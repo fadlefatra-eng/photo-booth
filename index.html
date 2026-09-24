@@ -325,6 +325,40 @@
     .editor .preview-pane{top:12px; background:none;}
     .editor .preview-pane canvas{max-height:calc(100vh - 330px);}   /* leave room for the title and the DONE button */
   }
+  /* filter buttons with a preview of your own photo */
+  .filter-row{display:flex; gap:10px; overflow-x:auto; padding:2px 2px 8px; -webkit-overflow-scrolling:touch;}
+  .filter-card{flex:0 0 76px; display:flex; flex-direction:column; align-items:center; gap:6px; background:none; border:none; padding:0; color:var(--rose-800); font-size:.76rem; font-weight:600;}
+  .filter-card canvas{width:72px; height:72px; border-radius:14px; border:3px solid transparent; box-shadow:var(--shadow-soft);}
+  .filter-card.active canvas{border-color:var(--rose-600);}
+  .filter-card.active{color:var(--rose-600);}
+  .app-version{display:inline-block; margin-left:6px; padding:2px 8px; border-radius:999px; background:var(--blush-100); font-weight:600;}
+
+  /* phone comfort: everything you tap is at least ~44px tall (Apple/Google's minimum touch size) */
+  .chip{min-height:42px; padding:10px 16px;}
+  .frame-tab{min-height:42px; padding:10px 16px;}
+  .tool-tab{min-height:44px;}
+  .swatch{width:42px; height:42px;}
+  .swatch-row{gap:12px;}
+  .switch-row{min-height:44px; cursor:pointer;}
+  .switch-row input{width:22px; height:22px; flex:0 0 auto; accent-color:var(--rose-600);}
+  .btn-text{min-height:44px; padding:12px 10px;}
+  .brand{display:inline-flex; align-items:center; min-height:44px; padding:0 6px 0 0;}
+  .ldr-toggle{min-height:44px; padding:12px;}
+  .swatch-hint .btn-text{min-height:36px;}
+  .tray-del{width:30px; height:30px; font-size:1.05rem;}
+  .live-unmute{min-height:36px; padding:8px 12px;}
+  .frame-card span, .frame-pick-row .frame-card span{font-size:.78rem;}
+  .motion-note, .swatch-hint{font-size:.8rem;}
+
+  /* phones: a slightly smaller heading and preview, so the tool panel shows without scrolling */
+  @media (max-width:600px){
+    #step-customize h2{font-size:1.3rem;}
+    #step-customize .step-sub{font-size:.84rem; margin-top:4px;}
+    .editor{margin-top:6px; gap:8px;}
+    .editor .preview-pane{padding:4px 0 8px;}
+    .editor .preview-pane canvas{max-height:31vh;}
+  }
+
   /* landing gallery groups */
   .gallery-group{grid-column:1/-1; font-family:var(--font-script); font-size:1.35rem; color:var(--rose-600); margin-top:8px;}
   .frame-tab{background:var(--white); border:1.5px solid var(--blush-100); border-radius:999px; padding:8px 14px; font-size:.8rem; font-weight:600; color:var(--rose-800);}
@@ -568,7 +602,7 @@
       <div class="privacy-note">🔒 Your photos stay on your device. We don't upload or store your photos.</div>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two.</footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v3</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -840,6 +874,8 @@
     {id:'original', label:'Original', css:'none'},
     {id:'soft', label:'Soft', css:'brightness(1.06) saturate(0.9) contrast(0.96)'},
     {id:'warm', label:'Warm', css:'sepia(0.18) saturate(1.25) brightness(1.03)'},
+    // "tint" is a color washed over the photo (soft-light), for tones plain CSS filters can't make
+    {id:'cool', label:'Cool', css:'saturate(0.92) brightness(1.04) contrast(1.03)', tint:'rgba(80,140,255,0.28)'},
     {id:'pink', label:'Pink', css:'saturate(1.35) hue-rotate(-6deg) brightness(1.04)'},
     {id:'vintage', label:'Vintage', css:'sepia(0.35) contrast(0.92) brightness(0.97) saturate(0.8)'},
     {id:'bw', label:'B & W', css:'grayscale(1) contrast(1.08)'}
@@ -891,6 +927,23 @@
     {id:'retro', name:'Retro 70s', color:'peach', colors:['peach','butter','cream','mocha'], title:'groovy love', decor:decorRetro}
   ].forEach(function(t){
     t.tab = 'illustrated'; t.layout = 'strip'; t.animated = true;
+    TEMPLATES.push(t);
+  });
+  // Characters: original couples + "Hoodie Friends" (drawn in decorXxx further down).
+  // `band` tints the lower part of the background for the two-tone hoodie look.
+  [
+    {id:'teddy', name:'Teddy Bears', color:'cream', colors:['cream','peach','butter','baby'], title:'bear hugs', decor:decorTeddy},
+    {id:'bunny', name:'Bunnies', color:'baby', colors:['baby','white','lavender','mint'], title:'bunny love', decor:decorBunny},
+    {id:'kitten', name:'Kittens', color:'peach', colors:['peach','cream','butter','sky'], title:'purrfect together', labelAt:'tl', decor:decorKitten},
+    {id:'penguin', name:'Penguins', color:'sky', colors:['sky','white','lavender','navy'], title:'my penguin', labelAt:'tl', decor:decorPenguin},
+    {id:'hoodie-frog', name:'Hoodie: Frog', color:'mint', band:'#8FD3BE', colors:['mint','butter','cream'], title:'snack time ♡', labelAt:'tr', decor:decorHoodieFrog},
+    {id:'hoodie-berry', name:'Hoodie: Berry', color:'baby', band:'#F7B8C8', colors:['baby','cream','white'], title:'berry sweet', labelAt:'tr', decor:decorHoodieBerry},
+    {id:'hoodie-bear', name:'Hoodie: Bear', color:'cream', band:'#E3C9A8', colors:['cream','peach','mocha'], title:'boba buddies', labelAt:'tr', decor:decorHoodieBear},
+    {id:'hoodie-dino', name:'Hoodie: Dino', color:'sky', band:'#8FD3E6', colors:['sky','mint','lavender'], title:'dino-mite', labelAt:'tr', decor:decorHoodieDino},
+    {id:'hoodie-chick', name:'Hoodie: Chick', color:'butter', band:'#FFD84D', colors:['butter','cream','peach'], title:'fresh from the oven', labelAt:'tr', decor:decorHoodieChick}
+  ].forEach(function(t){
+    t.tab = 'characters'; t.layout = 'strip'; t.animated = true;
+    if(t.band) t.pattern = patternBand;
     TEMPLATES.push(t);
   });
   var FX_OPTIONS = [
@@ -1209,15 +1262,26 @@
       this.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
 
+    // each filter button shows your own first photo with that filter, so you pick by look, not by name
     var filterRow = $('filterChips');
+    filterRow.className = 'filter-row';
     FILTERS.forEach(function(f){
       var b = document.createElement('button');
-      b.type = 'button'; b.className = 'chip' + (f.id===state.filterId?' active':'');
-      b.textContent = f.label;
+      b.type = 'button'; b.className = 'filter-card' + (f.id===state.filterId?' active':'');
+      b.dataset.filter = f.id;
+      b.setAttribute('aria-pressed', f.id===state.filterId ? 'true' : 'false');
+      var c = document.createElement('canvas');
+      c.width = 128; c.height = 128;
+      b.appendChild(c);
+      var label = document.createElement('span');
+      label.textContent = f.label;
+      b.appendChild(label);
       b.addEventListener('click', function(){
         state.filterId = f.id;
-        Array.prototype.forEach.call(filterRow.children, function(c){ c.classList.remove('active'); });
-        b.classList.add('active');
+        Array.prototype.forEach.call(filterRow.children, function(x){
+          x.classList.toggle('active', x === b);
+          x.setAttribute('aria-pressed', x === b ? 'true' : 'false');
+        });
         renderPreview();
       });
       filterRow.appendChild(b);
@@ -1446,6 +1510,17 @@
     $('titleToggle').checked = state.showTitle;
     $('popoutToggle').checked = state.popout;
     $('showDateToggle').checked = state.showDate;
+    renderFilterThumbs();
+  }
+  function renderFilterThumbs(){
+    var src = state.shots[0];
+    Array.prototype.forEach.call($('filterChips').children, function(b){
+      var f = FILTERS.filter(function(x){ return x.id === b.dataset.filter; })[0];
+      var c = b.querySelector('canvas'), ctx = c.getContext('2d');
+      ctx.clearRect(0, 0, c.width, c.height);
+      if(src) drawFiltered(ctx, src, 0, 0, c.width, c.height, f);
+      else { ctx.fillStyle = '#FFC2D6'; ctx.fillRect(0, 0, c.width, c.height); }
+    });
   }
   // the editor shows one tool panel at a time (Frame / Color / Filter / Stickers / Text)
   function showToolPanel(id){
@@ -3118,6 +3193,378 @@
     });
   }
 
+  /* ================= CHARACTERS =================
+     Original characters, drawn with simple shapes. Same rules as the themes: full-size
+     strip units, faces-in-photos stay clear, every movement loops once per LOOP. */
+  var OUTLINE = '#6B4A3A';
+  // eyes close for a moment once per loop (a blink); `phase` staggers the two characters
+  function blinkOpen(e, phase){
+    if(!e.moving) return 1;
+    var p = ((e.t / LOOP) + (phase || 0)) % 1;
+    return (p > 0.88 && p < 0.93) ? 0.12 : 1;
+  }
+  function blob(ctx, x, y, rx, ry, fill, stroke, lw){
+    ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI*2);
+    ctx.fillStyle = fill; ctx.fill();
+    if(stroke){ ctx.lineWidth = lw; ctx.strokeStyle = stroke; ctx.stroke(); }
+  }
+  function cuteFace(ctx, y, s, open){   // eyes, blush, little smile — centered on x = 0
+    ctx.fillStyle = '#3B1626';
+    [-1, 1].forEach(function(d){ ctx.beginPath(); ctx.ellipse(d*s*0.34, y, s*0.085, s*0.085*open, 0, 0, Math.PI*2); ctx.fill(); });
+    ctx.fillStyle = 'rgba(255,130,165,.5)';
+    [-1, 1].forEach(function(d){ ctx.beginPath(); ctx.ellipse(d*s*0.56, y + s*0.26, s*0.13, s*0.08, 0, 0, Math.PI*2); ctx.fill(); });
+    ctx.strokeStyle = '#3B1626'; ctx.lineWidth = s*0.035; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-s*0.1, y + s*0.36); ctx.quadraticCurveTo(-s*0.05, y + s*0.42, 0, y + s*0.36);
+    ctx.quadraticCurveTo(s*0.05, y + s*0.42, s*0.1, y + s*0.36); ctx.stroke();
+  }
+
+  /* ---- couples ---- */
+  function drawTeddyChar(ctx, x, y, s, fur, light, e, phase, opts){
+    var lw = s*0.06;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(sway(e, 1, phase*6, 0.07));
+    if(opts.body){
+      blob(ctx, 0, s*1.25, s*0.9, s*0.75, fur, OUTLINE, lw);
+      blob(ctx, 0, s*1.35, s*0.5, s*0.45, light);
+      blob(ctx, -s*0.55, s*1.92, s*0.32, s*0.22, fur, OUTLINE, lw);
+      blob(ctx, s*0.55, s*1.92, s*0.32, s*0.22, fur, OUTLINE, lw);
+    }
+    blob(ctx, -s*0.72, -s*0.7, s*0.34, s*0.34, fur, OUTLINE, lw);
+    blob(ctx, s*0.72, -s*0.7, s*0.34, s*0.34, fur, OUTLINE, lw);
+    blob(ctx, -s*0.72, -s*0.7, s*0.17, s*0.17, light);
+    blob(ctx, s*0.72, -s*0.7, s*0.17, s*0.17, light);
+    blob(ctx, 0, 0, s, s*0.92, fur, OUTLINE, lw);
+    blob(ctx, 0, s*0.34, s*0.4, s*0.3, light);
+    blob(ctx, 0, s*0.2, s*0.12, s*0.08, '#3B1626');
+    cuteFace(ctx, -s*0.08, s, blinkOpen(e, phase));
+    if(opts.bow){
+      ctx.fillStyle = '#E14F7A';
+      ctx.beginPath(); ctx.moveTo(s*0.55, -s*0.85); ctx.lineTo(s*0.25, -s*1.05); ctx.lineTo(s*0.25, -s*0.65); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(s*0.55, -s*0.85); ctx.lineTo(s*0.85, -s*1.05); ctx.lineTo(s*0.85, -s*0.65); ctx.closePath(); ctx.fill();
+      blob(ctx, s*0.55, -s*0.85, s*0.09, s*0.09, '#C23A64');
+    }
+    if(opts.paws){
+      blob(ctx, -s*0.5, s*0.95, s*0.27, s*0.2, fur, OUTLINE, lw);
+      blob(ctx, s*0.5, s*0.95, s*0.27, s*0.2, fur, OUTLINE, lw);
+    }
+    ctx.restore();
+  }
+  function drawBunnyChar(ctx, x, y, s, fur, e, phase, opts){
+    var lw = s*0.06, wig = sway(e, 2, phase*6, 0.14);
+    ctx.save(); ctx.translate(x, y); ctx.rotate(sway(e, 1, phase*6, 0.06));
+    if(opts.body){
+      blob(ctx, 0, s*1.15, s*0.85, s*0.72, fur, OUTLINE, lw);
+      blob(ctx, -s*0.5, s*1.8, s*0.3, s*0.2, fur, OUTLINE, lw);
+      blob(ctx, s*0.5, s*1.8, s*0.3, s*0.2, fur, OUTLINE, lw);
+    }
+    [-1, 1].forEach(function(d){   // long ears that wiggle
+      ctx.save(); ctx.translate(d*s*0.38, -s*0.62); ctx.rotate(d*0.14 + d*wig);
+      blob(ctx, 0, -s*0.72, s*0.26, s*0.8, fur, OUTLINE, lw);
+      blob(ctx, 0, -s*0.7, s*0.12, s*0.56, '#FFB3D1');
+      ctx.restore();
+    });
+    blob(ctx, 0, 0, s, s*0.85, fur, OUTLINE, lw);
+    ctx.fillStyle = '#FF8FB3';
+    ctx.beginPath(); ctx.moveTo(-s*0.08, s*0.14); ctx.lineTo(s*0.08, s*0.14); ctx.lineTo(0, s*0.24); ctx.closePath(); ctx.fill();
+    cuteFace(ctx, -s*0.06, s, blinkOpen(e, phase));
+    if(opts.paws){
+      blob(ctx, -s*0.45, s*0.86, s*0.25, s*0.19, fur, OUTLINE, lw);
+      blob(ctx, s*0.45, s*0.86, s*0.25, s*0.19, fur, OUTLINE, lw);
+    }
+    ctx.restore();
+  }
+  // tailSide: 1 = tail to the right, -1 = to the left (so it doesn't cover the date in the middle)
+  function drawKittenChar(ctx, x, y, s, fur, stripe, e, phase, peek, tailSide){
+    var lw = s*0.06;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(sway(e, 1, phase*6, 0.05));
+    if(!peek){
+      // tail swishing behind the body
+      ctx.save(); ctx.scale(tailSide || 1, 1); ctx.translate(s*0.7, s*1.5); ctx.rotate(sway(e, 1, phase*6 + 1, 0.35));
+      ctx.strokeStyle = OUTLINE; ctx.lineWidth = s*0.3; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(s*0.7, -s*0.2, s*0.55, -s*0.9); ctx.stroke();
+      ctx.strokeStyle = fur; ctx.lineWidth = s*0.2;
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(s*0.7, -s*0.2, s*0.55, -s*0.9); ctx.stroke();
+      ctx.restore();
+      blob(ctx, 0, s*1.2, s*0.82, s*0.72, fur, OUTLINE, lw);
+      blob(ctx, -s*0.45, s*1.85, s*0.28, s*0.19, fur, OUTLINE, lw);
+      blob(ctx, s*0.45, s*1.85, s*0.28, s*0.19, fur, OUTLINE, lw);
+    }
+    [-1, 1].forEach(function(d){   // pointy ears
+      ctx.beginPath(); ctx.moveTo(d*s*0.95, -s*0.2); ctx.lineTo(d*s*0.72, -s*1.1); ctx.lineTo(d*s*0.2, -s*0.72); ctx.closePath();
+      ctx.fillStyle = fur; ctx.fill(); ctx.strokeStyle = OUTLINE; ctx.lineWidth = lw; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(d*s*0.8, -s*0.35); ctx.lineTo(d*s*0.7, -s*0.88); ctx.lineTo(d*s*0.38, -s*0.66); ctx.closePath();
+      ctx.fillStyle = '#FFB3D1'; ctx.fill();
+    });
+    blob(ctx, 0, 0, s, s*0.88, fur, OUTLINE, lw);
+    if(stripe){
+      ctx.strokeStyle = stripe; ctx.lineWidth = s*0.07; ctx.lineCap = 'round';
+      [-0.22, 0, 0.22].forEach(function(dx){ ctx.beginPath(); ctx.moveTo(s*dx, -s*0.85); ctx.lineTo(s*dx, -s*0.6); ctx.stroke(); });
+    }
+    ctx.fillStyle = '#FF8FB3';
+    ctx.beginPath(); ctx.moveTo(-s*0.08, s*0.12); ctx.lineTo(s*0.08, s*0.12); ctx.lineTo(0, s*0.21); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = OUTLINE; ctx.lineWidth = s*0.025;
+    [-1, 1].forEach(function(d){
+      ctx.beginPath(); ctx.moveTo(d*s*0.3, s*0.2); ctx.lineTo(d*s*0.85, s*0.12);
+      ctx.moveTo(d*s*0.3, s*0.28); ctx.lineTo(d*s*0.85, s*0.32); ctx.stroke();
+    });
+    cuteFace(ctx, -s*0.08, s, blinkOpen(e, phase));
+    if(peek){   // front paws resting on the photo's edge
+      blob(ctx, -s*0.45, s*0.9, s*0.24, s*0.18, fur, OUTLINE, lw);
+      blob(ctx, s*0.45, s*0.9, s*0.24, s*0.18, fur, OUTLINE, lw);
+    }
+    ctx.restore();
+  }
+  function drawPenguinChar(ctx, x, y, s, scarf, e, phase){
+    var lw = s*0.06;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(sway(e, 2, phase*6, 0.09));   // a little waddle
+    blob(ctx, -s*0.3, s*0.98, s*0.26, s*0.12, '#F4A340', OUTLINE, lw*0.7);
+    blob(ctx, s*0.3, s*0.98, s*0.26, s*0.12, '#F4A340', OUTLINE, lw*0.7);
+    [-1, 1].forEach(function(d){
+      ctx.save(); ctx.translate(d*s*0.72, s*0.15); ctx.rotate(d*(0.3 + sway(e, 2, phase*6 + d, 0.18)));
+      blob(ctx, 0, s*0.2, s*0.16, s*0.45, '#1F2A44', OUTLINE, lw); ctx.restore();
+    });
+    blob(ctx, 0, 0, s*0.8, s, '#1F2A44', OUTLINE, lw);
+    blob(ctx, 0, s*0.2, s*0.56, s*0.7, '#FFFFFF');
+    blob(ctx, 0, -s*0.4, s*0.5, s*0.36, '#FFFFFF');
+    ctx.fillStyle = scarf;
+    ctx.fillRect(-s*0.72, -s*0.08, s*1.44, s*0.2);
+    ctx.fillRect(s*0.25, -s*0.02, s*0.22, s*0.5);
+    ctx.fillStyle = '#F4A340';
+    ctx.beginPath(); ctx.moveTo(-s*0.12, -s*0.3); ctx.lineTo(s*0.12, -s*0.3); ctx.lineTo(0, -s*0.16); ctx.closePath(); ctx.fill();
+    ctx.save(); ctx.translate(0, -s*0.4); cuteFace(ctx, -s*0.08, s*0.62, blinkOpen(e, phase)); ctx.restore();
+    ctx.restore();
+  }
+  function drawPawPrint(ctx, x, y, s, color){
+    ctx.fillStyle = color;
+    blob(ctx, x, y + s*0.25, s*0.42, s*0.34, color);
+    [[-0.45,-0.25],[-0.16,-0.52],[0.16,-0.52],[0.45,-0.25]].forEach(function(p){ blob(ctx, x + p[0]*s, y + p[1]*s, s*0.16, s*0.2, color); });
+  }
+
+  function decorTeddy(ctx, e){
+    var A = corners(e.rects[0]), B = corners(e.rects[e.rects.length-1]);
+    drawTeddyChar(ctx, A[0][0] + 124, A[0][1] + 12, 90, '#A47E6B', '#E8D5B7', e, 0, {paws:true});
+    drawTeddyChar(ctx, B[2][0] - 140, B[2][1] - 36, 82, '#C8A98B', '#FFF6E5', e, 0.5, {body:true, bow:true});
+    var beat = 1 + (e.moving ? Math.max(0, wave(e.t, 3, 0))*0.18 : 0);
+    drawHeart(ctx, B[2][0] - 290, B[2][1] - 84, 70*beat, '#E14F7A', 1);
+    e.rects.forEach(function(r, i){
+      if(!i) return;
+      var c = corners(r);
+      drawHeart(ctx, c[1][0] - 20, c[1][1] - 6, 36*beat, '#FF8FB3', 1);
+    });
+  }
+  function decorBunny(ctx, e){
+    var A = corners(e.rects[0]), B = corners(e.rects[e.rects.length-1]);
+    drawBunnyChar(ctx, A[0][0] + 124, A[0][1] + 12, 80, '#FFFFFF', e, 0, {paws:true});
+    drawBunnyChar(ctx, B[2][0] - 136, B[2][1] - 32, 76, '#E8D5B7', e, 0.5, {body:true});
+    // a carrot in the bottom-left corner
+    ctx.save(); ctx.translate(B[3][0] + 40, B[3][1] - 20); ctx.rotate(-0.6 + sway(e, 1, 2, 0.12));
+    ctx.fillStyle = '#F4A340'; ctx.strokeStyle = OUTLINE; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(-16, -40); ctx.lineTo(16, -40); ctx.lineTo(0, 40); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#7CC36A';
+    [-10, 0, 10].forEach(function(dx){ ctx.beginPath(); ctx.ellipse(dx, -52, 5, 14, dx*0.04, 0, Math.PI*2); ctx.fill(); ctx.stroke(); });
+    ctx.restore();
+    e.rects.forEach(function(r, i){
+      if(!i) return;
+      var c = corners(r);
+      drawHeart(ctx, c[1][0] - 20, c[1][1] - 6, 34, '#FF8FB3', 1);
+    });
+  }
+  function decorKitten(ctx, e){
+    var A = corners(e.rects[0]), B = corners(e.rects[e.rects.length-1]);
+    drawKittenChar(ctx, B[3][0] + 140, B[3][1] - 30, 72, '#F0997B', '#D8663E', e, 0, false, -1);
+    drawKittenChar(ctx, B[2][0] - 140, B[2][1] - 30, 72, '#B4B2A9', null, e, 0.5);
+    var beat = 1 + (e.moving ? Math.max(0, wave(e.t, 3, 0))*0.18 : 0);
+    drawHeart(ctx, (B[3][0] + B[2][0])/2, B[2][1] - 84, 56*beat, '#E14F7A', 1);
+    // a third kitten peeking in at the top, with paw prints trailing off to the side
+    drawKittenChar(ctx, A[1][0] - 104, A[1][1] + 14, 66, '#FFF6E5', '#E8C9A0', e, 0.25, true);   // clear of the title
+    var paw = rgba(OUTLINE, 0.45);
+    drawPawPrint(ctx, A[0][0] + 34, A[0][1] + 44, 36, paw);
+    drawPawPrint(ctx, A[0][0] + 84, A[0][1] + 14, 36, paw);
+  }
+  function decorPenguin(ctx, e){
+    var B = corners(e.rects[e.rects.length-1]);
+    for(var k=0; k<22; k++){   // falling snow — only visible around the photos' edges
+      var p = e.moving ? ((e.t / LOOP) + k/22) % 1 : k/22;
+      var sx = ((k * 137) % (e.w - 20)) + 10 + (e.moving ? Math.sin((p*2 + k) * Math.PI) * 10 : 0);
+      blob(ctx, sx, p * e.h, 5 + (k % 3)*2, 5 + (k % 3)*2, 'rgba(255,255,255,.9)');
+    }
+    drawPenguinChar(ctx, B[3][0] + 150, B[2][1] - 14, 86, '#E14F7A', e, 0);
+    drawPenguinChar(ctx, B[2][0] - 150, B[2][1] - 14, 86, '#378ADD', e, 0.5);
+  }
+
+  /* ---- Hoodie Friends: a little hand-drawn style (brown outlines), drawn in small units and scaled up ---- */
+  var HOOD_LINE = '#8B5E3C';
+  function unitBlob(ctx, x, y, rx, ry, fill, noStroke){
+    ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI*2);
+    ctx.fillStyle = fill; ctx.fill();
+    if(!noStroke) ctx.stroke();
+  }
+  function hoodFace(ctx, y, open, eye){
+    ctx.fillStyle = eye || HOOD_LINE;
+    [-7, 7].forEach(function(x){ ctx.beginPath(); ctx.ellipse(x, y, 1.8, 1.8*open, 0, 0, Math.PI*2); ctx.fill(); });
+    ctx.fillStyle = 'rgba(248,190,205,.95)';
+    [-11, 11].forEach(function(x){ ctx.beginPath(); ctx.ellipse(x, y + 6, 3, 2, 0, 0, Math.PI*2); ctx.fill(); });
+  }
+  function tinyFace(ctx, y, gap, r, open){   // for the snacks
+    ctx.fillStyle = HOOD_LINE;
+    [-gap, gap].forEach(function(x){ ctx.beginPath(); ctx.ellipse(x, y, r, r*open, 0, 0, Math.PI*2); ctx.fill(); });
+    ctx.lineWidth = r*0.8;
+    ctx.beginPath(); ctx.moveTo(-r*1.3, y + r*2.2); ctx.quadraticCurveTo(0, y + r*3.4, r*1.3, y + r*2.2); ctx.stroke();
+    ctx.lineWidth = 1.6;
+  }
+  function hoodStart(ctx, x, y, k, rot){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0); ctx.scale(k, k);
+    ctx.lineWidth = 1.6; ctx.strokeStyle = HOOD_LINE; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  }
+  function drawFrogHamster(ctx, open){
+    unitBlob(ctx, -12, -22, 7, 7, '#9BD37A'); unitBlob(ctx, 12, -22, 7, 7, '#9BD37A');
+    unitBlob(ctx, -12, -22, 3.2, 3.2, '#fff'); unitBlob(ctx, 12, -22, 3.2, 3.2, '#fff');
+    unitBlob(ctx, -12, -22, 1.3, 1.3, HOOD_LINE, true); unitBlob(ctx, 12, -22, 1.3, 1.3, HOOD_LINE, true);
+    unitBlob(ctx, 0, 0, 27, 23, '#9BD37A');
+    unitBlob(ctx, 0, 4, 18, 15, '#FBE3C4');
+    hoodFace(ctx, 1, open);
+    ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(-2, 6); ctx.quadraticCurveTo(0, 8, 2, 6); ctx.stroke(); ctx.lineWidth = 1.6;
+    unitBlob(ctx, -9, 18, 4.5, 3.5, '#FBE3C4'); unitBlob(ctx, 9, 18, 4.5, 3.5, '#FBE3C4');
+  }
+  function drawBerryBunny(ctx, open, wig){
+    [-1, 1].forEach(function(d){
+      ctx.save(); ctx.translate(d*8, -24); ctx.rotate(d*(0.2 + wig));
+      unitBlob(ctx, 0, -8, 4.5, 11, '#FFFFFF'); unitBlob(ctx, 0, -8, 2, 7.5, '#FFB3D1', true);
+      ctx.restore();
+    });
+    ctx.beginPath(); ctx.moveTo(-26, 0); ctx.quadraticCurveTo(-26, -26, 0, -26); ctx.quadraticCurveTo(26, -26, 26, 0);
+    ctx.quadraticCurveTo(26, 18, 0, 18); ctx.quadraticCurveTo(-26, 18, -26, 0); ctx.closePath();
+    ctx.fillStyle = '#F46F7A'; ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-6, -27); ctx.lineTo(-3, -32); ctx.lineTo(0, -28); ctx.lineTo(3, -32); ctx.lineTo(6, -27); ctx.closePath();
+    ctx.fillStyle = '#7CC36A'; ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#FFE9A8';
+    [[-16,-12],[16,-12],[-20,2],[20,2],[0,-19],[-9,-20],[9,-20]].forEach(function(p){ ctx.beginPath(); ctx.ellipse(p[0], p[1], 1.3, 2, 0, 0, Math.PI*2); ctx.fill(); });
+    unitBlob(ctx, 0, 2, 16, 13, '#FFFDF8');
+    hoodFace(ctx, 0, open);
+    ctx.lineWidth = 1.1; ctx.beginPath(); ctx.moveTo(-1.5, 4); ctx.lineTo(0, 5.5); ctx.lineTo(1.5, 4); ctx.stroke(); ctx.lineWidth = 1.6;
+  }
+  function drawBearCat(ctx, open){
+    unitBlob(ctx, -16, -19, 7, 7, '#C8A07A'); unitBlob(ctx, 16, -19, 7, 7, '#C8A07A');
+    unitBlob(ctx, -16, -19, 3.4, 3.4, '#F2D8BC', true); unitBlob(ctx, 16, -19, 3.4, 3.4, '#F2D8BC', true);
+    unitBlob(ctx, 0, 0, 27, 23, '#C8A07A');
+    unitBlob(ctx, 0, 4, 18, 15, '#E9E6E0');
+    ctx.lineWidth = 1.1;
+    ctx.beginPath(); ctx.moveTo(-9, -9); ctx.lineTo(-12, -15); ctx.lineTo(-6, -12); ctx.closePath(); ctx.fillStyle = '#E9E6E0'; ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(9, -9); ctx.lineTo(12, -15); ctx.lineTo(6, -12); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-9, 7); ctx.lineTo(-16, 7); ctx.moveTo(-9, 9.5); ctx.lineTo(-15, 10.5); ctx.moveTo(9, 7); ctx.lineTo(16, 7); ctx.moveTo(9, 9.5); ctx.lineTo(15, 10.5); ctx.stroke();
+    ctx.lineWidth = 1.6;
+    hoodFace(ctx, 1, open);
+    ctx.fillStyle = '#F46F7A'; ctx.beginPath(); ctx.moveTo(-2, 5.5); ctx.lineTo(2, 5.5); ctx.lineTo(0, 7.3); ctx.closePath(); ctx.fill();
+  }
+  function drawDinoBear(ctx, open){
+    ctx.beginPath(); ctx.moveTo(-10, -21); ctx.lineTo(-6, -30); ctx.lineTo(-2, -23); ctx.lineTo(2, -31); ctx.lineTo(6, -23); ctx.lineTo(10, -30); ctx.lineTo(13, -20); ctx.closePath();
+    ctx.fillStyle = '#7FC7DB'; ctx.fill(); ctx.stroke();
+    unitBlob(ctx, 0, 0, 27, 23, '#9ED9E8');
+    unitBlob(ctx, 0, 4, 18, 15, '#C89B72');
+    unitBlob(ctx, -13, -11, 4.5, 4.5, '#C89B72'); unitBlob(ctx, 13, -11, 4.5, 4.5, '#C89B72');
+    unitBlob(ctx, 0, 8.5, 7, 5, '#F2D8BC');
+    hoodFace(ctx, 0.5, open, '#3B1626');
+    unitBlob(ctx, 0, 6.5, 2, 1.3, '#3B1626', true);
+  }
+  function drawChickPuppy(ctx, open){
+    ctx.beginPath(); ctx.moveTo(-3, -22); ctx.quadraticCurveTo(-1, -31, 4, -25); ctx.fillStyle = '#FFE45C'; ctx.fill(); ctx.stroke();
+    unitBlob(ctx, 0, 0, 27, 23, '#FFE45C');
+    ctx.beginPath(); ctx.moveTo(-4, -7); ctx.lineTo(0, -4); ctx.lineTo(4, -7); ctx.lineTo(0, -9); ctx.closePath(); ctx.fillStyle = '#F4A340'; ctx.fill(); ctx.stroke();
+    unitBlob(ctx, 0, 6, 18, 13, '#FFFDF8');
+    unitBlob(ctx, -18, -1, 6, 9, '#E8C9A0'); unitBlob(ctx, 18, -1, 6, 9, '#E8C9A0');
+    hoodFace(ctx, 4, open, '#3B1626');
+    unitBlob(ctx, 0, 8.5, 2, 1.3, '#3B1626', true);
+  }
+  function drawOnigiri(ctx, open){
+    ctx.beginPath(); ctx.moveTo(0, -17); ctx.lineTo(16, 10); ctx.quadraticCurveTo(16, 15, 11, 15); ctx.lineTo(-11, 15); ctx.quadraticCurveTo(-16, 15, -16, 10); ctx.closePath();
+    ctx.fillStyle = '#FFFDF5'; ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#3F5E4A'; ctx.fillRect(-8, 4, 16, 11); ctx.strokeRect(-8, 4, 16, 11);
+    tinyFace(ctx, -3, 4.5, 1.3, open);
+  }
+  function drawDango(ctx, open){
+    ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, -30); ctx.lineTo(0, 33); ctx.stroke(); ctx.lineWidth = 1.6;
+    [['#F8C8D4', -18], ['#FFFDF5', -2], ['#B8DC9A', 14]].forEach(function(b){
+      unitBlob(ctx, 0, b[1], 8, 8, b[0]);
+      tinyFace(ctx, b[1] - 1.5, 2.6, 0.9, open);
+    });
+  }
+  function drawBoba(ctx, open){
+    ctx.lineWidth = 3; ctx.strokeStyle = '#F46F7A';
+    ctx.beginPath(); ctx.moveTo(5, -20); ctx.lineTo(9, -36); ctx.stroke();
+    ctx.lineWidth = 1.6; ctx.strokeStyle = HOOD_LINE;
+    ctx.beginPath(); ctx.moveTo(-13, -20); ctx.lineTo(13, -20); ctx.lineTo(10, 26); ctx.quadraticCurveTo(10, 30, 6, 30); ctx.lineTo(-6, 30); ctx.quadraticCurveTo(-10, 30, -10, 26); ctx.closePath();
+    ctx.fillStyle = '#E8C9A0'; ctx.fill(); ctx.stroke();
+    ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-15, -20); ctx.lineTo(15, -20); ctx.stroke(); ctx.lineWidth = 1.6;
+    [[-5,22],[1,24],[6,21],[-2,18]].forEach(function(p){ unitBlob(ctx, p[0], p[1], 2.5, 2.5, '#5C3D2E', true); });
+    tinyFace(ctx, 0, 4, 1.3, open);
+  }
+  function drawDonut(ctx, open){
+    unitBlob(ctx, 0, 0, 17, 17, '#F4C27A');
+    ctx.beginPath(); ctx.moveTo(-16, -4); ctx.quadraticCurveTo(-12, -17, 0, -17); ctx.quadraticCurveTo(12, -17, 16, -4);
+    ctx.quadraticCurveTo(10, 0, 6, -4); ctx.quadraticCurveTo(0, 2, -6, -4); ctx.quadraticCurveTo(-10, 0, -16, -4); ctx.closePath();
+    ctx.fillStyle = '#F7A8C4'; ctx.fill(); ctx.stroke();
+    unitBlob(ctx, 0, 0, 5, 5, '#FFFFFF');
+    [['#9ED9E8', -9, -11, 0.5], ['#FFE45C', 7, -12, -0.4], ['#FFFFFF', -1, -14, 0]].forEach(function(s){
+      ctx.save(); ctx.translate(s[1], s[2]); ctx.rotate(s[3]); ctx.fillStyle = s[0]; ctx.fillRect(-1.6, -0.6, 3.2, 1.2); ctx.restore();
+    });
+    tinyFace(ctx, 7.5, 7, 1.3, open);
+  }
+  function drawMelonBread(ctx, open){
+    ctx.beginPath(); ctx.moveTo(-16, 8); ctx.quadraticCurveTo(-16, -16, 0, -16); ctx.quadraticCurveTo(16, -16, 16, 8); ctx.closePath();
+    ctx.fillStyle = '#F4C27A'; ctx.fill(); ctx.stroke();
+    ctx.save(); ctx.clip();
+    ctx.strokeStyle = '#D99B52'; ctx.lineWidth = 0.8;
+    for(var i=-24; i<=24; i+=7){ ctx.beginPath(); ctx.moveTo(i, -18); ctx.lineTo(i + 20, 10); ctx.moveTo(i, -18); ctx.lineTo(i - 20, 10); ctx.stroke(); }
+    ctx.restore();
+    ctx.beginPath(); ctx.moveTo(-17, 8); ctx.lineTo(17, 8); ctx.stroke();
+    tinyFace(ctx, 0, 5, 1.3, open);
+  }
+  // outlined star + sakura sprinkles, like stickers
+  function drawOutlinedStar(ctx, x, y, r, rot){
+    drawStar5(ctx, x, y, r, '#FFE45C', 1, rot);
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0);
+    ctx.strokeStyle = HOOD_LINE; ctx.lineWidth = r*0.14; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    for(var i=0;i<10;i++){ var rr = i % 2 ? r*0.45 : r, a = -Math.PI/2 + i*Math.PI/5; ctx.lineTo(Math.cos(a)*rr, Math.sin(a)*rr); }
+    ctx.closePath(); ctx.stroke(); ctx.restore();
+  }
+  function drawSakura(ctx, x, y, r, rot){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0);
+    ctx.strokeStyle = HOOD_LINE; ctx.lineWidth = r*0.14;
+    for(var i=0;i<5;i++){ var a = i*Math.PI*2/5; blob(ctx, Math.cos(a)*r*0.55, Math.sin(a)*r*0.55, r*0.45, r*0.45, '#F8C8D4', HOOD_LINE, r*0.12); }
+    blob(ctx, 0, 0, r*0.28, r*0.28, '#FFE9A8');
+    ctx.restore();
+  }
+  function patternBand(ctx, W, H, L){   // two-tone background: a soft band across the lower half
+    ctx.save(); ctx.fillStyle = rgba(L.t.band, 0.6); ctx.fillRect(0, H*0.56, W, H*0.44); ctx.restore();
+  }
+  function decorHoodie(ctx, e, drawChar, drawFood, foodScale){
+    var A = corners(e.rects[0]), B = corners(e.rects[e.rects.length-1]);
+    var tw = function(k){ return 1 + sway(e, 2, k, 0.12); };
+    drawOutlinedStar(ctx, A[0][0] + 22, A[0][1] + 18, 30*tw(0), spin(e, 5));
+    drawOutlinedStar(ctx, A[1][0] - 26, A[1][1] + 10, 22*tw(1), spin(e, 5, -1));
+    drawOutlinedStar(ctx, A[0][0] + 6, A[0][1] + e.rects[0].h*0.62, 20*tw(2), 0);
+    e.rects.forEach(function(r, i){
+      if(!i) return;
+      var c = corners(r);
+      drawOutlinedStar(ctx, c[1][0] - 10, c[1][1] + 30, 22*tw(i + 3), spin(e, 5));
+    });
+    drawSakura(ctx, B[2][0] - 40, B[2][1] - 26, 22, spin(e, 5));
+    drawSakura(ctx, B[2][0] - 8, B[2][1] + 18, 18, spin(e, 5, -1));
+    // the snack bounces on the right edge of the first photo
+    hoodStart(ctx, A[1][0] - 26, A[1][1] + e.rects[0].h*0.6 + sway(e, 2, 0.5, 9), foodScale, sway(e, 1, 1, 0.12));
+    drawFood(ctx, blinkOpen(e, 0.45));
+    ctx.restore();
+    // the big hoodie friend sits in the bottom-left corner, peeking into the photo
+    hoodStart(ctx, B[3][0] + 86, B[3][1] + 44, 4.7, sway(e, 1, 0, 0.05));   // stays clear of the date
+    drawChar(ctx, blinkOpen(e, 0.1), sway(e, 2, 0, 0.18));
+    ctx.restore();
+  }
+  function decorHoodieFrog(ctx, e){ decorHoodie(ctx, e, drawFrogHamster, drawOnigiri, 3.4); }
+  function decorHoodieBerry(ctx, e){ decorHoodie(ctx, e, drawBerryBunny, drawDango, 3.1); }
+  function decorHoodieBear(ctx, e){ decorHoodie(ctx, e, drawBearCat, drawBoba, 3.1); }
+  function decorHoodieDino(ctx, e){ decorHoodie(ctx, e, drawDinoBear, drawDonut, 3.4); }
+  function decorHoodieChick(ctx, e){ decorHoodie(ctx, e, drawChickPuppy, drawMelonBread, 3.4); }
+
   /* ---------------- frame decorations while posing ----------------
      The frame's illustrations are drawn on top of the camera, lined up exactly where they'll
      land on the photo being taken — so you can pose with them and see what they cover. */
@@ -3195,7 +3642,7 @@
     var look = {
       t: t,
       hex: hex,
-      filterCss: filter.css,
+      filter: filter,
       isWhite: colorId === 'white',
       accent: dark ? '#FF8FB3' : (colorId === 'white' ? '#E14F7A' : shade(hex,-0.28)),
       textColor: dark ? '#FFF6F8' : '#3B1626',
@@ -3256,13 +3703,20 @@
                     textColor:b.textColor, hex:b.hex, dark:b.dark, popout:state.popout});
     ctx.restore();
   }
+  // "me ♡ / you ♡" pills; each frame can move them to a corner its characters leave free (labelAt)
   function drawLabels(ctx, b){
     if(!shotsAreMixed()) return;
+    var at = b.t.labelAt || 'bl';
     b.rects.forEach(function(r, i){
+      var text = shotLabel(i);
       ctx.save();
       ctx.translate(r.cx, r.cy);
       ctx.rotate(r.rot || 0);
-      drawSideLabel(ctx, -r.w/2 + 16, r.h/2 - 16, shotLabel(i), b.accent);
+      ctx.font = "600 20px Poppins, sans-serif";
+      var pillW = ctx.measureText(text).width + 24;
+      var x = at.charAt(1) === 'r' ? r.w/2 - 16 - pillW : -r.w/2 + 16;
+      var y = at.charAt(0) === 't' ? -r.h/2 + 46 : r.h/2 - 16;
+      drawSideLabel(ctx, x, y, text, b.accent);
       ctx.restore();
     });
   }
@@ -3340,7 +3794,7 @@
 
     for(var s=0; s<L.n; s++){
       var y = headerH + s*(CELL+GAP);
-      drawPhotoInto(ctx, s, PAD, y, CELL, CELL, L.filterCss, film ? 6 : 16);
+      drawPhotoInto(ctx, s, PAD, y, CELL, CELL, L.filter, film ? 6 : 16);
       L.rects.push({cx:PAD + CELL/2, cy:y + CELL/2, w:CELL, h:CELL, rot:0});
     }
     drawFooter(ctx, W, headerH + L.n*CELL + (L.n-1)*GAP + 46, L.textColor);
@@ -3369,7 +3823,7 @@
       var rowW = inRow*CELL + (inRow-1)*GAP;
       var x = (W - rowW)/2 + col*(CELL+GAP);
       var y = headerH + row*(CELL+GAP);
-      drawPhotoInto(ctx, i, x, y, CELL, CELL, L.filterCss, 14);
+      drawPhotoInto(ctx, i, x, y, CELL, CELL, L.filter, 14);
       L.rects.push({cx:x + CELL/2, cy:y + CELL/2, w:CELL, h:CELL, rot:0});
     }
     drawFooter(ctx, W, headerH + rows*CELL + (rows-1)*GAP + 46, L.textColor);
@@ -3405,7 +3859,7 @@
       ctx.shadowColor = 'rgba(59,22,38,0.25)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 8;
       roundRect(ctx, -cardW/2, -cardH/2, cardW, cardH, 10); ctx.fill();
       ctx.shadowColor = 'transparent';
-      drawPhotoInto(ctx, i, -photoSize/2, -cardH/2+14, photoSize, photoSize, L.filterCss);
+      drawPhotoInto(ctx, i, -photoSize/2, -cardH/2+14, photoSize, photoSize, L.filter);
       ctx.fillStyle = '#3B1626';   // the card is always white, so its caption is always dark
       ctx.font = "500 16px 'Dancing Script', cursive";
       ctx.textAlign = 'center';
@@ -3431,14 +3885,12 @@
     ctx.fillStyle = g2; ctx.fillRect(0,0,w,h);
   }
 
-  function drawPhotoInto(ctx, index, x, y, w, h, filterCss, radius){
+  function drawPhotoInto(ctx, index, x, y, w, h, filter, radius){
     ctx.save();
     if(radius){ roundRect(ctx,x,y,w,h,radius); ctx.clip(); }
     var shotCanvas = state.shots[index];
     if(shotCanvas){
-      ctx.filter = filterCss;
-      ctx.drawImage(shotCanvas, x, y, w, h);
-      ctx.filter = 'none';
+      drawFiltered(ctx, shotCanvas, x, y, w, h, filter);
     } else {
       var g = ctx.createLinearGradient(x,y,x+w,y+h);
       g.addColorStop(0,'#FFC2D6'); g.addColorStop(1,'#FF8FB3');
@@ -3446,6 +3898,21 @@
       drawHeart(ctx, x + w/2, y + h/2 - w*0.18, w*0.3, '#FFFFFF', 0.75);   // placeholder photo
     }
     ctx.restore();
+  }
+
+  // a photo with a filter: CSS-style adjustments, then an optional color wash (e.g. Cool's blue)
+  function drawFiltered(ctx, img, x, y, w, h, filter){
+    ctx.filter = filter.css;
+    ctx.drawImage(img, x, y, w, h);
+    ctx.filter = 'none';
+    if(filter.tint){
+      ctx.save();
+      ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+      ctx.globalCompositeOperation = 'soft-light';
+      ctx.fillStyle = filter.tint;
+      ctx.fillRect(x, y, w, h);
+      ctx.restore();
+    }
   }
 
   function drawFooterDate(ctx, w, y, textColor){
