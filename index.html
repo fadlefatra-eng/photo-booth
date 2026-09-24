@@ -350,6 +350,34 @@
   .frame-card span, .frame-pick-row .frame-card span{font-size:.78rem;}
   .motion-note, .swatch-hint{font-size:.8rem;}
 
+  /* custom frames */
+  .frame-card.cf-new .frame-thumb{border:2px dashed var(--pink-300); flex-direction:column; gap:6px; color:var(--rose-800); font-weight:600; font-size:.8rem; background:var(--blush-50);}
+  .frame-card.cf-new .cf-plus{font-size:1.8rem; line-height:1; color:var(--rose-600);}
+  .cf-edit-btn{display:block; margin:10px auto 0;}
+  .cf-edit-btn[hidden]{display:none;}
+  #confirmModal{z-index:95;}   /* "are you sure?" must show above the custom frame editor */
+  .cf-editor{position:fixed; inset:0; z-index:88; background:var(--blush-50); overflow-y:auto; -webkit-overflow-scrolling:touch;}
+  .cf-inner{max-width:560px; margin:0 auto; padding:0 16px 40px;}
+  .cf-head{position:sticky; top:0; z-index:3; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; background:var(--blush-50); border-bottom:1px solid var(--blush-100);}
+  .cf-head h3{font-size:1.1rem; color:var(--plum-900);}
+  .cf-save{min-height:44px; padding:10px 20px; font-size:.85rem;}
+  /* the preview stays in view while you change position and size below it */
+  .cf-preview{position:sticky; top:64px; z-index:2; display:flex; justify-content:center; padding:10px 0 8px; background:linear-gradient(var(--blush-50) 88%, rgba(255,247,249,0));}
+  .cf-preview canvas{max-height:30vh; width:auto; border-radius:12px; box-shadow:var(--shadow-pink);}
+  .cf-section{background:var(--white); border-radius:var(--radius-md); padding:14px; margin-top:12px; box-shadow:var(--shadow-soft);}
+  .cf-section > * + *{margin-top:10px;}
+  .cf-section h4{font-size:.8rem; text-transform:uppercase; letter-spacing:.06em; color:var(--rose-800); font-family:var(--font-body); font-weight:600;}
+  .cf-section h4 small{text-transform:none; letter-spacing:0; font-weight:500; opacity:.75;}
+  .cf-images{display:flex; gap:10px; flex-wrap:wrap;}
+  .cf-img{width:64px; height:64px; border-radius:14px; border:3px solid transparent; background:var(--blush-50) center/contain no-repeat; box-shadow:var(--shadow-soft); padding:0;}
+  .cf-img.active{border-color:var(--rose-600);}
+  .cf-img.cf-add{border:2px dashed var(--pink-300); font-size:1.6rem; color:var(--rose-600); background:var(--white);}
+  .cf-tip{font-size:.78rem; color:var(--rose-800); opacity:.8; line-height:1.45;}
+  .cf-section input[type=range]{width:100%; accent-color:var(--rose-600); min-height:44px;}
+  .cf-danger{color:#C0392B;}
+  #cfBases .frame-card{flex:0 0 84px;}
+  #cfBases .frame-thumb{height:96px;}
+
   /* phones: a slightly smaller heading and preview, so the tool panel shows without scrolling */
   @media (max-width:600px){
     #step-customize h2{font-size:1.3rem;}
@@ -514,6 +542,47 @@
     </div>
   </div>
 
+  <!-- custom frame editor: your own images on a frame, saved only on this device -->
+  <div class="cf-editor" id="cfEditor" role="dialog" aria-modal="true" aria-labelledby="cfTitle" hidden>
+    <div class="cf-inner">
+      <div class="cf-head">
+        <button type="button" class="btn-text" id="cfCancel">Cancel</button>
+        <h3 id="cfTitle">Custom frame</h3>
+        <button type="button" class="btn btn-primary cf-save" id="cfSave">SAVE ♡</button>
+      </div>
+      <div class="cf-preview"><canvas id="cfCanvas" width="10" height="10" aria-label="Preview of your custom frame"></canvas></div>
+      <div class="cf-section" id="cfQuick">
+        <h4>Quick start</h4>
+        <div class="chip-row" id="cfPresets"></div>
+      </div>
+      <div class="cf-section">
+        <h4>Your images <small>— saved only on this device</small></h4>
+        <div class="cf-images" id="cfImages"></div>
+        <p class="cf-tip">Tip: PNG images with a see-through background look best. Images stay near the edges, so faces are never covered.</p>
+        <input type="file" id="cfFile" accept="image/*" class="sr-only" tabindex="-1" aria-hidden="true">
+      </div>
+      <div class="cf-section" id="cfItemControls" hidden>
+        <h4>Where</h4>
+        <div class="chip-row" id="cfPositions"></div>
+        <h4>Size</h4>
+        <input type="range" id="cfSize" min="12" max="60" step="1" aria-label="Image size">
+        <p class="cf-tip" id="cfMaxNote" hidden>This is the biggest it can be in this spot — so it never covers faces. Try a bottom corner for bigger images.</p>
+        <button type="button" class="btn-text cf-danger" id="cfRemoveImg">Remove this image</button>
+      </div>
+      <div class="cf-section">
+        <h4>Background</h4>
+        <div class="frame-pick-row" id="cfBases" role="group" aria-label="Background frame"></div>
+        <div class="swatch-row" id="cfColors" role="group" aria-label="Background color"></div>
+      </div>
+      <div class="cf-section">
+        <label class="switch-row"><input type="checkbox" id="cfWiggle" checked><span>Gentle wiggle ✨</span></label>
+        <h4>Name</h4>
+        <input type="text" id="cfName" maxlength="24" placeholder="Our frame" aria-label="Frame name">
+        <button type="button" class="btn-text cf-danger" id="cfDelete" hidden>Delete this frame</button>
+      </div>
+    </div>
+  </div>
+
   <div class="welcome-overlay" id="welcomeOverlay" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
     <div class="welcome-card">
       <span class="eyebrow-script">Hey love ♡</span>
@@ -602,7 +671,7 @@
       <div class="privacy-note">🔒 Your photos stay on your device. We don't upload or store your photos.</div>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v3.1</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -630,6 +699,7 @@
         <p class="step-sub">You'll see its decorations while you pose — and you can still change it after.</p>
         <div class="frame-tabs" id="frameTabsStep" role="tablist" aria-label="Frame types"></div>
         <div class="frame-grid" id="frameGrid" role="group" aria-label="Choose a frame"></div>
+        <button type="button" class="btn-text cf-edit-btn js-cf-edit" hidden>✎ Edit this custom frame</button>
         <div class="step-footer">
           <button class="btn btn-primary btn-block" id="toCameraBtn">START PHOTO BOOTH ♡</button>
           <button type="button" class="btn-text skip-link" id="skipFrameBtn">Skip — I'll choose after</button>
@@ -777,6 +847,7 @@
             <div class="tool-panel" data-panel="frame" role="tabpanel">
               <div class="frame-tabs" id="frameTabsCustomize" role="tablist" aria-label="Frame types"></div>
               <div class="frame-pick-row" id="framePickRow" role="group" aria-label="Choose a frame"></div>
+              <button type="button" class="btn-text cf-edit-btn js-cf-edit" hidden>✎ Edit this custom frame</button>
               <label class="switch-row" id="popoutToggleRow" hidden><input type="checkbox" id="popoutToggle" checked><span>Let decorations peek over photos</span></label>
             </div>
             <div class="tool-panel" data-panel="color" role="tabpanel" hidden>
@@ -904,7 +975,8 @@
   var FRAME_TABS = [
     {id:'plain', label:'Plain'},
     {id:'illustrated', label:'Illustrated'},
-    {id:'characters', label:'Characters'}
+    {id:'characters', label:'Characters'},
+    {id:'custom', label:'Custom'}   // your own frames — always shown, so you can make the first one
   ];
   var TEMPLATES = [
     {id:'classic', tab:'plain', name:'Classic Strip', layout:'strip', color:'pink'},
@@ -1155,28 +1227,40 @@
   }
 
   /* ---------------- frame pickers (frame step + customize step) ---------------- */
+  function makeFrameCard(t){
+    var card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'frame-card';
+    card.dataset.template = t.id;
+    card.dataset.tab = t.tab;
+    var thumb = document.createElement('div');
+    thumb.className = 'frame-thumb';
+    card.appendChild(thumb);
+    var label = document.createElement('span');
+    label.textContent = t.name;
+    card.appendChild(label);
+    card.addEventListener('click', function(){ selectTemplate(t.id); });
+    return card;
+  }
   function buildFrameCards(container){
-    TEMPLATES.forEach(function(t){
-      var card = document.createElement('button');
-      card.type = 'button';
-      card.className = 'frame-card';
-      card.dataset.template = t.id;
-      var thumb = document.createElement('div');
-      thumb.className = 'frame-thumb';
-      card.appendChild(thumb);
-      var label = document.createElement('span');
-      label.textContent = t.name;
-      card.appendChild(label);
-      card.addEventListener('click', function(){ selectTemplate(t.id); });
-      container.appendChild(card);
-    });
+    // the Custom tab starts with a "create" card; saved custom frames are added after it
+    var create = document.createElement('button');
+    create.type = 'button';
+    create.className = 'frame-card cf-new';
+    create.dataset.tab = 'custom';
+    create.innerHTML = '<div class="frame-thumb"><span class="cf-plus">+</span>Create</div><span>New frame</span>';
+    create.addEventListener('click', function(){ openCfEditor(null); });
+    container.appendChild(create);
+    TEMPLATES.forEach(function(t){ container.appendChild(makeFrameCard(t)); });
   }
   buildFrameCards($('frameGrid'));
   buildFrameCards($('framePickRow'));
 
-  // tabs only appear for groups that actually have frames in them
+  // tabs only appear for groups that actually have frames in them (Custom is always there)
   function usedTabs(){
-    return FRAME_TABS.filter(function(tab){ return TEMPLATES.some(function(t){ return t.tab === tab.id; }); });
+    return FRAME_TABS.filter(function(tab){
+      return tab.id === 'custom' || TEMPLATES.some(function(t){ return t.tab === tab.id; });
+    });
   }
   function buildFrameTabs(containerId){
     var box = $(containerId);
@@ -1203,9 +1287,7 @@
       });
     });
     ['frameGrid','framePickRow'].forEach(function(id){
-      Array.prototype.forEach.call($(id).children, function(c){
-        c.hidden = templateById(c.dataset.template).tab !== tabId;
-      });
+      Array.prototype.forEach.call($(id).children, function(c){ c.hidden = c.dataset.tab !== tabId; });
     });
     if(state.currentStep === 'frame') fillThumbs($('frameGrid'), 0.2);
     if(state.currentStep === 'customize') fillThumbs($('framePickRow'), 0.14);
@@ -1219,6 +1301,9 @@
         c.setAttribute('aria-pressed', on ? 'true' : 'false');
       });
     });
+    // "edit" only makes sense for one of your own frames
+    var isCustom = templateById(state.templateId).tab === 'custom';
+    Array.prototype.forEach.call(document.querySelectorAll('.js-cf-edit'), function(b){ b.hidden = !isCustom; });
   }
   function selectTemplate(id){
     state.templateId = id;
@@ -1399,6 +1484,11 @@
   }
   window.addEventListener('popstate', function(e){
     var s = e.state || {};
+    if(!$('cfEditor').hidden){   // back while editing a custom frame just closes the editor
+      closeCfEditor();
+      history.pushState(currentEntry(), '');
+      return;
+    }
     closeCodeModal();   // back button should close an open code box, not leave it floating over another step
     if(s.guard){ askToLeave(); return; }
     if(s.pid === PAGE_ID && s.step){
@@ -1460,7 +1550,9 @@
   $('confirmYes').addEventListener('click', function(){ closeConfirm(true); });
   $('confirmNo').addEventListener('click', function(){ closeConfirm(false); });
   document.addEventListener('keydown', function(e){
-    if(e.key === 'Escape' && !$('confirmModal').hidden) closeConfirm(false);
+    if(e.key !== 'Escape') return;
+    if(!$('confirmModal').hidden) closeConfirm(false);
+    else if(!$('cfEditor').hidden) closeCfEditor();
   });
   function renderDots(){
     var wrap = $('progressDots');
@@ -3568,6 +3660,355 @@
   function decorHoodieDino(ctx, e){ decorHoodie(ctx, e, drawDinoBear, drawDonut, 3.4); }
   function decorHoodieChick(ctx, e){ decorHoodie(ctx, e, drawChickPuppy, drawMelonBread, 3.4); }
 
+  /* ================= CUSTOM FRAMES =================
+     Your own images on a frame. Everything is stored in this browser's IndexedDB — a small
+     database inside the browser — so the images never leave the device.
+     A saved frame ("record") looks like:
+       {id, name, baseId, colorId, wiggle, items:[{id, pos, size, blob}]}
+     and becomes a normal template (tab "custom") whose decor draws the base frame's
+     illustrations and then your images. */
+  var CUSTOM_POSITIONS = [
+    {id:'tl', label:'Top left'}, {id:'tr', label:'Top right'},
+    {id:'bl', label:'Bottom left'}, {id:'br', label:'Bottom right'},
+    {id:'left', label:'Left side'}, {id:'right', label:'Right side'}
+  ];
+  var CUSTOM_PRESETS = [
+    {id:'peek', label:'Peek from the bottom', positions:['br']},
+    {id:'corners', label:'Two top corners', positions:['tl','tr']},
+    {id:'sides', label:'Both sides', positions:['left','right']},
+    {id:'blank', label:'Start blank', positions:[]}
+  ];
+  var customImages = {};   // item id → ImageBitmap/Image ready to draw
+
+  /* ---- storage ---- */
+  var customDbPromise = null;
+  function customDb(){
+    if(customDbPromise) return customDbPromise;
+    customDbPromise = new Promise(function(resolve){
+      try{
+        var req = indexedDB.open('our-little-booth', 1);
+        req.onupgradeneeded = function(){ req.result.createObjectStore('frames', {keyPath:'id'}); };
+        req.onsuccess = function(){ resolve(req.result); };
+        req.onerror = function(){ resolve(null); };
+      }catch(e){ resolve(null); }   // private windows may block it — frames then last until the page closes
+    });
+    return customDbPromise;
+  }
+  function customDbRun(mode, work){
+    return customDb().then(function(db){
+      if(!db) return null;
+      return new Promise(function(resolve, reject){
+        var tx = db.transaction('frames', mode), req = work(tx.objectStore('frames'));
+        tx.oncomplete = function(){ resolve(req ? req.result : null); };
+        tx.onerror = tx.onabort = function(){ reject(tx.error); };
+      });
+    });
+  }
+  function loadImage(blob){
+    if(window.createImageBitmap) return createImageBitmap(blob);
+    return new Promise(function(resolve, reject){
+      var img = new Image(), url = URL.createObjectURL(blob);
+      img.onload = function(){ resolve(img); };
+      img.onerror = reject;
+      img.src = url;
+    });
+  }
+  // shrink big photos (phones make 4000px images) and keep transparency by saving as PNG
+  function prepareImage(file){
+    return loadImage(file).then(function(src){
+      var w = src.width, h = src.height, k = Math.min(1, 700 / Math.max(w, h));
+      var c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(w*k)); c.height = Math.max(1, Math.round(h*k));
+      c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+      return new Promise(function(resolve, reject){ c.toBlob(function(b){ b ? resolve(b) : reject(new Error('png')); }, 'image/png'); });
+    });
+  }
+
+  /* ---- placing images: always near the edges, never over a photo's middle ---- */
+  function customPlacement(it, img, e){
+    var rs = e.rects;
+    var top = Infinity, bottom = -Infinity, left = Infinity, right = -Infinity;
+    rs.forEach(function(r){
+      top = Math.min(top, r.cy - r.h/2); bottom = Math.max(bottom, r.cy + r.h/2);
+      left = Math.min(left, r.cx - r.w/2); right = Math.max(right, r.cx + r.w/2);
+    });
+    var band = rs[0].w * SAFE_INSET * 0.85;   // how far into a photo an image may reach (with room to wiggle)
+    var aspect = img.height / img.width;
+    var w = e.w * it.size / 100, h = w * aspect;
+    // each spot has a size limit so the image never reaches a face or runs off the strip
+    var corner = it.pos.length === 2, side = !corner;
+    if(corner){
+      var room = it.pos.charAt(0) === 'b' ? (e.h - bottom) + band - 8 : top + band - 8;
+      if(h > room){ h = room; w = h / aspect; }
+      if(w > e.w * 0.36){ w = e.w * 0.36; h = w * aspect; }   // keep the title and date in the middle free
+    } else {
+      var roomW = (it.pos === 'left' ? left : e.w - right) + band - 6;
+      if(w > roomW){ w = roomW; h = w * aspect; }
+      if(h > rs[0].h * 0.9){ h = rs[0].h * 0.9; w = h / aspect; }
+    }
+    var cx, cy;
+    if(it.pos === 'tl' || it.pos === 'bl') cx = 8 + w/2;
+    if(it.pos === 'tr' || it.pos === 'br') cx = e.w - 8 - w/2;
+    if(it.pos === 'tl' || it.pos === 'tr') cy = top + Math.min(h, band) - h/2;
+    if(it.pos === 'bl' || it.pos === 'br') cy = bottom - Math.min(h, band) + h/2;
+    if(it.pos === 'left'){ cx = left + Math.min(w, band) - w/2; cy = rs[0].cy; }
+    if(it.pos === 'right'){ cx = right - Math.min(w, band) + w/2; cy = rs[rs.length - 1].cy; }
+    return {cx:cx, cy:cy, w:w, h:h};
+  }
+  function drawCustomItems(ctx, e, rec){
+    rec.items.forEach(function(it, i){
+      var img = customImages[it.id];
+      if(!img) return;
+      var p = customPlacement(it, img, e);
+      ctx.save();
+      ctx.translate(p.cx, p.cy);
+      if(rec.wiggle){   // a gentle bob + tilt, small enough to stay inside the edge band
+        ctx.translate(sway(e, 1, i*1.7, 3), sway(e, 2, i, 3));
+        ctx.rotate(sway(e, 1, i*1.3, 0.03));
+      }
+      ctx.drawImage(img, -p.w/2, -p.h/2, p.w, p.h);
+      ctx.restore();
+    });
+  }
+  // turn a saved record into a template the rest of the app understands
+  function customTemplate(rec){
+    var baseT = templateById(rec.baseId);
+    var used = rec.items.map(function(it){ return it.pos; });
+    return {
+      id: 'custom-' + rec.id, tab: 'custom', custom: true, rec: rec,
+      name: rec.name || 'My frame',
+      layout: baseT.layout, thin: baseT.thin, pattern: baseT.pattern, band: baseT.band,
+      color: rec.colorId || baseT.color, colors: baseT.colors, title: baseT.title,
+      animated: !!(baseT.animated || rec.wiggle),
+      labelAt: ['tl','tr','bl','br'].filter(function(p){ return used.indexOf(p) === -1; })[0] || 'bl',
+      // extra room above / below the photos when your images sit there, so they can be bigger
+      headerH: (used.indexOf('tl') !== -1 || used.indexOf('tr') !== -1) ? 160 : 0,
+      footerH: (used.indexOf('bl') !== -1 || used.indexOf('br') !== -1) ? 190 : 0,
+      pad: (used.indexOf('left') !== -1 || used.indexOf('right') !== -1) ? 110 : 0,   // wider sides for side images
+      decor: function(ctx, e){
+        if(baseT.decor) baseT.decor(ctx, e);
+        drawCustomItems(ctx, e, rec);
+      }
+    };
+  }
+  // add (or replace) a custom frame everywhere frames are listed
+  function registerCustom(rec){
+    var t = customTemplate(rec);
+    var old = TEMPLATES.map(function(x){ return x.id; }).indexOf(t.id);
+    if(old === -1) TEMPLATES.push(t); else TEMPLATES[old] = t;
+    ['frameGrid','framePickRow'].forEach(function(id){
+      var box = $(id), existing = box.querySelector('[data-template="' + t.id + '"]');
+      var card = makeFrameCard(t);
+      if(existing) box.replaceChild(card, existing);
+      else box.insertBefore(card, box.querySelector('.cf-new').nextSibling);   // newest first, after "create"
+      card.hidden = state.frameTab !== 'custom';
+    });
+    return t;
+  }
+  function unregisterCustom(rec){
+    var id = 'custom-' + rec.id;
+    TEMPLATES = TEMPLATES.filter(function(x){ return x.id !== id; });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-template="' + id + '"]'), function(c){ c.remove(); });
+    rec.items.forEach(function(it){ delete customImages[it.id]; });
+  }
+  // on start: load saved frames from the device
+  function loadCustomFrames(){
+    return customDbRun('readonly', function(store){ return store.getAll(); }).then(function(recs){
+      return Promise.all((recs || []).map(function(rec){
+        return Promise.all(rec.items.map(function(it){
+          return loadImage(it.blob).then(function(img){ customImages[it.id] = img; }, function(){});
+        })).then(function(){ return rec; });
+      }));
+    }).then(function(recs){
+      recs.sort(function(a, b){ return a.created - b.created; }).forEach(registerCustom);
+      if(state.currentStep === 'frame' || state.currentStep === 'customize') showFrameTab(state.frameTab);
+    }).catch(function(){ /* no saved frames */ });
+  }
+
+  /* ---- the editor ---- */
+  var cf = {draft:null, sel:-1, pending:[]};
+  var CF_BASES = ['classic','minimal','film','grid'];   // plus every illustrated theme (added below)
+  function cfUid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function openCfEditor(rec){
+    cf.draft = rec ? JSON.parse(JSON.stringify({id:rec.id, name:rec.name, baseId:rec.baseId, colorId:rec.colorId, wiggle:rec.wiggle, created:rec.created}))
+                   : {id:cfUid(), name:'', baseId:'classic', colorId:'pink', wiggle:true, created:Date.now()};
+    cf.draft.items = rec ? rec.items.map(function(it){ return {id:it.id, pos:it.pos, size:it.size, blob:it.blob}; }) : [];
+    cf.isNew = !rec;
+    cf.sel = cf.draft.items.length ? 0 : -1;
+    cf.pending = [];
+    $('cfTitle').textContent = rec ? 'Edit custom frame' : 'New custom frame';
+    $('cfName').value = cf.draft.name;
+    $('cfWiggle').checked = cf.draft.wiggle;
+    $('cfDelete').hidden = !rec;
+    $('cfEditor').hidden = false;
+    $('cfEditor').scrollTop = 0;
+    document.body.style.overflow = 'hidden';
+    renderCfBases();
+    renderCf();
+  }
+  function closeCfEditor(){
+    $('cfEditor').hidden = true;
+    document.body.style.overflow = '';
+    cf.draft = null;
+  }
+  function cfDraftTemplate(){ return customTemplate(cf.draft); }
+  function renderCf(){
+    var d = cf.draft;
+    $('cfQuick').hidden = !(cf.isNew && !d.items.length);
+    // the preview: your real photos if you have some, otherwise pink placeholders
+    var b = makeBase(cfDraftTemplate(), d.colorId, 0.42, state.shots.length ? 0 : 2);   // 2 slots keep your images big enough to judge
+    var cv = $('cfCanvas');
+    cv.width = b.canvas.width; cv.height = b.canvas.height;
+    cv.getContext('2d').drawImage(b.canvas, 0, 0);
+    // tell the user when the size slider has hit the limit for this spot
+    var selIt = d.items[cf.sel], selImg = selIt && customImages[selIt.id];
+    var capped = false;
+    if(selImg){
+      var p = customPlacement(selIt, selImg, {w:b.w, h:b.h, rects:b.rects});
+      capped = p.w < b.w * selIt.size / 100 - 1;
+    }
+    $('cfMaxNote').hidden = !capped;
+    // image buttons
+    var box = $('cfImages');
+    box.innerHTML = '';
+    d.items.forEach(function(it, i){
+      var btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'cf-img' + (i === cf.sel ? ' active' : '');
+      btn.setAttribute('aria-label', 'Image ' + (i + 1));
+      if(!it.url) it.url = URL.createObjectURL(it.blob);
+      btn.style.backgroundImage = 'url(' + it.url + ')';
+      btn.addEventListener('click', function(){ cf.sel = i; renderCf(); });
+      box.appendChild(btn);
+    });
+    var add = document.createElement('button');
+    add.type = 'button'; add.className = 'cf-img cf-add'; add.textContent = '+';
+    add.setAttribute('aria-label', 'Add an image from your gallery');
+    add.addEventListener('click', function(){ $('cfFile').click(); });
+    box.appendChild(add);
+    // controls for the selected image
+    var it = d.items[cf.sel];
+    $('cfItemControls').hidden = !it;
+    if(it){
+      var row = $('cfPositions');
+      row.innerHTML = '';
+      CUSTOM_POSITIONS.forEach(function(p){
+        var c = document.createElement('button');
+        c.type = 'button'; c.className = 'chip' + (p.id === it.pos ? ' active' : '');
+        c.textContent = p.label;
+        c.addEventListener('click', function(){ it.pos = p.id; renderCf(); });
+        row.appendChild(c);
+      });
+      $('cfSize').value = it.size;
+    }
+    // colors
+    var colors = $('cfColors');
+    colors.innerHTML = '';
+    var suits = templateById(d.baseId).colors || [];
+    COLOR_OPTIONS.forEach(function(c){
+      var s = document.createElement('button');
+      s.type = 'button'; s.className = 'swatch' + (c.id === d.colorId ? ' selected' : '') + (suits.indexOf(c.id) !== -1 ? ' rec' : '');
+      s.style.background = c.hex; s.title = c.label; s.setAttribute('aria-label', c.label);
+      s.addEventListener('click', function(){ d.colorId = c.id; renderCf(); });
+      colors.appendChild(s);
+    });
+    Array.prototype.forEach.call($('cfBases').children, function(c){ c.classList.toggle('selected', c.dataset.base === d.baseId); });
+  }
+  function renderCfBases(){
+    var box = $('cfBases');
+    box.innerHTML = '';
+    CF_BASES.concat(TEMPLATES.filter(function(t){ return t.tab === 'illustrated'; }).map(function(t){ return t.id; })).forEach(function(id){
+      var t = templateById(id);
+      var card = document.createElement('button');
+      card.type = 'button'; card.className = 'frame-card'; card.dataset.base = id;
+      var thumb = document.createElement('div'); thumb.className = 'frame-thumb';
+      thumb.appendChild(makeBase(t, null, 0.12, 2).canvas);
+      card.appendChild(thumb);
+      var label = document.createElement('span'); label.textContent = t.name; card.appendChild(label);
+      card.addEventListener('click', function(){ cf.draft.baseId = id; cf.draft.colorId = t.color; renderCf(); });
+      box.appendChild(card);
+    });
+  }
+  $('cfPresets').innerHTML = '';
+  CUSTOM_PRESETS.forEach(function(p){
+    var c = document.createElement('button');
+    c.type = 'button'; c.className = 'chip'; c.textContent = p.label;
+    c.addEventListener('click', function(){
+      cf.pending = p.positions.slice();   // the next images you add fill these spots in order
+      Array.prototype.forEach.call($('cfPresets').children, function(x){ x.classList.toggle('active', x === c); });
+      if(p.positions.length) $('cfFile').click();
+    });
+    $('cfPresets').appendChild(c);
+  });
+  $('cfFile').addEventListener('change', function(){
+    var file = this.files && this.files[0];
+    this.value = '';
+    if(!file) return;
+    prepareImage(file).then(function(blob){
+      var it = {id:cfUid(), pos:cf.pending.shift() || 'br', size:34, blob:blob};
+      return loadImage(blob).then(function(img){
+        customImages[it.id] = img;
+        cf.draft.items.push(it);
+        cf.sel = cf.draft.items.length - 1;
+        renderCf();
+        if(cf.pending.length) showToast('Now add the next image ♡');
+      });
+    }).catch(function(){ showToast("We couldn't read that image. Try another one ♡"); });
+  });
+  $('cfSize').addEventListener('input', function(){
+    var it = cf.draft && cf.draft.items[cf.sel];
+    if(it){ it.size = +this.value; renderCf(); }
+  });
+  $('cfRemoveImg').addEventListener('click', function(){
+    var d = cf.draft;
+    d.items.splice(cf.sel, 1);
+    cf.sel = d.items.length ? Math.min(cf.sel, d.items.length - 1) : -1;
+    renderCf();
+  });
+  $('cfWiggle').addEventListener('change', function(){ cf.draft.wiggle = this.checked; renderCf(); });
+  $('cfName').addEventListener('input', function(){ cf.draft.name = this.value; });
+  $('cfCancel').addEventListener('click', closeCfEditor);
+  $('cfSave').addEventListener('click', function(){
+    var d = cf.draft;
+    if(!d.items.length){ showToast('Add at least one image first ♡'); return; }
+    d.name = (d.name || '').trim() || 'My frame';
+    var rec = {id:d.id, name:d.name, baseId:d.baseId, colorId:d.colorId, wiggle:d.wiggle, created:d.created,
+               items:d.items.map(function(it){ return {id:it.id, pos:it.pos, size:it.size, blob:it.blob}; })};
+    var old = TEMPLATES.filter(function(t){ return t.id === 'custom-' + rec.id; })[0];
+    if(old) old.rec.items.forEach(function(it){   // forget images this edit removed
+      if(!rec.items.some(function(x){ return x.id === it.id; })) delete customImages[it.id];
+    });
+    customDbRun('readwrite', function(store){ return store.put(rec); }).then(function(res){
+      if(res === null) showToast("Saved for now — this browser can't keep it after you close the page");
+      else showToast('Saved on this device ♡');
+    }, function(){
+      showToast("Couldn't save to this device (storage full?) — it works until you close the page");
+    });
+    var t = registerCustom(rec);
+    closeCfEditor();
+    showFrameTab('custom');
+    selectTemplate(t.id);
+  });
+  $('cfDelete').addEventListener('click', function(){
+    var d = cf.draft, t = templateById('custom-' + d.id);
+    confirmBox({title:'Delete this frame?', text:'"' + (t.name) + '" and its images will be removed from this device.', yes:'DELETE', no:'KEEP'})
+      .then(function(yes){
+        if(!yes) return;
+        customDbRun('readwrite', function(store){ return store.delete(d.id); }).catch(function(){});
+        if(t.custom) unregisterCustom(t.rec);
+        closeCfEditor();
+        if(state.templateId === 'custom-' + d.id) selectTemplate('classic');
+        showFrameTab('custom');
+        showToast('Frame deleted');
+      });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.js-cf-edit'), function(b){
+    b.addEventListener('click', function(){
+      var t = templateById(state.templateId);
+      if(t.custom) openCfEditor(t.rec);
+    });
+  });
+  loadCustomFrames();
+
   /* ---------------- frame decorations while posing ----------------
      The frame's illustrations are drawn on top of the camera, lined up exactly where they'll
      land on the photo being taken — so you can pose with them and see what they cover. */
@@ -3783,9 +4224,9 @@
   // one photo per row; "film" is the same strip with sprocket holes in wider margins
   function drawStripLayout(canvas, L){
     var film = L.t.layout === 'film';
-    var PAD = film ? 76 : 40, CELL = 640, GAP = film ? 20 : 26;
-    var headerH = (L.title || L.t.decor) ? 96 : 40;   // decorated frames keep room above the photos for their drawings
-    var footerH = (state.showDate || state.customText || L.t.decor) ? 130 : 60;   // …and below
+    var PAD = L.t.pad || (film ? 76 : 40), CELL = 640, GAP = film ? 20 : 26;   // pad: wider side margins on request
+    var headerH = L.t.headerH || ((L.title || L.t.decor) ? 96 : 40);   // decorated frames keep room above the photos for their drawings
+    var footerH = L.t.footerH || ((state.showDate || state.customText || L.t.decor) ? 130 : 60);   // …and below
     var W = CELL + PAD*2;
     var H = headerH + L.n*CELL + (L.n-1)*GAP + footerH + PAD;
     var ctx = prepCanvas(canvas, W, H, L.scale);
@@ -3806,12 +4247,12 @@
 
   // two photos per row; an odd last photo sits centered
   function drawGridLayout(canvas, L){
-    var PAD = 40, GAP = 20;
+    var PAD = L.t.pad || 40, GAP = 20;
     var cols = L.n === 1 ? 1 : 2;
     var CELL = cols === 1 ? 700 : 340;
     var rows = Math.ceil(L.n / cols);
-    var headerH = (L.title || L.t.decor) ? 96 : 40;   // decorated frames keep room above the photos for their drawings
-    var footerH = (state.showDate || state.customText || L.t.decor) ? 130 : 60;   // …and below
+    var headerH = L.t.headerH || ((L.title || L.t.decor) ? 96 : 40);   // decorated frames keep room above the photos for their drawings
+    var footerH = L.t.footerH || ((state.showDate || state.customText || L.t.decor) ? 130 : 60);   // …and below
     var W = PAD*2 + 700;
     var H = headerH + rows*CELL + (rows-1)*GAP + footerH + PAD;
     var ctx = prepCanvas(canvas, W, H, L.scale);
