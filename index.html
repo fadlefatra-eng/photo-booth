@@ -1,0 +1,2132 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Our Little Photo Booth</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,600&family=Poppins:wght@400;500;600;700&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blush-50:#FFF7F9;
+    --blush-100:#FFE9F0;
+    --pink-200:#FFD1E3;
+    --pink-300:#FFB3D1;
+    --pink-400:#FF8FB3;
+    --rose-600:#E14F7A;
+    --rose-800:#93264F;
+    --plum-900:#3B1626;
+    --white:#FFFFFF;
+    --shadow-pink: 0 18px 40px -18px rgba(147,38,79,0.35);
+    --shadow-soft: 0 10px 26px -14px rgba(147,38,79,0.28);
+    --radius-lg: 28px;
+    --radius-md: 18px;
+    --radius-sm: 12px;
+    --font-display:'Playfair Display', 'Iowan Old Style', Georgia, serif;
+    --font-script:'Dancing Script', cursive;
+    --font-body:'Poppins', 'Segoe UI', system-ui, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0;
+    background:var(--blush-50);
+    color:var(--plum-900);
+    font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased;
+    overflow-x:clip;
+  }
+  h1,h2,h3{font-family:var(--font-display); text-wrap:balance; margin:0;}
+  p{margin:0;}
+  button{font-family:inherit; cursor:pointer;}
+  img,canvas{max-width:100%; display:block;}
+  a{color:inherit;}
+  :focus-visible{outline:3px solid var(--rose-600); outline-offset:3px; border-radius:6px;}
+  ::selection{background:var(--pink-300); color:var(--plum-900);}
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important;}
+  }
+
+  /* ---------- layout shells ---------- */
+  .app{position:relative; min-height:100%;}
+  .view{display:none;}
+  .app[data-view="landing"] .view-landing{display:block;}
+  .app[data-view="app"] .view-app{display:block;}
+
+  /* ---------- nav ---------- */
+  .nav{
+    position:sticky; top:0; z-index:40;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 20px;
+    background:rgba(255,247,249,0.82);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    border-bottom:1px solid rgba(225,79,122,0.12);
+  }
+  .brand{font-family:var(--font-display); font-weight:600; font-size:1.15rem; text-decoration:none; color:var(--rose-800); letter-spacing:.01em;}
+  .nav-links{display:flex; gap:28px; font-size:.92rem; font-weight:500;}
+  .nav-links a{text-decoration:none; color:var(--plum-900); opacity:.78; padding:6px 2px;}
+  .nav-links a:hover{opacity:1; color:var(--rose-600);}
+  .hamburger{
+    display:none; background:none; border:1px solid rgba(147,38,79,0.2); border-radius:10px;
+    width:42px; height:42px; font-size:1.1rem; color:var(--rose-800);
+  }
+  @media (max-width:720px){
+    .nav-links{
+      position:absolute; top:100%; left:0; right:0; flex-direction:column; gap:2px;
+      background:var(--white); padding:10px 20px 18px; box-shadow:var(--shadow-soft);
+      display:none;
+    }
+    .nav-links.open{display:flex;}
+    .nav-links a{padding:10px 4px; border-bottom:1px solid var(--blush-100);}
+    .hamburger{display:block;}
+  }
+
+  /* ---------- buttons ---------- */
+  .btn{
+    border:none; border-radius:999px; padding:16px 30px; font-weight:600; font-size:.98rem;
+    letter-spacing:.03em; transition:transform .15s ease, box-shadow .15s ease, background .2s ease;
+    min-height:52px;
+  }
+  .btn:active{transform:scale(.97);}
+  .btn-primary{background:linear-gradient(135deg,var(--pink-400),var(--rose-600)); color:var(--white); box-shadow:var(--shadow-pink);}
+  .btn-primary:hover{box-shadow:0 22px 44px -16px rgba(147,38,79,0.45); transform:translateY(-1px);}
+  .btn-secondary{background:var(--white); color:var(--rose-700,var(--rose-600)); border:1.5px solid var(--pink-300); box-shadow:var(--shadow-soft);}
+  .btn-secondary:hover{border-color:var(--rose-600);}
+  .btn-ghost{background:var(--blush-100); color:var(--rose-800); border:1px solid transparent;}
+  .btn-ghost:hover{background:var(--pink-200);}
+  .btn-block{width:100%;}
+  .btn-text{background:none; border:none; color:var(--rose-800); opacity:.7; font-size:.85rem; text-decoration:underline; padding:8px;}
+  .icon-btn{
+    width:52px; height:52px; border-radius:50%; border:1.5px solid var(--pink-300);
+    background:var(--white); color:var(--rose-800); font-size:1.2rem; display:flex; align-items:center; justify-content:center;
+    box-shadow:var(--shadow-soft);
+  }
+  .icon-btn:hover{border-color:var(--rose-600);}
+  .icon-btn[disabled]{opacity:.35; pointer-events:none;}
+
+  /* ---------- welcome overlay ---------- */
+  .welcome-overlay{
+    position:fixed; inset:0; z-index:80; display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 50% 20%, rgba(255,209,227,0.92), rgba(147,38,79,0.78));
+    padding:24px; opacity:0; pointer-events:none; transition:opacity .35s ease;
+  }
+  .welcome-overlay.show{opacity:1; pointer-events:auto;}
+  .welcome-card{
+    background:var(--white); border-radius:var(--radius-lg); padding:40px 32px; max-width:380px; width:100%;
+    text-align:center; box-shadow:0 30px 70px -20px rgba(59,22,38,0.5);
+    animation:pop-in .4s cubic-bezier(.2,.9,.3,1.2);
+  }
+  @keyframes pop-in{from{transform:scale(.85) translateY(10px); opacity:0;} to{transform:none; opacity:1;}}
+  .eyebrow-script{font-family:var(--font-script); font-size:1.6rem; color:var(--rose-600); margin-bottom:4px;}
+  .welcome-card h2{font-size:1.5rem; color:var(--plum-900); margin-bottom:22px;}
+  .welcome-card .btn-primary{width:100%; margin-bottom:10px;}
+
+  /* ---------- hero ---------- */
+  .hero{
+    position:relative; padding:64px 20px 56px; text-align:center; overflow:hidden;
+    background:radial-gradient(120% 90% at 50% -10%, var(--pink-200) 0%, var(--blush-50) 62%);
+  }
+  .floaties{position:absolute; inset:0; overflow:hidden; pointer-events:none;}
+  .floaties span{
+    position:absolute; bottom:-40px; color:var(--pink-300); opacity:.55;
+    animation:float-up linear infinite;
+  }
+  @keyframes float-up{
+    0%{transform:translateY(0) rotate(0deg); opacity:0;}
+    10%{opacity:.6;}
+    90%{opacity:.5;}
+    100%{transform:translateY(-620px) rotate(25deg); opacity:0;}
+  }
+  .hero-inner{position:relative; max-width:640px; margin:0 auto;}
+  .hero-eyebrow{font-family:var(--font-script); font-size:1.5rem; color:var(--rose-600); display:block; margin-bottom:10px;}
+  .hero h1{font-size:clamp(2rem,6vw,3.1rem); color:var(--plum-900); line-height:1.12;}
+  .hero-sub{margin-top:16px; font-size:1.08rem; color:var(--rose-800); opacity:.85;}
+  .hero-actions{display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-top:30px;}
+  .hero-footnote{margin-top:18px; font-family:var(--font-script); font-size:1.15rem; color:var(--rose-600);}
+
+  /* booth mockup */
+  .mockup{
+    margin:44px auto 0; width:min(260px,70vw); background:var(--white); border-radius:20px;
+    padding:14px 14px 20px; box-shadow:0 26px 60px -22px rgba(147,38,79,0.45); position:relative;
+    transform:rotate(-3deg);
+  }
+  .mockup .strip-shot{
+    height:58px; border-radius:12px; margin-bottom:9px;
+    background:linear-gradient(135deg,var(--pink-300),var(--pink-400));
+  }
+  .mockup .strip-shot:nth-child(2){background:linear-gradient(135deg,var(--pink-200),var(--pink-300));}
+  .mockup .strip-shot:nth-child(3){background:linear-gradient(135deg,var(--rose-600),var(--pink-400));}
+  .mockup .strip-shot:last-child{margin-bottom:0;}
+  .mockup-caption{text-align:center; font-family:var(--font-script); color:var(--rose-600); font-size:1.05rem; margin-top:10px;}
+
+  /* ---------- how it works ---------- */
+  .section{padding:60px 20px; max-width:960px; margin:0 auto;}
+  .section-head{text-align:center; max-width:520px; margin:0 auto 40px;}
+  .section-head .kicker{font-family:var(--font-script); color:var(--rose-600); font-size:1.2rem;}
+  .section-head h2{font-size:clamp(1.6rem,4vw,2.1rem); margin-top:6px;}
+  .how-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:22px;}
+  @media (max-width:720px){.how-grid{grid-template-columns:1fr;}}
+  .how-card{background:var(--white); border-radius:var(--radius-md); padding:26px 22px; box-shadow:var(--shadow-soft); border:1px solid var(--blush-100);}
+  .how-num{font-family:var(--font-display); font-weight:700; color:var(--pink-300); font-size:1.6rem; margin-bottom:10px;}
+  .how-card h3{font-size:1.08rem; margin-bottom:8px; color:var(--rose-800);}
+  .how-card p{font-size:.92rem; color:var(--plum-900); opacity:.75; line-height:1.5;}
+
+  /* ---------- frame gallery on landing ---------- */
+  .gallery-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:16px;}
+  @media (max-width:720px){.gallery-grid{grid-template-columns:repeat(2,1fr);}}
+  .gallery-card{background:var(--white); border-radius:16px; padding:12px; text-align:center; box-shadow:var(--shadow-soft); border:1px solid var(--blush-100);}
+  .gallery-thumb{border-radius:10px; height:96px; margin-bottom:10px;}
+  .gallery-card span{font-size:.78rem; font-weight:600; color:var(--rose-800);}
+
+  /* ---------- about ---------- */
+  .about{text-align:center;}
+  .about-card{background:linear-gradient(135deg,var(--pink-200),var(--blush-100)); border-radius:var(--radius-lg); padding:48px 28px;}
+  .about-card .kicker{font-family:var(--font-script); font-size:1.7rem; color:var(--rose-700,var(--rose-600));}
+  .about-card p{max-width:480px; margin:14px auto 0; color:var(--plum-900); opacity:.82; line-height:1.6;}
+  .about-card .tag{margin-top:18px; font-family:var(--font-script); font-size:1.2rem; color:var(--rose-600);}
+
+  .privacy-note{
+    display:flex; align-items:center; gap:10px; justify-content:center; max-width:520px; margin:0 auto;
+    padding:16px 20px; background:var(--blush-100); border-radius:999px; font-size:.85rem; color:var(--rose-800); text-align:center;
+  }
+  footer.site-footer{text-align:center; padding:36px 20px 56px; font-size:.82rem; color:var(--rose-800); opacity:.6;}
+
+  /* ================= APP FLOW ================= */
+  .view-app{display:block; min-height:100%; background:linear-gradient(180deg,var(--blush-50),var(--blush-100));}
+  .app-topbar{display:flex; align-items:center; justify-content:space-between; padding:16px 18px; gap:12px;}
+  .progress-dots{display:flex; gap:8px;}
+  .progress-dots span{width:8px; height:8px; border-radius:50%; background:var(--pink-200); transition:background .2s, width .2s;}
+  .progress-dots span.active{background:var(--rose-600); width:22px; border-radius:6px;}
+  .app-topbar .icon-btn{width:44px; height:44px; font-size:1.05rem;}
+
+  .app-stage{display:block; padding:0 20px 20px; max-width:560px; margin:0 auto; width:100%;}
+  .step{display:none;}
+  .step.active{display:block;}
+  /* primary action stays reachable however long the page gets */
+  .step-footer{
+    position:sticky; bottom:0; z-index:20; margin-top:24px;
+    padding:14px 0 16px;
+    background:linear-gradient(to top, var(--blush-100) 62%, rgba(255,233,240,0));
+  }
+  .step h2{font-size:clamp(1.4rem,4vw,1.8rem); text-align:center; color:var(--plum-900);}
+  .step-sub{text-align:center; color:var(--rose-800); opacity:.75; font-size:.92rem; margin-top:8px;}
+
+  /* shot count */
+  .count-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:28px 0 0;}
+  .count-card{
+    background:var(--white); border:2px solid var(--blush-100); border-radius:var(--radius-md);
+    padding:18px 8px; display:flex; flex-direction:column; align-items:center; gap:4px;
+    font-family:var(--font-display); font-size:1.7rem; font-weight:700; color:var(--rose-800);
+    box-shadow:var(--shadow-soft); min-height:88px;
+  }
+  .count-card span{font-family:var(--font-body); font-size:.68rem; font-weight:600; letter-spacing:.05em; color:var(--plum-900); opacity:.6; text-transform:uppercase;}
+  .count-card.selected{border-color:var(--rose-600); background:linear-gradient(135deg,var(--pink-200),var(--white)); transform:translateY(-2px);}
+
+  /* frame select */
+  .frame-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin:22px 0 0; padding-bottom:6px;}
+  .frame-card{
+    background:var(--white); border-radius:16px; padding:10px; border:2px solid transparent;
+    box-shadow:var(--shadow-soft); text-align:center;
+  }
+  .frame-card.selected{border-color:var(--rose-600);}
+  .frame-thumb{border-radius:10px; height:86px; margin-bottom:8px; position:relative; overflow:hidden;}
+  .frame-card span{font-size:.76rem; font-weight:600; color:var(--rose-800);}
+
+  /* camera */
+  .camera-title{font-size:1.15rem !important; margin:6px 0 14px;}
+  .camera-stage{
+    position:relative; width:100%; aspect-ratio:3/4; max-height:58vh; border-radius:var(--radius-lg);
+    overflow:hidden; background:var(--plum-900); box-shadow:var(--shadow-pink);
+  }
+  .camera-stage video{width:100%; height:100%; object-fit:cover;}
+  .camera-stage video.mirror{transform:scaleX(-1);}
+  .camera-stage .fx-canvas{position:absolute; inset:0; width:100%; height:100%; pointer-events:none;}
+  .fx-row{margin-top:20px; text-align:center;}
+  .fx-row h3{font-size:.82rem; text-transform:uppercase; letter-spacing:.06em; color:var(--rose-800); margin-bottom:10px; font-family:var(--font-body); font-weight:600;}
+  .fx-row .chip-row{justify-content:center;}
+  .flash{position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none;}
+  .flash.on{animation:flash-pop .38s ease;}
+  @keyframes flash-pop{0%{opacity:0;}15%{opacity:.9;}100%{opacity:0;}}
+  .countdown{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-display); font-weight:700; color:#fff; font-size:5.2rem;
+    text-shadow:0 6px 24px rgba(0,0,0,.35); pointer-events:none; opacity:0;
+  }
+  .countdown.show{opacity:1; animation:count-pop .68s ease;}
+  @keyframes count-pop{0%{transform:scale(1.3); opacity:0;}25%{opacity:1; transform:scale(1);}100%{opacity:1;}}
+  .shot-indicator{
+    position:absolute; top:14px; left:14px; background:rgba(59,22,38,.55); color:#fff; font-size:.75rem;
+    padding:6px 12px; border-radius:999px; letter-spacing:.04em; font-weight:600;
+  }
+  .camera-permission{
+    position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:28px; background:linear-gradient(160deg,rgba(255,143,179,.94),rgba(147,38,79,.94)); color:#fff; gap:14px;
+  }
+  .camera-permission.show{display:flex;}
+  .camera-permission .icon{font-size:2.4rem;}
+  .camera-permission h3{font-size:1.15rem; color:#fff;}
+  .camera-permission p{font-size:.88rem; opacity:.92; max-width:280px; line-height:1.5;}
+  .camera-controls{display:flex; align-items:center; justify-content:center; gap:18px; margin-top:22px;}
+  .btn-shutter{width:82px; height:82px; border-radius:50%; background:linear-gradient(135deg,var(--pink-400),var(--rose-600)); color:#fff; font-size:0; box-shadow:var(--shadow-pink); position:relative; border:4px solid #fff;}
+  .btn-shutter::after{content:'♡'; font-size:1.8rem;}
+  .btn-shutter[disabled]{opacity:.5;}
+  .btn-shutter.fallback::after{content:'📷'; font-size:1.6rem;}
+  .fallback-row.highlight{border-style:solid; border-color:var(--rose-600); box-shadow:0 0 0 4px rgba(225,79,122,.12);}
+  .mute-state-off::after{content:'🔇';}
+
+  /* customize */
+  .customize-layout{display:flex; flex-direction:column; gap:22px;}
+  .preview-pane{display:flex; flex-direction:column; align-items:center; gap:8px;}
+  .preview-pane canvas{border-radius:14px; box-shadow:var(--shadow-pink); max-height:44vh; width:auto;}
+  .ready-note{font-family:var(--font-script); color:var(--rose-600); font-size:1.15rem;}
+  .control-group{margin-bottom:18px;}
+  .control-group h3{font-size:.82rem; text-transform:uppercase; letter-spacing:.06em; color:var(--rose-800); margin-bottom:10px; font-family:var(--font-body); font-weight:600;}
+  .swatch-row{display:flex; gap:10px; flex-wrap:wrap;}
+  .swatch{width:38px; height:38px; border-radius:50%; border:3px solid transparent; box-shadow:inset 0 0 0 1px rgba(147,38,79,.15);}
+  .swatch.selected{border-color:var(--rose-600);}
+  .chip-row{display:flex; gap:8px; flex-wrap:wrap;}
+  .chip{
+    background:var(--white); border:1.5px solid var(--blush-100); border-radius:999px; padding:9px 15px;
+    font-size:.82rem; font-weight:500; color:var(--plum-900);
+  }
+  .chip.active{background:var(--rose-600); border-color:var(--rose-600); color:#fff;}
+  input[type="text"], select{
+    width:100%; padding:13px 16px; border-radius:12px; border:1.5px solid var(--blush-100);
+    font-family:inherit; font-size:.95rem; background:var(--white); color:var(--plum-900); min-height:48px;
+  }
+  select{margin-top:8px;}
+  .switch-row{display:flex; align-items:center; gap:10px; font-size:.92rem;}
+  .switch-row input{width:20px; height:20px;}
+
+  /* result */
+  .result-frame{display:flex; justify-content:center; margin:20px 0;}
+  .result-frame canvas{border-radius:16px; box-shadow:var(--shadow-pink); max-height:46vh; width:auto;}
+  .result-actions{
+    display:flex; flex-direction:column; gap:10px; align-items:stretch;
+    position:sticky; bottom:0; z-index:20; padding:12px 0 14px;
+    background:linear-gradient(to top, var(--blush-100) 72%, rgba(255,233,240,0));
+  }
+  .result-actions-row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center;}
+  .result-actions-row .btn{flex:1; min-width:104px; font-size:.78rem; padding:13px 10px;}
+  .privacy-inline{text-align:center; font-size:.78rem; color:var(--rose-800); opacity:.7; margin-top:18px; line-height:1.5;}
+
+  /* fallback capture (phone camera app / gallery) */
+  .fallback-row{margin-top:22px; background:var(--white); border:1px dashed var(--pink-300); border-radius:var(--radius-md); padding:18px 16px;}
+  .fallback-hint{font-size:.82rem; color:var(--rose-800); opacity:.8; line-height:1.5; text-align:center; margin-bottom:14px;}
+  .fallback-buttons{display:flex; gap:10px; flex-wrap:wrap;}
+  .fallback-buttons .btn{flex:1; min-width:150px; font-size:.78rem; padding:14px 12px;}
+  .tray{margin-top:16px; border-top:1px solid var(--blush-100); padding-top:14px;}
+  .tray-thumbs{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;}
+  .tray-thumb{position:relative; width:60px; height:60px; border-radius:10px; overflow:hidden; box-shadow:var(--shadow-soft);}
+  .tray-thumb img{width:100%; height:100%; object-fit:cover;}
+  .tray-del{
+    position:absolute; top:2px; right:2px; width:22px; height:22px; border-radius:50%; border:none;
+    background:rgba(59,22,38,.72); color:#fff; font-size:.9rem; line-height:1; display:flex; align-items:center; justify-content:center;
+  }
+  .tray-actions{display:flex; align-items:center; justify-content:space-between; gap:12px;}
+  .tray-count{font-size:.8rem; font-weight:600; color:var(--rose-800);}
+  .tray-actions .btn{padding:12px 22px; min-height:46px; font-size:.82rem;}
+  /* long-distance mode */
+  .ldr-row{margin-top:16px; background:linear-gradient(135deg,var(--pink-200),var(--blush-100)); border-radius:var(--radius-md); padding:18px 16px;}
+  .ldr-title{font-family:var(--font-script); font-size:1.35rem; color:var(--rose-800); text-align:center;}
+  .ldr-hint{font-size:.8rem; color:var(--plum-900); opacity:.78; line-height:1.5; text-align:center; margin:4px 0 14px;}
+  .ldr-steps{font-size:.75rem; color:var(--rose-800); opacity:.85; line-height:1.6; margin-top:12px; padding-left:18px;}
+  .ldr-steps li{margin-bottom:2px;}
+  .code-modal{
+    position:fixed; inset:0; z-index:85; display:flex; align-items:center; justify-content:center; padding:22px;
+    background:rgba(59,22,38,.55);
+  }
+  .code-card{background:var(--white); border-radius:var(--radius-lg); padding:26px 22px; width:100%; max-width:400px; box-shadow:0 30px 70px -20px rgba(59,22,38,.5);}
+  .code-card h3{font-size:1.15rem; color:var(--plum-900); margin-bottom:6px;}
+  .code-card p{font-size:.84rem; color:var(--rose-800); opacity:.8; line-height:1.5; margin-bottom:14px;}
+  .code-card textarea{
+    width:100%; border-radius:12px; border:1.5px solid var(--blush-100); padding:12px 14px; font-family:inherit;
+    font-size:.82rem; resize:vertical; background:var(--blush-50); color:var(--plum-900); word-break:break-all;
+  }
+  .code-actions{display:flex; gap:10px; margin-top:14px;}
+  .code-actions .btn{flex:1; font-size:.8rem; padding:13px 12px;}
+  .camera-permission .permission-actions{display:flex; flex-direction:column; gap:8px; width:100%; max-width:260px;}
+  .camera-permission .btn{width:100%; font-size:.78rem; padding:13px 14px; min-height:46px;}
+
+  /* toast */
+  .toast{
+    position:fixed; left:50%; bottom:28px; transform:translate(-50%,20px); background:var(--plum-900); color:#fff;
+    padding:13px 22px; border-radius:999px; font-size:.86rem; opacity:0; pointer-events:none; transition:all .25s ease; z-index:90;
+    box-shadow:0 14px 30px -10px rgba(0,0,0,.4);
+  }
+  .toast.show{opacity:1; transform:translate(-50%,0);}
+
+  /* transition message overlay inside camera step */
+  .transition-msg{
+    position:absolute; inset:0; z-index:5; display:none; flex-direction:column; align-items:center; justify-content:center;
+    background:rgba(255,247,249,.97); text-align:center; gap:8px; border-radius:var(--radius-lg);
+  }
+  .transition-msg.show{display:flex;}
+  .transition-msg .line1{font-family:var(--font-script); font-size:1.8rem; color:var(--rose-600);}
+  .transition-msg .line2{font-size:.92rem; color:var(--plum-900); opacity:.75;}
+
+  .sr-only{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap;}
+</style>
+
+<div class="app" id="app" data-view="landing">
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <div class="code-modal" id="codeModal" role="dialog" aria-modal="true" aria-labelledby="codeModalTitle" hidden>
+    <div class="code-card">
+      <h3 id="codeModalTitle">Paste their photo code ♡</h3>
+      <p id="codeModalText">Paste the code your love sent you — their photos join your strip.</p>
+      <textarea id="codeInput" rows="4" spellcheck="false" aria-label="Photo code"></textarea>
+      <div class="code-actions">
+        <button class="btn btn-ghost" id="codeCancel">Cancel</button>
+        <button class="btn btn-primary" id="codeApply">ADD PHOTOS ♡</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="welcome-overlay" id="welcomeOverlay" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+    <div class="welcome-card">
+      <span class="eyebrow-script">Hey love ♡</span>
+      <h2 id="welcomeTitle">Ready to make a memory?</h2>
+      <button class="btn btn-primary" id="welcomeStart">LET'S TAKE A PHOTO</button>
+      <button class="btn-text" id="welcomeDismiss">maybe later</button>
+    </div>
+  </div>
+
+  <header class="nav">
+    <a class="brand" href="#top">♡ Our Booth</a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#top">Home</a>
+      <a href="#howitworks">Photo Booth</a>
+      <a href="#frames">Frames</a>
+      <a href="#about">About</a>
+    </nav>
+    <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">☰</button>
+  </header>
+
+  <!-- ============ LANDING ============ -->
+  <main class="view view-landing" id="view-landing">
+    <section class="hero" id="top">
+      <div class="floaties" id="floaties" aria-hidden="true"></div>
+      <div class="hero-inner">
+        <span class="hero-eyebrow">for two ♡</span>
+        <h1>OUR LITTLE PHOTO BOOTH</h1>
+        <p class="hero-sub">Capture little moments, keep them forever.</p>
+        <div class="hero-actions">
+          <button class="btn btn-primary" id="startBtn">START PHOTO BOOTH ♡</button>
+          <button class="btn btn-secondary" id="inviteBtn">INVITE YOUR LOVE ♡</button>
+          <button class="btn btn-secondary" id="howBtn">HOW IT WORKS</button>
+        </div>
+        <div class="mockup" aria-hidden="true">
+          <div class="strip-shot"></div>
+          <div class="strip-shot"></div>
+          <div class="strip-shot"></div>
+          <div class="mockup-caption">forever &amp; always ♡</div>
+        </div>
+        <p class="hero-footnote">Made for two ♡</p>
+      </div>
+    </section>
+
+    <section class="section" id="howitworks">
+      <div class="section-head">
+        <span class="kicker">how it works</span>
+        <h2>Three steps to a memory</h2>
+      </div>
+      <div class="how-grid">
+        <div class="how-card">
+          <div class="how-num">01</div>
+          <h3>Say cheese ♡</h3>
+          <p>Allow your camera and choose how many shots you want — up to four in a row. No camera access? Use your phone's camera app or photos you already have.</p>
+        </div>
+        <div class="how-card">
+          <div class="how-num">02</div>
+          <h3>Pick your vibe</h3>
+          <p>Choose a frame, a filter, and a few little stickers to make it yours — they can even move ✨</p>
+        </div>
+        <div class="how-card">
+          <div class="how-num">03</div>
+          <h3>Keep it forever</h3>
+          <p>Download your photo strip in seconds. It never leaves your device.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="frames">
+      <div class="section-head">
+        <span class="kicker">frames</span>
+        <h2>Pick a mood for your strip</h2>
+      </div>
+      <div class="gallery-grid" id="galleryGrid"></div>
+    </section>
+
+    <section class="section about" id="about">
+      <div class="about-card">
+        <span class="kicker">Made for Two ♡</span>
+        <p>A tiny digital photo booth for two people who want to turn ordinary moments into little memories.</p>
+        <p>Far apart tonight? Take your shots on your own phones, swap codes, and you'll still land on the same strip ♡</p>
+        <p class="tag">Take a picture. Laugh a little. Keep the memory forever.</p>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:0;">
+      <div class="privacy-note">🔒 Your photos stay on your device. We don't upload or store your photos.</div>
+    </section>
+
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two.</footer>
+  </main>
+
+  <!-- ============ APP FLOW ============ -->
+  <main class="view view-app" id="view-app">
+    <div class="app-stage">
+      <div class="app-topbar">
+        <button class="icon-btn" id="backBtn" aria-label="Go back">←</button>
+        <div class="progress-dots" id="progressDots" aria-hidden="true"></div>
+        <button class="icon-btn" id="muteBtn" aria-label="Mute shutter sound">🔊</button>
+      </div>
+
+      <!-- STEP 1: count -->
+      <section class="step" id="step-count" data-step="count">
+        <h2>How many shots?</h2>
+        <p class="step-sub">Pick how many little moments to capture.</p>
+        <div class="count-grid" id="countGrid" role="group" aria-label="Number of shots"></div>
+        <div class="step-footer">
+          <button class="btn btn-primary btn-block" id="toFrameBtn">NEXT ♡</button>
+        </div>
+      </section>
+
+      <!-- STEP 2: frame -->
+      <section class="step" id="step-frame" data-step="frame">
+        <h2>Choose Frame</h2>
+        <p class="step-sub">You can always change this later.</p>
+        <div class="frame-grid" id="frameGrid" role="group" aria-label="Choose a frame"></div>
+        <div class="step-footer">
+          <button class="btn btn-primary btn-block" id="toCameraBtn">START PHOTO BOOTH ♡</button>
+        </div>
+      </section>
+
+      <!-- STEP 3: camera -->
+      <section class="step" id="step-camera" data-step="camera">
+        <h2 class="camera-title">OUR LITTLE PHOTO BOOTH ♡</h2>
+        <div class="camera-stage">
+          <video id="video" playsinline autoplay muted aria-label="Camera preview"></video>
+          <canvas class="fx-canvas" id="fxCanvas" aria-hidden="true"></canvas>
+          <div class="flash" id="flash" aria-hidden="true"></div>
+          <div class="countdown" id="countdown" aria-live="polite"></div>
+          <div class="shot-indicator" id="shotIndicator"></div>
+          <div class="transition-msg" id="transitionMsg">
+            <span class="line1" id="transitionLine1"></span>
+            <span class="line2" id="transitionLine2"></span>
+          </div>
+          <div class="camera-permission" id="permissionState">
+            <span class="icon">📷</span>
+            <h3 id="permissionTitle">We'd love to see your smile ♡</h3>
+            <p id="permissionText">Please allow camera access when your browser asks.</p>
+            <div class="permission-actions">
+              <button class="btn btn-secondary" id="permissionRetry" hidden>TRY AGAIN</button>
+              <button class="btn btn-ghost" id="permissionUpload" hidden>USE PHONE CAMERA INSTEAD</button>
+            </div>
+          </div>
+        </div>
+        <div class="camera-controls">
+          <button class="icon-btn" id="switchCameraBtn" aria-label="Switch camera">↻</button>
+          <button class="btn btn-shutter" id="takePhotoBtn" aria-label="Start capturing"></button>
+          <button class="icon-btn" id="changeFrameFromCamera" aria-label="Choose a different frame">🖼</button>
+        </div>
+        <div class="fx-row">
+          <h3>Live effects ✨</h3>
+          <div class="chip-row" id="fxChips" role="group" aria-label="Live camera effects"></div>
+        </div>
+
+        <div class="fallback-row" id="fallbackRow">
+          <p class="fallback-hint">Camera blocked here? Use your phone's own camera app or photos you already have — same frames, same strip ♡</p>
+          <div class="fallback-buttons">
+            <button class="btn btn-secondary" id="useCameraAppBtn">TAKE WITH PHONE CAMERA</button>
+            <button class="btn btn-ghost" id="useGalleryBtn">CHOOSE FROM GALLERY</button>
+          </div>
+          <div class="tray" id="tray" hidden>
+            <div class="tray-thumbs" id="trayThumbs"></div>
+            <div class="tray-actions">
+              <span class="tray-count" id="trayCount"></span>
+              <button class="btn btn-primary" id="trayContinue">CONTINUE ♡</button>
+            </div>
+          </div>
+        </div>
+        <div class="ldr-row">
+          <p class="ldr-title">Long distance ♡</p>
+          <p class="ldr-hint">Far apart? Open this page on both phones, take your own shots, then swap codes — you'll end up on the same strip.</p>
+          <div class="fallback-buttons">
+            <button class="btn btn-secondary" id="copyMyCodeBtn">COPY MY PHOTO CODE</button>
+            <button class="btn btn-ghost" id="pasteCodeBtn">PASTE THEIR CODE</button>
+          </div>
+          <ol class="ldr-steps">
+            <li>Both take photos here, on your own phones.</li>
+            <li>One of you taps "Copy my photo code" and sends it by chat.</li>
+            <li>The other taps "Paste their code" — one strip, two people ♡</li>
+          </ol>
+        </div>
+
+        <input type="file" id="cameraAppInput" accept="image/*" capture="user" class="sr-only" tabindex="-1" aria-hidden="true">
+        <input type="file" id="galleryInput" accept="image/*" multiple class="sr-only" tabindex="-1" aria-hidden="true">
+      </section>
+
+      <!-- STEP 4: customize -->
+      <section class="step" id="step-customize" data-step="customize">
+        <h2>MAKE IT YOURS ♡</h2>
+        <div class="customize-layout">
+          <div class="preview-pane">
+            <canvas id="previewCanvas" width="720" height="900"></canvas>
+            <p class="ready-note">your memories are ready ♡</p>
+          </div>
+          <div>
+            <div class="control-group">
+              <h3>Frame Color</h3>
+              <div class="swatch-row" id="colorSwatches"></div>
+            </div>
+            <div class="control-group">
+              <h3>Filter</h3>
+              <div class="chip-row" id="filterChips"></div>
+            </div>
+            <div class="control-group">
+              <h3>Stickers</h3>
+              <div class="chip-row" id="stickerChips"></div>
+            </div>
+            <div class="control-group">
+              <h3>Motion</h3>
+              <label class="switch-row"><input type="checkbox" id="animToggle" checked><span>Moving stickers ✨</span></label>
+            </div>
+            <div class="control-group">
+              <h3>Add Text</h3>
+              <input type="text" id="customText" maxlength="40" placeholder="Forever &amp; Always">
+            </div>
+            <div class="control-group">
+              <h3>Date</h3>
+              <label class="switch-row"><input type="checkbox" id="showDateToggle" checked><span>Show date on photo</span></label>
+              <select id="dateLabelSelect" aria-label="Date label">
+                <option value="date">Just the date</option>
+                <option value="Our Date">Our Date</option>
+                <option value="Love Day">Love Day</option>
+                <option value="Best Day">Best Day</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="step-footer">
+          <button class="btn btn-primary btn-block" id="toResultBtn">DONE ♡</button>
+        </div>
+      </section>
+
+      <!-- STEP 5: result -->
+      <section class="step" id="step-result" data-step="result">
+        <h2>OUR MEMORY ♡</h2>
+        <p class="step-sub">A little moment worth keeping.</p>
+        <div class="result-frame">
+          <canvas id="resultCanvas" width="720" height="900"></canvas>
+        </div>
+        <div class="result-actions">
+          <button class="btn btn-primary btn-block" id="downloadBtn">DOWNLOAD PHOTO ♡</button>
+          <button class="btn btn-secondary btn-block" id="videoBtn" hidden>DOWNLOAD VIDEO ✨</button>
+          <div class="result-actions-row">
+            <button class="btn btn-ghost" id="retakeBtn">TAKE AGAIN ↻</button>
+            <button class="btn btn-ghost" id="changeFrameBtn">CHANGE FRAME</button>
+            <button class="btn btn-ghost" id="shareBtn">SHARE</button>
+          </div>
+        </div>
+        <p class="privacy-inline">🔒 Your memories stay yours. Photos are processed locally on your device and are never uploaded.</p>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- data ---------------- */
+  var COLOR_OPTIONS = [
+    {id:'pink', label:'Pink', hex:'#FF8FB3'},
+    {id:'baby', label:'Baby Pink', hex:'#FFD1E3'},
+    {id:'rose', label:'Rose', hex:'#E14F7A'},
+    {id:'white', label:'White', hex:'#FFFFFF'},
+    {id:'romantic', label:'Romantic', hex:'#FFF0F5'},
+    {id:'cute', label:'Cute', hex:'#FFC2D6'},
+    {id:'lavender', label:'Lavender', hex:'#D9C8FF'},
+    {id:'mint', label:'Mint', hex:'#BDEFD9'},
+    {id:'midnight', label:'Midnight', hex:'#3B1626'}
+  ];
+  var FILTERS = [
+    {id:'original', label:'Original', css:'none'},
+    {id:'soft', label:'Soft', css:'brightness(1.06) saturate(0.9) contrast(0.96)'},
+    {id:'warm', label:'Warm', css:'sepia(0.18) saturate(1.25) brightness(1.03)'},
+    {id:'pink', label:'Pink', css:'saturate(1.35) hue-rotate(-6deg) brightness(1.04)'},
+    {id:'vintage', label:'Vintage', css:'sepia(0.35) contrast(0.92) brightness(0.97) saturate(0.8)'},
+    {id:'bw', label:'B & W', css:'grayscale(1) contrast(1.08)'}
+  ];
+  var STICKERS = [
+    {id:'hearts', label:'♡ Hearts', kind:'heart'},
+    {id:'stars', label:'✦ Stars', kind:'star'},
+    {id:'flowers', label:'✿ Flowers', kind:'flower'},
+    {id:'kiss', label:'Kiss', kind:'kiss'},
+    {id:'bow', label:'Bow', kind:'bow'},
+    {id:'sparkles', label:'Sparkles', kind:'sparkle'},
+    {id:'cherry', label:'🍒 Cherry', kind:'cherry'},
+    {id:'crown', label:'👑 Crown', kind:'crown'},
+    {id:'cloud', label:'☁ Cloud', kind:'cloud'},
+    {id:'love', label:'LOVE', kind:'word', text:'LOVE'},
+    {id:'xoxo', label:'XOXO', kind:'word', text:'XOXO'},
+    {id:'together', label:'TOGETHER', kind:'word', text:'TOGETHER'}
+  ];
+  var TEMPLATES = [
+    {id:'classic-pink', name:'Classic Pink', layout:'strip', color:'pink', decor:['hearts-light'], header:'OUR LITTLE PHOTO BOOTH ♡'},
+    {id:'love-strip', name:'Love Strip', layout:'strip', color:'rose', decor:['hearts'], header:'LOVE', dateOn:true},
+    {id:'cute-heart', name:'Cute Heart', layout:'strip', color:'baby', decor:['hearts-dense']},
+    {id:'romantic', name:'Romantic', layout:'strip', color:'romantic', decor:['minimal']},
+    {id:'polaroid-love', name:'Polaroid Love', layout:'polaroid', color:'baby', decor:['sparkle']},
+    {id:'minimal-pink', name:'Minimal Pink', layout:'strip', color:'white', decor:[], thin:true},
+    {id:'couple-fun', name:'Couple Fun', layout:'strip', color:'pink', decor:['fun'], header:'xoxo'},
+    {id:'date-memory', name:'Date Memory', layout:'strip', color:'cute', decor:['hearts-light'], header:'Our Date', dateOn:true},
+    {id:'sweet-grid', name:'Sweet Grid', layout:'grid', color:'baby', decor:['sparkle'], header:'us ♡'},
+    {id:'film-night', name:'Film Night', layout:'film', color:'midnight', decor:[], header:'MOVIE NIGHT', dateOn:true},
+    {id:'lavender-dream', name:'Lavender Dream', layout:'strip', color:'lavender', decor:['sparkle'], header:'sweet dreams'},
+    {id:'mint-picnic', name:'Mint Picnic', layout:'grid', color:'mint', decor:['fun'], header:'Picnic Date'}
+  ];
+  var FX_OPTIONS = [
+    {id:'none', label:'None'},
+    {id:'hearts', label:'♡ Hearts'},
+    {id:'sparkles', label:'✦ Sparkles'},
+    {id:'petals', label:'✿ Petals'},
+    {id:'bubbles', label:'○ Bubbles'}
+  ];
+  var STEP_ORDER = ['count','frame','camera','customize','result'];
+  var MAX_SHOTS = 4;   // one strip never holds more than this, even with a partner's photos
+  var LOOP = 3;        // seconds; every sticker motion repeats exactly once per loop
+
+  /* ---------------- state ---------------- */
+  var state = {
+    shotCount: 4,
+    templateId: 'classic-pink',
+    colorId: null,
+    filterId: 'original',
+    stickers: {},
+    customText: '',
+    showDate: true,
+    dateLabel: 'date',
+    facingMode: 'user',
+    shots: [],
+    stream: null,
+    muted: false,
+    cameraFallbackMode: false,
+    currentStep: 'count',
+    fxId: 'none',
+    animated: true
+  };
+  try{ state.muted = localStorage.getItem('oob-muted') === '1'; }catch(e){}
+  if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) state.animated = false;
+
+  /* ---------------- utils ---------------- */
+  function $(id){ return document.getElementById(id); }
+  function wait(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+  function shade(hex, percent){
+    var num = parseInt(hex.replace('#',''),16);
+    var r = (num >> 16) + Math.round(255*percent);
+    var g = ((num >> 8) & 0xff) + Math.round(255*percent);
+    var b = (num & 0xff) + Math.round(255*percent);
+    r = clamp(r,0,255); g = clamp(g,0,255); b = clamp(b,0,255);
+    return '#' + (0x1000000 + r*0x10000 + g*0x100 + b).toString(16).slice(1);
+  }
+  function showToast(msg){
+    var t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(function(){ t.classList.remove('show'); }, 2600);
+  }
+  function isDarkHex(hex){
+    var num = parseInt(hex.replace('#',''),16);
+    var lum = (0.299*(num >> 16) + 0.587*((num >> 8) & 0xff) + 0.114*(num & 0xff)) / 255;
+    return lum < 0.45;
+  }
+  // a sine wave that repeats `cycles` times per LOOP, so animations loop seamlessly
+  function wave(t, cycles, phase){ return Math.sin((Math.PI*2*cycles*t)/LOOP + (phase || 0)); }
+  function formatDate(){
+    var d = new Date();
+    var months = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+    return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+  }
+  function templateById(id){
+    for(var i=0;i<TEMPLATES.length;i++){ if(TEMPLATES[i].id===id) return TEMPLATES[i]; }
+    return TEMPLATES[0];
+  }
+  function colorHex(id){
+    for(var i=0;i<COLOR_OPTIONS.length;i++){ if(COLOR_OPTIONS[i].id===id) return COLOR_OPTIONS[i].hex; }
+    return '#FF8FB3';
+  }
+
+  /* ---------------- ambient floaties (landing only) ---------------- */
+  (function initFloaties(){
+    var host = $('floaties');
+    var glyphs = ['♡','✦','♡','✧','♡'];
+    var count = window.innerWidth < 620 ? 8 : 14;
+    for(var i=0;i<count;i++){
+      var s = document.createElement('span');
+      s.textContent = glyphs[i % glyphs.length];
+      var left = Math.random()*100;
+      var dur = 9 + Math.random()*9;
+      var delay = Math.random()*10;
+      var size = 0.8 + Math.random()*1.4;
+      s.style.left = left + '%';
+      s.style.fontSize = size + 'rem';
+      s.style.animationDuration = dur + 's';
+      s.style.animationDelay = '-' + delay + 's';
+      host.appendChild(s);
+    }
+  })();
+
+  /* ---------------- welcome overlay ---------------- */
+  (function initWelcome(){
+    var seen = false;
+    try{ seen = sessionStorage.getItem('oob-welcomed') === '1'; }catch(e){}
+    if(!seen){
+      setTimeout(function(){ $('welcomeOverlay').classList.add('show'); }, 550);
+    }
+    function dismiss(){
+      $('welcomeOverlay').classList.remove('show');
+      try{ sessionStorage.setItem('oob-welcomed','1'); }catch(e){}
+    }
+    $('welcomeStart').addEventListener('click', function(){ dismiss(); enterApp(); });
+    $('welcomeDismiss').addEventListener('click', dismiss);
+  })();
+
+  /* ---------------- nav ---------------- */
+  $('hamburger').addEventListener('click', function(){
+    var links = $('navLinks');
+    var open = links.classList.toggle('open');
+    this.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.nav-links a'), function(a){
+    a.addEventListener('click', function(){ $('navLinks').classList.remove('open'); });
+  });
+  $('startBtn').addEventListener('click', enterApp);
+  $('howBtn').addEventListener('click', function(){
+    document.getElementById('howitworks').scrollIntoView({behavior:'smooth'});
+  });
+
+  /* ---------------- gallery thumbnails (landing) ---------------- */
+  (function buildGallery(){
+    var grid = $('galleryGrid');
+    TEMPLATES.forEach(function(t){
+      var card = document.createElement('div');
+      card.className = 'gallery-card';
+      var thumb = document.createElement('div');
+      thumb.className = 'gallery-thumb';
+      thumb.style.background = thumbBackground(t);
+      card.appendChild(thumb);
+      var label = document.createElement('span');
+      label.textContent = t.name;
+      card.appendChild(label);
+      grid.appendChild(card);
+    });
+  })();
+  function thumbBackground(t){
+    var base = colorHex(t.color);
+    var fill;
+    if(t.color === 'romantic') fill = 'linear-gradient(160deg,#FFF6F8,#FFD1E3)';
+    else if(t.layout === 'polaroid') fill = 'linear-gradient(160deg,' + base + ',' + shade(base,-0.08) + ')';
+    else fill = 'linear-gradient(160deg,' + shade(base,0.12) + ',' + shade(base,-0.1) + ')';
+    // extra CSS gradient layers hint at the layout: a cross for the grid, sprocket holes for film
+    var line = 'rgba(255,255,255,.85)';
+    if(t.layout === 'grid'){
+      return 'linear-gradient(90deg,transparent 47%,' + line + ' 47% 53%,transparent 53%),' +
+             'linear-gradient(0deg,transparent 47%,' + line + ' 47% 53%,transparent 53%),' + fill;
+    }
+    if(t.layout === 'film'){
+      var hole = 'radial-gradient(circle,rgba(255,246,248,.85) 3px,transparent 3.5px)';
+      return hole + ' left 4px top 0/12px 14px repeat-y,' + hole + ' right 4px top 0/12px 14px repeat-y,' + fill;
+    }
+    return fill;
+  }
+
+  /* ---------------- build step-count ---------------- */
+  (function buildCounts(){
+    var grid = $('countGrid');
+    [1,2,3,4].forEach(function(n){
+      var b = document.createElement('button');
+      b.className = 'count-card' + (n===state.shotCount ? ' selected':'');
+      b.type = 'button';
+      b.innerHTML = n + '<span>' + (n===1?'Photo':'Photos') + '</span>';
+      b.addEventListener('click', function(){
+        state.shotCount = n;
+        Array.prototype.forEach.call(grid.children, function(c){ c.classList.remove('selected'); });
+        b.classList.add('selected');
+      });
+      grid.appendChild(b);
+    });
+  })();
+  function syncCountGrid(){
+    Array.prototype.forEach.call($('countGrid').children, function(c, i){
+      c.classList.toggle('selected', i + 1 === state.shotCount);
+    });
+  }
+
+  /* ---------------- build step-frame ---------------- */
+  (function buildFrameGrid(){
+    var grid = $('frameGrid');
+    TEMPLATES.forEach(function(t){
+      var card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'frame-card' + (t.id===state.templateId ? ' selected':'');
+      var thumb = document.createElement('div');
+      thumb.className = 'frame-thumb';
+      thumb.style.background = thumbBackground(t);
+      card.appendChild(thumb);
+      var label = document.createElement('span');
+      label.textContent = t.name;
+      card.appendChild(label);
+      card.addEventListener('click', function(){
+        state.templateId = t.id;
+        state.colorId = t.color;
+        Array.prototype.forEach.call(grid.children, function(c){ c.classList.remove('selected'); });
+        card.classList.add('selected');
+      });
+      grid.appendChild(card);
+    });
+  })();
+
+  /* ---------------- build customize controls ---------------- */
+  (function buildCustomize(){
+    var swatchRow = $('colorSwatches');
+    COLOR_OPTIONS.forEach(function(c){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'swatch'; b.style.background = c.hex;
+      b.title = c.label; b.setAttribute('aria-label', c.label);
+      b.addEventListener('click', function(){
+        state.colorId = c.id;
+        Array.prototype.forEach.call(swatchRow.children, function(s){ s.classList.remove('selected'); });
+        b.classList.add('selected');
+        renderPreview();
+      });
+      swatchRow.appendChild(b);
+    });
+
+    var filterRow = $('filterChips');
+    FILTERS.forEach(function(f){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip' + (f.id===state.filterId?' active':'');
+      b.textContent = f.label;
+      b.addEventListener('click', function(){
+        state.filterId = f.id;
+        Array.prototype.forEach.call(filterRow.children, function(c){ c.classList.remove('active'); });
+        b.classList.add('active');
+        renderPreview();
+      });
+      filterRow.appendChild(b);
+    });
+
+    var stickerRow = $('stickerChips');
+    STICKERS.forEach(function(s){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip';
+      b.textContent = s.label;
+      b.addEventListener('click', function(){
+        state.stickers[s.id] = !state.stickers[s.id];
+        b.classList.toggle('active', !!state.stickers[s.id]);
+        renderPreview();
+      });
+      stickerRow.appendChild(b);
+    });
+
+    $('customText').addEventListener('input', function(){
+      state.customText = this.value;
+      renderPreview();
+    });
+    $('showDateToggle').addEventListener('change', function(){
+      state.showDate = this.checked;
+      renderPreview();
+    });
+    $('dateLabelSelect').addEventListener('change', function(){
+      state.dateLabel = this.value;
+      renderPreview();
+    });
+    $('animToggle').checked = state.animated;
+    $('animToggle').addEventListener('change', function(){
+      state.animated = this.checked;
+      renderPreview();
+    });
+
+    var fxRow = $('fxChips');
+    FX_OPTIONS.forEach(function(f){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip' + (f.id===state.fxId?' active':'');
+      b.textContent = f.label;
+      b.addEventListener('click', function(){
+        state.fxId = f.id;
+        Array.prototype.forEach.call(fxRow.children, function(c){ c.classList.remove('active'); });
+        b.classList.add('active');
+        startFx();
+      });
+      fxRow.appendChild(b);
+    });
+  })();
+
+  /* ---------------- navigation ---------------- */
+  function enterApp(){
+    $('app').setAttribute('data-view','app');
+    goToStep('count', true);
+  }
+  function exitApp(){
+    stopStream();
+    if(state.currentStep === 'camera') leaveCamera();
+    stopAnim();
+    $('app').setAttribute('data-view','landing');
+  }
+  function goToStep(step, skipStop){
+    if(state.currentStep === 'camera' && step !== 'camera'){
+      if(!skipStop) stopStream();
+      leaveCamera();
+    }
+    stopAnim();
+    state.currentStep = step;
+    Array.prototype.forEach.call(document.querySelectorAll('.step'), function(s){
+      s.classList.toggle('active', s.dataset.step === step);
+    });
+    renderDots();
+    if(step === 'count'){ syncCountGrid(); }
+    if(step === 'camera'){ initCamera(); updateTray(); startFx(); }
+    if(step === 'customize'){ prepCustomizeDefaults(); renderPreview(); }
+    if(step === 'result'){ renderResult(); }
+    window.scrollTo(0,0);
+  }
+  function renderDots(){
+    var wrap = $('progressDots');
+    wrap.innerHTML = '';
+    STEP_ORDER.forEach(function(s){
+      var d = document.createElement('span');
+      if(s === state.currentStep) d.classList.add('active');
+      wrap.appendChild(d);
+    });
+  }
+  $('backBtn').addEventListener('click', function(){
+    var i = STEP_ORDER.indexOf(state.currentStep);
+    if(i <= 0){ exitApp(); return; }
+    goToStep(STEP_ORDER[i-1]);
+  });
+  $('toFrameBtn').addEventListener('click', function(){ goToStep('frame'); });
+  $('toCameraBtn').addEventListener('click', function(){
+    if(!state.colorId) state.colorId = templateById(state.templateId).color;
+    state.shots = [];
+    goToStep('camera');
+  });
+  $('changeFrameFromCamera').addEventListener('click', function(){ goToStep('frame'); });
+  $('toResultBtn').addEventListener('click', function(){ goToStep('result'); });
+  $('changeFrameBtn').addEventListener('click', function(){ goToStep('frame'); });
+  $('retakeBtn').addEventListener('click', function(){ state.shots = []; goToStep('camera'); });
+
+  function prepCustomizeDefaults(){
+    if(!state.colorId) state.colorId = templateById(state.templateId).color;
+    var swatchRow = $('colorSwatches');
+    Array.prototype.forEach.call(swatchRow.children, function(s,i){
+      s.classList.toggle('selected', COLOR_OPTIONS[i].id === state.colorId);
+    });
+    var t = templateById(state.templateId);
+    if(t.dateOn) state.showDate = true;
+    $('showDateToggle').checked = state.showDate;
+  }
+
+  /* ---------------- mute ---------------- */
+  $('muteBtn').addEventListener('click', function(){
+    state.muted = !state.muted;
+    this.textContent = state.muted ? '🔇' : '🔊';
+    this.setAttribute('aria-label', state.muted ? 'Unmute shutter sound' : 'Mute shutter sound');
+    try{ localStorage.setItem('oob-muted', state.muted ? '1':'0'); }catch(e){}
+  });
+  (function initMuteBtn(){
+    $('muteBtn').textContent = state.muted ? '🔇' : '🔊';
+  })();
+
+  function playShutter(){
+    if(state.muted) return;
+    try{
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return;
+      var ctx = playShutter._ctx || (playShutter._ctx = new AC());
+      var t0 = ctx.currentTime;
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(1400, t0);
+      osc.frequency.exponentialRampToValueAtTime(220, t0 + 0.09);
+      gain.gain.setValueAtTime(0.16, t0);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.12);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(t0); osc.stop(t0 + 0.13);
+    }catch(e){}
+  }
+
+  /* ---------------- camera ---------------- */
+  var video = $('video');
+  function stopStream(){
+    if(state.stream){
+      state.stream.getTracks().forEach(function(tr){ tr.stop(); });
+      state.stream = null;
+    }
+  }
+  function showPermission(mode, title, text, showRetry){
+    var box = $('permissionState');
+    box.classList.add('show');
+    box.className = 'camera-permission show';
+    $('permissionTitle').textContent = title;
+    $('permissionText').textContent = text;
+    $('permissionRetry').hidden = !showRetry;
+    $('permissionUpload').hidden = (mode === 'asking');
+    $('switchCameraBtn').disabled = true;
+    if(mode === 'asking'){
+      state.cameraFallbackMode = false;
+      $('takePhotoBtn').disabled = true;
+      $('takePhotoBtn').classList.remove('fallback');
+      $('fallbackRow').classList.remove('highlight');
+    } else {
+      // live camera is unavailable: turn the shutter into the phone-camera button
+      state.cameraFallbackMode = true;
+      $('takePhotoBtn').disabled = false;
+      $('takePhotoBtn').classList.add('fallback');
+      $('takePhotoBtn').setAttribute('aria-label', "Take a photo with your phone's camera");
+      $('fallbackRow').classList.add('highlight');
+    }
+  }
+  function hidePermission(){
+    $('permissionState').classList.remove('show');
+    state.cameraFallbackMode = false;
+    $('takePhotoBtn').disabled = false;
+    $('takePhotoBtn').classList.remove('fallback');
+    $('takePhotoBtn').setAttribute('aria-label', 'Start capturing');
+    $('fallbackRow').classList.remove('highlight');
+    $('switchCameraBtn').disabled = false;
+  }
+  function initCamera(){
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      showPermission('unsupported', "Your camera isn't reachable here ♡",
+        "This browser doesn't support live camera access. Use your phone's own camera below, or try Chrome or Safari.", false);
+      return;
+    }
+    showPermission('asking', "We'd love to see your smile ♡", "Please allow camera access when your browser asks.", false);
+    stopStream();
+    var constraints = { video: { facingMode: state.facingMode }, audio:false };
+    navigator.mediaDevices.getUserMedia(constraints).catch(function(){
+      return navigator.mediaDevices.getUserMedia({video:true, audio:false});
+    }).then(function(stream){
+      state.stream = stream;
+      video.srcObject = stream;
+      video.classList.toggle('mirror', state.facingMode === 'user');
+      hidePermission();
+    }).catch(function(err){
+      var name = err && err.name;
+      if(name === 'NotAllowedError' || name === 'PermissionDeniedError' || name === 'SecurityError'){
+        showPermission('denied', "Oops! We can't access your camera ♡",
+          "Allow camera permission in your browser settings, or just use your phone's own camera below — it works without any permission here.", true);
+      }else if(name === 'NotFoundError' || name === 'DevicesNotFoundError'){
+        showPermission('missing', "No camera found ♡",
+          "We couldn't find a camera here — use your phone's own camera below instead, it works without any permission.", true);
+      }else{
+        showPermission('error', "Something went wrong ♡",
+          "We couldn't start the camera. Please try again.", true);
+      }
+    });
+  }
+  $('permissionRetry').addEventListener('click', initCamera);
+  $('switchCameraBtn').addEventListener('click', function(){
+    state.facingMode = state.facingMode === 'user' ? 'environment' : 'user';
+    initCamera();
+  });
+
+  /* ---------------- phone camera app / gallery fallback ---------------- */
+  function squareCanvasFrom(source, w, h){
+    var size = Math.min(w, h);
+    var sx = (w - size)/2, sy = (h - size)/2;
+    var c = document.createElement('canvas');
+    c.width = 640; c.height = 640;
+    c.getContext('2d').drawImage(source, sx, sy, size, size, 0, 0, 640, 640);
+    return c;
+  }
+  function fileToShot(file){
+    return new Promise(function(resolve, reject){
+      function viaImage(){
+        var url = URL.createObjectURL(file);
+        var img = new Image();
+        img.onload = function(){
+          var c = squareCanvasFrom(img, img.naturalWidth, img.naturalHeight);
+          URL.revokeObjectURL(url);
+          resolve(c);
+        };
+        img.onerror = function(){ URL.revokeObjectURL(url); reject(new Error('decode')); };
+        img.src = url;
+      }
+      if(window.createImageBitmap){
+        var p;
+        try{ p = createImageBitmap(file, {imageOrientation:'from-image'}); }
+        catch(e){ viaImage(); return; }
+        p.then(function(bmp){
+          resolve(squareCanvasFrom(bmp, bmp.width, bmp.height));
+          if(bmp.close) bmp.close();
+        }).catch(viaImage);
+      } else {
+        viaImage();
+      }
+    });
+  }
+  function addFilesAsShots(fileList){
+    var files = Array.prototype.slice.call(fileList).filter(function(f){
+      return f && f.type && f.type.indexOf('image/') === 0;
+    });
+    if(!files.length) return;
+    var room = state.shotCount - state.shots.length;
+    if(room <= 0){
+      showToast('You already have ' + state.shotCount + ' photos ♡');
+      return;
+    }
+    files = files.slice(0, room);
+    Promise.all(files.map(fileToShot)).then(function(canvases){
+      canvases.forEach(function(c){ c.dataset.from = 'me'; state.shots.push(c); });
+      updateTray();
+      if(state.shots.length >= state.shotCount){
+        showToast('That was cute ♡');
+        setTimeout(function(){ goToStep('customize'); }, 700);
+      } else {
+        showToast(state.shots.length + ' of ' + state.shotCount + ' — keep going ♡');
+      }
+    }).catch(function(){
+      showToast("We couldn't read that photo. Try another one ♡");
+    });
+  }
+  function updateTray(){
+    var thumbs = $('trayThumbs');
+    thumbs.innerHTML = '';
+    state.shots.forEach(function(c, i){
+      var wrap = document.createElement('div');
+      wrap.className = 'tray-thumb';
+      var img = document.createElement('img');
+      img.src = c.toDataURL('image/jpeg', 0.7);
+      img.alt = 'Photo ' + (i+1);
+      var del = document.createElement('button');
+      del.type = 'button'; del.className = 'tray-del'; del.textContent = '×';
+      del.setAttribute('aria-label', 'Remove photo ' + (i+1));
+      del.addEventListener('click', function(){
+        state.shots.splice(i,1);
+        updateTray();
+      });
+      wrap.appendChild(img); wrap.appendChild(del);
+      thumbs.appendChild(wrap);
+    });
+    $('trayCount').textContent = state.shots.length + ' / ' + state.shotCount + ' photos';
+    $('tray').hidden = state.shots.length === 0;
+  }
+  $('useCameraAppBtn').addEventListener('click', function(){ $('cameraAppInput').click(); });
+  $('useGalleryBtn').addEventListener('click', function(){ $('galleryInput').click(); });
+  $('permissionUpload').addEventListener('click', function(){ $('galleryInput').click(); });
+  $('cameraAppInput').addEventListener('change', function(){ addFilesAsShots(this.files); this.value = ''; });
+  $('galleryInput').addEventListener('change', function(){ addFilesAsShots(this.files); this.value = ''; });
+  $('trayContinue').addEventListener('click', function(){
+    if(!state.shots.length){ showToast('Add at least one photo first ♡'); return; }
+    goToStep('customize');
+  });
+
+  /* ---------------- long distance: invite + photo codes ---------------- */
+  function copyText(text){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      return navigator.clipboard.writeText(text).catch(legacyCopy);
+    }
+    return legacyCopy();
+    function legacyCopy(){
+      return new Promise(function(resolve, reject){
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly','');
+        ta.style.position = 'fixed'; ta.style.top = '-1000px'; ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select(); ta.setSelectionRange(0, text.length);
+        var ok = false;
+        try{ ok = document.execCommand('copy'); }catch(e){ ok = false; }
+        document.body.removeChild(ta);
+        ok ? resolve() : reject(new Error('copy'));
+      });
+    }
+  }
+  function inviteMessage(){
+    return "I made us a little photo booth ♡ Open this and let's take photos together: " + location.href;
+  }
+  $('inviteBtn').addEventListener('click', function(){
+    var msg = inviteMessage();
+    if(navigator.share){
+      navigator.share({ title:'Our Little Photo Booth', text:"I made us a little photo booth ♡ Let's take photos together:", url: location.href })
+        .catch(function(){ /* cancelled */ });
+      return;
+    }
+    copyText(msg).then(function(){
+      showToast('Invite link copied — send it to your love ♡');
+    }).catch(function(){
+      openCodeModal('invite', msg);
+    });
+  });
+
+  function encodeShot(canvas, size, quality){
+    var t = document.createElement('canvas');
+    t.width = size; t.height = size;
+    t.getContext('2d').drawImage(canvas, 0, 0, size, size);
+    return t.toDataURL('image/jpeg', quality).split(',')[1];
+  }
+  function packShots(shots){
+    var ladder = [[384,0.55],[320,0.45],[256,0.4],[224,0.34]];
+    var code = '';
+    for(var i=0;i<ladder.length;i++){
+      var parts = shots.map(function(c){ return encodeShot(c, ladder[i][0], ladder[i][1]); });
+      code = 'LB1|' + parts.join('|');
+      if(code.length <= 45000) return code;
+    }
+    return code;
+  }
+  function unpackCode(raw){
+    var code = (raw || '').replace(/\s+/g, '');
+    var parts = code.split('|');
+    if(parts[0] !== 'LB1' || parts.length < 2) return Promise.reject(new Error('format'));
+    var pieces = parts.slice(1).filter(Boolean);
+    if(!pieces.length) return Promise.reject(new Error('empty'));
+    return Promise.all(pieces.map(function(b64){
+      return new Promise(function(resolve, reject){
+        var img = new Image();
+        img.onload = function(){
+          var c = squareCanvasFrom(img, img.naturalWidth, img.naturalHeight);
+          c.dataset.from = 'you';
+          resolve(c);
+        };
+        img.onerror = function(){ reject(new Error('decode')); };
+        img.src = 'data:image/jpeg;base64,' + b64;
+      });
+    }));
+  }
+  $('copyMyCodeBtn').addEventListener('click', function(){
+    // only send your own photos — not the ones your partner already sent you
+    var mine = state.shots.filter(function(c){ return c.dataset.from !== 'you'; });
+    if(!mine.length){ showToast('Take a photo first, then copy your code ♡'); return; }
+    var code;
+    try{ code = packShots(mine); }
+    catch(e){ showToast("We couldn't pack your photos. Try fewer shots ♡"); return; }
+    if(code.length > 60000){
+      showToast('Too many photos for one code — try 1 or 2 shots ♡');
+      return;
+    }
+    copyText(code).then(function(){
+      showToast('Code copied — send it to your love by chat ♡');
+    }).catch(function(){
+      openCodeModal('show', code);
+    });
+  });
+
+  var codeModalMode = 'paste';
+  function openCodeModal(mode, text){
+    codeModalMode = mode;
+    var modal = $('codeModal');
+    var input = $('codeInput');
+    if(mode === 'paste'){
+      $('codeModalTitle').textContent = 'Paste their photo code ♡';
+      $('codeModalText').textContent = "Paste the code your love sent you — their photos join your strip.";
+      input.value = '';
+      input.readOnly = false;
+      $('codeApply').textContent = 'ADD PHOTOS ♡';
+    } else if(mode === 'show'){
+      $('codeModalTitle').textContent = 'Your photo code ♡';
+      $('codeModalText').textContent = 'Select all of this and send it to your love by chat.';
+      input.value = text;
+      input.readOnly = true;
+      $('codeApply').textContent = 'DONE';
+    } else {
+      $('codeModalTitle').textContent = 'Your invite ♡';
+      $('codeModalText').textContent = 'Copy this message and send it to your love.';
+      input.value = text;
+      input.readOnly = true;
+      $('codeApply').textContent = 'DONE';
+    }
+    modal.hidden = false;
+    setTimeout(function(){ input.focus(); if(mode !== 'paste') input.select(); }, 60);
+  }
+  function closeCodeModal(){ $('codeModal').hidden = true; }
+  $('pasteCodeBtn').addEventListener('click', function(){ openCodeModal('paste'); });
+  $('codeCancel').addEventListener('click', closeCodeModal);
+  $('codeModal').addEventListener('click', function(e){ if(e.target === this) closeCodeModal(); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && !$('codeModal').hidden) closeCodeModal();
+  });
+  $('codeApply').addEventListener('click', function(){
+    if(codeModalMode !== 'paste'){ closeCodeModal(); return; }
+    var raw = $('codeInput').value;
+    if(!raw.trim()){ showToast('Paste the code first ♡'); return; }
+    unpackCode(raw).then(function(canvases){
+      var room = MAX_SHOTS - state.shots.length;
+      if(room <= 0){ showToast('Your strip is full — remove a photo first ♡'); return; }
+      var added = canvases.slice(0, room);
+      added.forEach(function(c){ state.shots.push(c); });
+      state.shotCount = Math.max(state.shotCount, state.shots.length);
+      closeCodeModal();
+      updateTray();
+      showToast(added.length < canvases.length
+        ? 'Only ' + added.length + ' of their photos fit (max ' + MAX_SHOTS + ') ♡'
+        : 'Their photos are in — you are on one strip now ♡');
+      setTimeout(function(){ goToStep('customize'); }, 800);
+    }).catch(function(){
+      showToast("That code doesn't look right. Copy the whole thing and try again ♡");
+    });
+  });
+
+  /* ---------------- capture / countdown sequence ---------------- */
+  function captureShot(){
+    var vw = video.videoWidth || 640, vh = video.videoHeight || 640;
+    var size = Math.min(vw, vh);
+    var sx = (vw - size)/2, sy = (vh - size)/2;
+    var c = document.createElement('canvas');
+    c.width = 640; c.height = 640;
+    var cx = c.getContext('2d');
+    if(state.facingMode === 'user'){ cx.translate(640,0); cx.scale(-1,1); }
+    cx.drawImage(video, sx, sy, size, size, 0, 0, 640, 640);
+    if(state.fxId !== 'none'){
+      // bake the live effect into the photo — un-mirrored, so hearts don't flip
+      cx.setTransform(1,0,0,1,0,0);
+      drawFx(cx, 640, 640);
+    }
+    c.dataset.from = 'me';
+    state.shots.push(c);
+    updateTray();
+  }
+  function triggerFlash(){
+    var f = $('flash');
+    f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
+  }
+  function showCountdownText(txt){
+    var el = $('countdown');
+    el.textContent = txt;
+    el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+  }
+  function countdownFrom(n){
+    var p = Promise.resolve();
+    var seq = [];
+    for(var i=n;i>=1;i--){ seq.push(i); }
+    return seq.reduce(function(chain, num){
+      return chain.then(function(){ showCountdownText(String(num)); return wait(650); });
+    }, p).then(function(){ showCountdownText('CLICK!'); return wait(220); });
+  }
+  function setShotIndicator(txt){ $('shotIndicator').textContent = txt; }
+  function showTransition(l1, l2){
+    $('transitionLine1').textContent = l1;
+    $('transitionLine2').textContent = l2;
+    $('transitionMsg').classList.add('show');
+  }
+  function hideTransition(){ $('transitionMsg').classList.remove('show'); }
+
+  var booting = false;
+  var boothRun = 0;   // bumped when we leave the camera, so an old countdown knows to stop
+  $('takePhotoBtn').addEventListener('click', function(){
+    if(state.cameraFallbackMode){ $('cameraAppInput').click(); return; }
+    if(booting || $('takePhotoBtn').disabled) return;
+    if(state.shots.length >= state.shotCount){
+      showToast('You already have ' + state.shotCount + ' photos ♡');
+      goToStep('customize');
+      return;
+    }
+    booting = true;
+    $('takePhotoBtn').disabled = true;
+    var runId = ++boothRun;
+    runBooth(runId).then(function(){ if(runId === boothRun) booting = false; });
+  });
+  function runBooth(runId){
+    function stillHere(){ return runId === boothRun && state.currentStep === 'camera'; }
+    function next(){
+      if(!stillHere()) return Promise.resolve();
+      // count what we already have (e.g. gallery photos), so we only take what's missing
+      if(state.shots.length >= state.shotCount){
+        setShotIndicator('');
+        showTransition('That was cute ♡', 'Your little memories are ready.');
+        return wait(1300).then(function(){
+          if(!stillHere()) return;
+          hideTransition();
+          $('takePhotoBtn').disabled = false;
+          goToStep('customize');
+        });
+      }
+      setShotIndicator('SHOT ' + (state.shots.length+1) + ' / ' + state.shotCount);
+      return countdownFrom(3).then(function(){
+        if(!stillHere()) return;
+        playShutter();
+        triggerFlash();
+        captureShot();
+        return wait(500).then(next);
+      });
+    }
+    return next();
+  }
+  function leaveCamera(){
+    boothRun++;
+    booting = false;
+    stopFx();
+    hideTransition();
+    setShotIndicator('');
+    $('countdown').classList.remove('show');
+    $('takePhotoBtn').disabled = false;
+  }
+
+  /* ---------------- live camera effects ----------------
+     Particles live in 0..1 coordinates, so the same list can be drawn on the
+     on-screen overlay and baked into the 640x640 photo at the moment of capture. */
+  var fx = {parts:[], raf:0, last:0};
+  var fxCanvas = $('fxCanvas');
+  function fxTarget(){ return {hearts:14, sparkles:18, petals:16, bubbles:12}[state.fxId] || 0; }
+  function spawnFx(kind, anywhere){
+    var r = Math.random;
+    var p = {kind:kind, x:r(), y:r(), age:0, life:99, size:0.03 + r()*0.03,
+             rot:r()*6.28, vr:(r()-0.5)*1.5, phase:r()*6.28, vx:0, vy:0};
+    if(kind === 'hearts'){ p.vy = -(0.08 + r()*0.08); if(!anywhere) p.y = 1.08; }
+    if(kind === 'bubbles'){ p.vy = -(0.06 + r()*0.06); p.size = 0.02 + r()*0.04; if(!anywhere) p.y = 1.08; }
+    if(kind === 'petals'){ p.vy = 0.07 + r()*0.07; p.vx = (r()-0.5)*0.05; if(!anywhere) p.y = -0.08; }
+    if(kind === 'sparkles'){ p.life = 1.2 + r()*1.6; p.size = 0.015 + r()*0.025; if(anywhere) p.age = r()*p.life; }
+    return p;
+  }
+  function updateFx(dt){
+    fx.parts = fx.parts.filter(function(p){
+      p.age += dt; p.x += p.vx*dt; p.y += p.vy*dt; p.rot += p.vr*dt;
+      return p.age < p.life && p.y > -0.15 && p.y < 1.15;
+    });
+    while(fx.parts.length < fxTarget()) fx.parts.push(spawnFx(state.fxId, false));
+  }
+  function drawFx(ctx, w, h){
+    var m = Math.min(w, h);
+    fx.parts.forEach(function(p){
+      var sway = Math.sin(p.age*2 + p.phase);
+      var s = p.size * m;
+      ctx.save();
+      ctx.translate((p.x + sway*0.02) * w, p.y * h);
+      if(p.kind === 'hearts'){
+        ctx.rotate(sway*0.3);
+        drawHeart(ctx, 0, -s*0.6, s*1.6, '#FF6F9C', 0.85);
+      } else if(p.kind === 'sparkles'){
+        drawStar(ctx, 0, 0, s, '#FFFFFF', Math.sin(Math.PI * p.age / p.life));
+      } else if(p.kind === 'petals'){
+        ctx.rotate(p.rot);
+        ctx.globalAlpha = 0.85; ctx.fillStyle = '#FFB3D1';
+        ctx.beginPath(); ctx.ellipse(0, 0, s*0.45, s*0.8, 0, 0, Math.PI*2); ctx.fill();
+      } else if(p.kind === 'bubbles'){
+        ctx.globalAlpha = 0.8; ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = Math.max(1.5, s*0.08);
+        ctx.beginPath(); ctx.arc(0, 0, s, 0, Math.PI*2); ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,.55)';
+        ctx.beginPath(); ctx.arc(-s*0.35, -s*0.35, s*0.18, 0, Math.PI*2); ctx.fill();
+      }
+      ctx.restore();
+    });
+  }
+  function startFx(){
+    stopFx();
+    fx.parts = [];
+    for(var i=0;i<fxTarget();i++) fx.parts.push(spawnFx(state.fxId, true));
+    fx.last = performance.now();
+    (function tick(now){
+      var dt = Math.min(0.05, (now - fx.last)/1000);   // cap dt so a hidden tab doesn't teleport particles
+      fx.last = now;
+      var dpr = window.devicePixelRatio || 1;
+      var cw = Math.round(fxCanvas.clientWidth*dpr), ch = Math.round(fxCanvas.clientHeight*dpr);
+      if(fxCanvas.width !== cw || fxCanvas.height !== ch){ fxCanvas.width = cw; fxCanvas.height = ch; }
+      var ctx = fxCanvas.getContext('2d');
+      ctx.clearRect(0, 0, cw, ch);
+      if(state.fxId === 'none'){ fx.raf = 0; return; }
+      updateFx(dt);
+      drawFx(ctx, cw, ch);
+      fx.raf = requestAnimationFrame(tick);
+    })(fx.last);
+  }
+  function stopFx(){ cancelAnimationFrame(fx.raf); fx.raf = 0; }
+
+  /* ---------------- drawing helpers ---------------- */
+  function drawHeart(ctx,x,y,size,color,alpha){
+    ctx.save();
+    ctx.globalAlpha = alpha == null ? 1 : alpha;
+    ctx.fillStyle = color;
+    ctx.translate(x,y);
+    ctx.scale(size/20, size/20);
+    ctx.beginPath();
+    ctx.moveTo(0,6);
+    ctx.bezierCurveTo(0,-2,-10,-2,-10,7);
+    ctx.bezierCurveTo(-10,14,-4,18,0,24);
+    ctx.bezierCurveTo(4,18,10,14,10,7);
+    ctx.bezierCurveTo(10,-2,0,-2,0,6);
+    ctx.fill();
+    ctx.restore();
+  }
+  function drawStar(ctx,x,y,size,color,alpha){
+    ctx.save();
+    ctx.globalAlpha = alpha == null ? 1 : alpha;
+    ctx.fillStyle = color;
+    ctx.translate(x,y);
+    ctx.beginPath();
+    for(var i=0;i<4;i++){
+      ctx.rotate(Math.PI/2);
+      ctx.moveTo(0,0);
+      ctx.quadraticCurveTo(size*0.15, size*0.15, size, 0);
+      ctx.quadraticCurveTo(size*0.15, -size*0.15, 0, 0);
+    }
+    ctx.fill();
+    ctx.restore();
+  }
+  function drawFlower(ctx,x,y,size,color,alpha){
+    ctx.save();
+    ctx.globalAlpha = alpha == null ? 1 : alpha;
+    ctx.fillStyle = color;
+    ctx.translate(x,y);
+    for(var i=0;i<5;i++){
+      ctx.save();
+      ctx.rotate((Math.PI*2/5)*i);
+      ctx.beginPath();
+      ctx.ellipse(0, -size*0.55, size*0.38, size*0.6, 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.fillStyle = '#FFF3D6';
+    ctx.beginPath(); ctx.arc(0,0,size*0.32,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  function drawBow(ctx,x,y,size,color,alpha){
+    ctx.save();
+    ctx.globalAlpha = alpha == null ? 1 : alpha;
+    ctx.fillStyle = color;
+    ctx.translate(x,y);
+    ctx.beginPath();
+    ctx.moveTo(0,0); ctx.lineTo(-size,-size*0.6); ctx.lineTo(-size,size*0.6); ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(0,0); ctx.lineTo(size,-size*0.6); ctx.lineTo(size,size*0.6); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.arc(0,0,size*0.22,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  function drawSparkleMark(ctx,x,y,size,color,alpha){
+    ctx.save();
+    ctx.globalAlpha = alpha == null ? 1 : alpha;
+    ctx.strokeStyle = color; ctx.lineWidth = Math.max(1,size*0.12); ctx.lineCap='round';
+    ctx.translate(x,y);
+    ctx.beginPath(); ctx.moveTo(0,-size); ctx.lineTo(0,size); ctx.moveTo(-size,0); ctx.lineTo(size,0); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-size*0.6,-size*0.6); ctx.lineTo(size*0.6,size*0.6); ctx.moveTo(size*0.6,-size*0.6); ctx.lineTo(-size*0.6,size*0.6); ctx.stroke();
+    ctx.restore();
+  }
+  function drawWordBadge(ctx,x,y,text,color,textColor){
+    ctx.save();
+    ctx.font = '700 22px Poppins, sans-serif';
+    var w = ctx.measureText(text).width + 26;
+    ctx.translate(x,y);
+    ctx.fillStyle = color;
+    roundRect(ctx, -w/2, -20, w, 40, 20); ctx.fill();
+    ctx.fillStyle = textColor;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(text, 0, 2);
+    ctx.restore();
+  }
+  function drawSideLabel(ctx,x,y,text,bg){
+    ctx.save();
+    ctx.font = "600 20px Poppins, sans-serif";
+    var w = ctx.measureText(text).width + 24;
+    ctx.globalAlpha = 0.88;
+    ctx.fillStyle = bg;
+    roundRect(ctx, x, y - 30, w, 36, 18); ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 12, y - 11);
+    ctx.restore();
+  }
+  function shotsAreMixed(){
+    var mine = false, theirs = false;
+    state.shots.forEach(function(c){
+      if(c.dataset && c.dataset.from === 'you') theirs = true; else mine = true;
+    });
+    return mine && theirs;
+  }
+  function shotLabel(i){
+    var c = state.shots[i];
+    return (c && c.dataset && c.dataset.from === 'you') ? 'you ♡' : 'me ♡';
+  }
+  function drawKiss(ctx,x,y,size,color,alpha){
+    ctx.save();
+    ctx.globalAlpha = alpha == null ? 1 : alpha;
+    ctx.fillStyle = color;
+    ctx.translate(x,y);
+    ctx.beginPath();
+    ctx.moveTo(-size,0);
+    ctx.bezierCurveTo(-size*0.6,-size*0.55,-size*0.1,-size*0.15,0,0);
+    ctx.bezierCurveTo(size*0.1,-size*0.15,size*0.6,-size*0.55,size,0);
+    ctx.bezierCurveTo(size*0.55,size*0.3,-size*0.55,size*0.3,-size,0);
+    ctx.fill();
+    ctx.restore();
+  }
+  function drawCherry(ctx,x,y,size,color,alpha){
+    ctx.save();
+    ctx.globalAlpha = alpha == null ? 1 : alpha;
+    ctx.translate(x,y);
+    ctx.strokeStyle = '#5E8C3A'; ctx.lineWidth = Math.max(2, size*0.08); ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-size*0.35, size*0.3); ctx.quadraticCurveTo(-size*0.2, -size*0.3, size*0.1, -size*0.6);
+    ctx.moveTo(size*0.35, size*0.35); ctx.quadraticCurveTo(size*0.25, -size*0.2, size*0.1, -size*0.6);
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(-size*0.35, size*0.45, size*0.3, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(size*0.35, size*0.5, size*0.3, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.6)';
+    ctx.beginPath(); ctx.arc(-size*0.45, size*0.36, size*0.08, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  function drawCrown(ctx,x,y,size,color,alpha){
+    ctx.save();
+    ctx.globalAlpha = alpha == null ? 1 : alpha;
+    ctx.translate(x,y);
+    ctx.fillStyle = '#FFC94D';
+    ctx.beginPath();
+    ctx.moveTo(-size, size*0.45); ctx.lineTo(-size, -size*0.35); ctx.lineTo(-size*0.5, size*0.05);
+    ctx.lineTo(0, -size*0.6); ctx.lineTo(size*0.5, size*0.05); ctx.lineTo(size, -size*0.35);
+    ctx.lineTo(size, size*0.45); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = color;
+    [-size*0.5, 0, size*0.5].forEach(function(cx){
+      ctx.beginPath(); ctx.arc(cx, size*0.25, size*0.12, 0, Math.PI*2); ctx.fill();
+    });
+    ctx.restore();
+  }
+  function drawCloud(ctx,x,y,size,color,alpha){
+    ctx.save();
+    ctx.globalAlpha = alpha == null ? 1 : alpha;
+    ctx.translate(x,y);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.shadowColor = color; ctx.shadowBlur = size*0.35;
+    ctx.beginPath();
+    [[-size*0.5, size*0.1, size*0.38], [0, -size*0.15, size*0.5], [size*0.5, size*0.1, size*0.38]].forEach(function(c){
+      ctx.moveTo(c[0] + c[2], c[1]);
+      ctx.arc(c[0], c[1], c[2], 0, Math.PI*2);
+    });
+    ctx.fill();
+    ctx.restore();
+  }
+  function roundRect(ctx,x,y,w,h,r){
+    if(typeof r === 'number') r = {tl:r,tr:r,br:r,bl:r};
+    ctx.beginPath();
+    ctx.moveTo(x+r.tl,y);
+    ctx.lineTo(x+w-r.tr,y); ctx.arcTo(x+w,y,x+w,y+r.tr,r.tr);
+    ctx.lineTo(x+w,y+h-r.br); ctx.arcTo(x+w,y+h,x+w-r.br,y+h,r.br);
+    ctx.lineTo(x+r.bl,y+h); ctx.arcTo(x,y+h,x,y+h-r.bl,r.bl);
+    ctx.lineTo(x,y+r.tl); ctx.arcTo(x,y,x+r.tl,y,r.tl);
+    ctx.closePath();
+  }
+  function seeded(i){ var x = Math.sin(i*999)*10000; return x - Math.floor(x); }
+
+  function scatterDecor(ctx, kinds, w, h, accent){
+    var items = [];
+    if(kinds.indexOf('hearts-light') !== -1) items.push({kind:'heart', n:6, size:16, area:'edge'});
+    if(kinds.indexOf('hearts') !== -1) items.push({kind:'heart', n:10, size:18, area:'edge'});
+    if(kinds.indexOf('hearts-dense') !== -1) items.push({kind:'heart', n:22, size:13, area:'border'});
+    if(kinds.indexOf('sparkle') !== -1) items.push({kind:'sparkle', n:10, size:9, area:'edge'});
+    if(kinds.indexOf('fun') !== -1) items.push({kind:'star', n:8, size:14, area:'edge'});
+    var seedBase = 1;
+    items.forEach(function(group){
+      for(var i=0;i<group.n;i++){
+        var rx = seeded(seedBase); var ry = seeded(seedBase+0.5); seedBase += 1.37;
+        var x,y;
+        if(group.area === 'border'){
+          var edge = Math.floor(rx*4);
+          if(edge===0){ x = rx*w; y = 14 + ry*10; }
+          else if(edge===1){ x = rx*w; y = h-14-ry*10; }
+          else if(edge===2){ x = 14+rx*10; y = ry*h; }
+          else { x = w-14-rx*10; y = ry*h; }
+        } else {
+          x = 20 + rx*(w-40);
+          y = 20 + ry*(h-40);
+          if(x > w*0.18 && x < w*0.82 && y > h*0.18 && y < h*0.82) continue;
+        }
+        var alpha = 0.55 + ry*0.35;
+        if(group.kind === 'heart') drawHeart(ctx,x,y,group.size,accent,alpha);
+        if(group.kind === 'sparkle') drawSparkleMark(ctx,x,y,group.size,accent,alpha);
+        if(group.kind === 'star') drawStar(ctx,x,y,group.size,accent,alpha);
+      }
+    });
+  }
+
+  var STICKER_DRAWERS = {
+    heart:drawHeart, star:drawStar, flower:drawFlower, bow:drawBow, sparkle:drawSparkleMark,
+    kiss:drawKiss, cherry:drawCherry, crown:drawCrown, cloud:drawCloud
+  };
+  function hasStickers(){
+    return STICKERS.some(function(s){ return state.stickers[s.id]; });
+  }
+  // t = seconds into the loop; when `moving` is false every sticker sits still (t is ignored)
+  function drawStickerPicks(ctx, w, h, accent, textColor, t, moving){
+    var picks = STICKERS.filter(function(s){ return state.stickers[s.id]; });
+    if(!picks.length) return;
+    // corners and sides first; top/bottom center last because the header and date live there
+    var positions = [
+      {x:0.14,y:0.10},{x:0.86,y:0.10},{x:0.14,y:0.9},{x:0.86,y:0.9},
+      {x:0.08,y:0.5},{x:0.92,y:0.5},{x:0.08,y:0.3},{x:0.92,y:0.7},
+      {x:0.92,y:0.3},{x:0.08,y:0.7},{x:0.5,y:0.06},{x:0.5,y:0.94}
+    ];
+    picks.forEach(function(s, idx){
+      var pos = positions[idx % positions.length];
+      var ph = idx * 1.3;                 // each sticker gets its own phase so they don't move in sync
+      var bob = 0, rot = 0, scale = 1, alpha = 0.95;
+      if(moving){
+        bob = wave(t, 2, ph) * 8;         // float up and down
+        rot = wave(t, 1, ph) * 0.18;      // tilt side to side
+        scale = 1 + wave(t, 3, ph) * 0.06;
+        if(s.kind === 'heart') scale += Math.max(0, wave(t, 3, ph)) * 0.15;   // heartbeat
+        if(s.kind === 'sparkle') alpha = 0.5 + 0.45 * (wave(t, 3, ph) * 0.5 + 0.5);  // twinkle
+        if(s.kind === 'star') rot = Math.PI * 2 * t / LOOP;                   // one full spin per loop
+      }
+      ctx.save();
+      ctx.translate(pos.x * w, pos.y * h + bob);
+      ctx.rotate(rot);
+      ctx.scale(scale, scale);
+      if(s.kind === 'word') drawWordBadge(ctx, 0, 0, s.text, accent, textColor);
+      else STICKER_DRAWERS[s.kind](ctx, 0, 0, 30 + (idx%3)*6, accent, alpha);
+      ctx.restore();
+    });
+  }
+
+  /* ---------------- compose ----------------
+     The strip is drawn in two layers:
+     1. buildBase() paints everything that never moves (background, photos, text) once
+        into an offscreen canvas. Filters on big photos are slow, so we never redo them per frame.
+     2. drawFrame() copies that base and draws the stickers on top — cheap enough to run
+        60 times a second, which is what makes the stickers move. */
+  var base = null;
+  var LAYOUTS = {
+    strip: drawStripLayout,
+    film: drawStripLayout,
+    grid: drawGridLayout,
+    polaroid: drawPolaroidLayout
+  };
+
+  function buildBase(){
+    var t = templateById(state.templateId);
+    var hex = colorHex(state.colorId || t.color);
+    var dark = isDarkHex(hex);
+    var filter = FILTERS.filter(function(f){ return f.id===state.filterId; })[0] || FILTERS[0];
+    var look = {
+      t: t,
+      hex: hex,
+      filterCss: filter.css,
+      isWhite: state.colorId === 'white',
+      isRomantic: state.colorId === 'romantic',
+      accent: dark ? '#FF8FB3' : (state.colorId === 'white' ? '#E14F7A' : shade(hex,-0.28)),
+      textColor: dark ? '#FFF6F8' : '#3B1626',
+      n: Math.max(state.shots.length, 1)
+    };
+    var canvas = document.createElement('canvas');
+    (LAYOUTS[t.layout] || drawStripLayout)(canvas, look);
+    base = {canvas:canvas, w:canvas.width, h:canvas.height, accent:look.accent};
+  }
+
+  function evenPx(v){ return Math.max(2, Math.round(v/2)*2); }   // video encoders want even sizes
+  function drawFrame(target, t, scale){
+    if(!base) buildBase();
+    var s = scale || 1;
+    var w = evenPx(base.w*s), h = evenPx(base.h*s);
+    if(target.width !== w || target.height !== h){ target.width = w; target.height = h; }
+    var ctx = target.getContext('2d');
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.clearRect(0,0,w,h);
+    ctx.setTransform(w/base.w, 0, 0, h/base.h, 0, 0);
+    ctx.drawImage(base.canvas, 0, 0);
+    drawStickerPicks(ctx, base.w, base.h, base.accent, '#fff', t, state.animated);
+    ctx.setTransform(1,0,0,1,0,0);
+  }
+
+  function drawHeader(ctx, text, w, color){
+    if(!text) return;
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center';
+    if(text === text.toUpperCase() && text !== 'xoxo'){
+      ctx.font = "700 30px 'Playfair Display', serif";
+    } else {
+      ctx.font = "600 40px 'Dancing Script', cursive";
+    }
+    ctx.fillText(text, w/2, 62);
+  }
+  function drawFooter(ctx, w, y, color){
+    if(state.customText){
+      ctx.fillStyle = color;
+      ctx.textAlign = 'center';
+      ctx.font = "600 30px 'Dancing Script', cursive";
+      ctx.fillText(state.customText.slice(0,40), w/2, y);
+      y += 38;
+    }
+    if(state.showDate) drawFooterDate(ctx, w, y, color);
+  }
+  function drawBorder(ctx, w, h, color, thin){
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = thin ? 3 : 10;
+    roundRect(ctx, ctx.lineWidth/2, ctx.lineWidth/2, w-ctx.lineWidth, h-ctx.lineWidth, 26);
+    ctx.stroke();
+    ctx.restore();
+  }
+  function drawSprockets(ctx, w, h){
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,246,248,0.88)';
+    for(var y = 24; y < h - 30; y += 46){
+      roundRect(ctx, 22, y, 28, 20, 5); ctx.fill();
+      roundRect(ctx, w - 50, y, 28, 20, 5); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // one photo per row; "film" is the same strip with sprocket holes in wider margins
+  function drawStripLayout(canvas, L){
+    var film = L.t.layout === 'film';
+    var PAD = film ? 76 : 40, CELL = 640, GAP = film ? 20 : 26;
+    var headerH = L.t.header ? 96 : 40;
+    var footerH = (state.showDate || state.customText) ? 130 : 60;
+    var W = CELL + PAD*2;
+    var H = headerH + L.n*CELL + (L.n-1)*GAP + footerH + PAD;
+    canvas.width = W; canvas.height = H;
+    var ctx = canvas.getContext('2d');
+    paintBackground(ctx, W, H, L.hex, L.isRomantic, L.isWhite);
+    if(film) drawSprockets(ctx, W, H);
+    else drawBorder(ctx, W, H, L.accent, L.t.thin);
+    drawHeader(ctx, L.t.header, W, L.textColor);
+
+    var mixed = shotsAreMixed();
+    for(var s=0; s<L.n; s++){
+      var y = headerH + s*(CELL+GAP);
+      drawPhotoInto(ctx, s, PAD, y, CELL, CELL, L.filterCss, film ? 6 : 16);
+      if(mixed) drawSideLabel(ctx, PAD + 18, y + CELL - 18, shotLabel(s), L.accent);
+    }
+    scatterDecor(ctx, L.t.decor, W, H, L.accent);
+    drawFooter(ctx, W, headerH + L.n*CELL + (L.n-1)*GAP + 46, L.textColor);
+  }
+
+  // two photos per row; an odd last photo sits centered
+  function drawGridLayout(canvas, L){
+    var PAD = 40, GAP = 20;
+    var cols = L.n === 1 ? 1 : 2;
+    var CELL = cols === 1 ? 700 : 340;
+    var rows = Math.ceil(L.n / cols);
+    var headerH = L.t.header ? 96 : 40;
+    var footerH = (state.showDate || state.customText) ? 130 : 60;
+    var W = PAD*2 + 700;
+    var H = headerH + rows*CELL + (rows-1)*GAP + footerH + PAD;
+    canvas.width = W; canvas.height = H;
+    var ctx = canvas.getContext('2d');
+    paintBackground(ctx, W, H, L.hex, L.isRomantic, L.isWhite);
+    drawBorder(ctx, W, H, L.accent, L.t.thin);
+    drawHeader(ctx, L.t.header, W, L.textColor);
+
+    var mixed = shotsAreMixed();
+    for(var i=0; i<L.n; i++){
+      var row = Math.floor(i/cols), col = i % cols;
+      var inRow = Math.min(cols, L.n - row*cols);
+      var rowW = inRow*CELL + (inRow-1)*GAP;
+      var x = (W - rowW)/2 + col*(CELL+GAP);
+      var y = headerH + row*(CELL+GAP);
+      drawPhotoInto(ctx, i, x, y, CELL, CELL, L.filterCss, 14);
+      if(mixed) drawSideLabel(ctx, x + 12, y + CELL - 12, shotLabel(i), L.accent);
+    }
+    scatterDecor(ctx, L.t.decor, W, H, L.accent);
+    drawFooter(ctx, W, headerH + rows*CELL + (rows-1)*GAP + 46, L.textColor);
+  }
+
+  function drawPolaroidLayout(canvas, L){
+    var cols = L.n <= 1 ? 1 : 2;
+    var rows = Math.ceil(L.n/cols);
+    var cardW = 300, cardH = 360, gap = 34, pad = 44, headerH = 90;
+    var w = cols*cardW + (cols+1)*gap;
+    var h = headerH + rows*cardH + (rows+1)*gap + pad;
+    canvas.width = w; canvas.height = h;
+    var ctx = canvas.getContext('2d');
+    paintBackground(ctx, w, h, L.hex, L.isRomantic, L.isWhite);
+    ctx.fillStyle = L.textColor;
+    ctx.font = "600 30px 'Dancing Script', cursive";
+    ctx.textAlign = 'center';
+    ctx.fillText('Our Little Photo Booth ♡', w/2, 54);
+    var mixed = shotsAreMixed();
+    for(var i=0;i<L.n;i++){
+      var col = i % cols, row = Math.floor(i/cols);
+      var cx0 = gap + col*(cardW+gap);
+      var cy0 = headerH + gap + row*(cardH+gap);
+      var rot = (i % 2 === 0 ? -1 : 1) * (2 + (i%3));
+      ctx.save();
+      ctx.translate(cx0+cardW/2, cy0+cardH/2);
+      ctx.rotate(rot*Math.PI/180);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.shadowColor = 'rgba(59,22,38,0.25)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 8;
+      roundRect(ctx, -cardW/2, -cardH/2, cardW, cardH, 10); ctx.fill();
+      ctx.shadowColor = 'transparent';
+      var photoSize = cardW - 28;
+      drawPhotoInto(ctx, i, -photoSize/2, -cardH/2+14, photoSize, photoSize, L.filterCss);
+      if(mixed) drawSideLabel(ctx, -photoSize/2 + 12, -cardH/2 + 14 + photoSize - 12, shotLabel(i), L.accent);
+      ctx.fillStyle = '#3B1626';   // the card is always white, so its caption is always dark
+      ctx.font = "500 16px 'Dancing Script', cursive";
+      ctx.textAlign = 'center';
+      ctx.fillText(i===L.n-1 && state.customText ? state.customText.slice(0,20) : '♡', 0, cardH/2 - 18);
+      ctx.restore();
+    }
+    scatterDecor(ctx, L.t.decor, w, h, L.accent);
+    if(state.showDate) drawFooterDate(ctx, w, h-14, L.textColor);
+  }
+
+  function paintBackground(ctx,w,h,base,isRomantic,isWhite){
+    if(isWhite){
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0,0,w,h);
+      return;
+    }
+    if(isRomantic){
+      var g = ctx.createLinearGradient(0,0,0,h);
+      g.addColorStop(0,'#FFF6F8'); g.addColorStop(1, base);
+      ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
+      return;
+    }
+    var g2 = ctx.createLinearGradient(0,0,w,h);
+    g2.addColorStop(0, shade(base,0.12));
+    g2.addColorStop(1, shade(base,-0.08));
+    ctx.fillStyle = g2; ctx.fillRect(0,0,w,h);
+  }
+
+  function drawPhotoInto(ctx, index, x, y, w, h, filterCss, radius){
+    ctx.save();
+    if(radius){ roundRect(ctx,x,y,w,h,radius); ctx.clip(); }
+    var shotCanvas = state.shots[index];
+    if(shotCanvas){
+      ctx.filter = filterCss;
+      ctx.drawImage(shotCanvas, x, y, w, h);
+      ctx.filter = 'none';
+    } else {
+      var g = ctx.createLinearGradient(x,y,x+w,y+h);
+      g.addColorStop(0,'#FFC2D6'); g.addColorStop(1,'#FF8FB3');
+      ctx.fillStyle = g; ctx.fillRect(x,y,w,h);
+    }
+    ctx.restore();
+  }
+
+  function drawFooterDate(ctx, w, y, textColor){
+    var label = state.dateLabel && state.dateLabel !== 'date' ? state.dateLabel + ' — ' : '';
+    ctx.fillStyle = textColor;
+    ctx.globalAlpha = 0.85;
+    ctx.font = "600 20px Poppins, sans-serif";
+    ctx.textAlign = 'center';
+    ctx.fillText(label + formatDate(), w/2, y);
+    ctx.globalAlpha = 1;
+  }
+
+  /* ---------------- preview / result render ---------------- */
+  var anim = {raf:0};
+  function playAnim(target){
+    stopAnim();
+    if(!state.animated || !hasStickers()){ drawFrame(target, 0); return; }
+    var start = performance.now();
+    (function tick(now){
+      drawFrame(target, ((now - start)/1000) % LOOP);
+      anim.raf = requestAnimationFrame(tick);
+    })(start);
+  }
+  function stopAnim(){ cancelAnimationFrame(anim.raf); anim.raf = 0; }
+
+  var previewTimer = null;
+  function renderPreview(){
+    clearTimeout(previewTimer);
+    previewTimer = setTimeout(function(){ buildBase(); playAnim($('previewCanvas')); }, 60);
+  }
+  function renderResult(){
+    buildBase();
+    playAnim($('resultCanvas'));
+    $('videoBtn').hidden = !(state.animated && hasStickers() && pickVideoType());
+  }
+
+  /* ---------------- download / share ---------------- */
+  function saveBlob(blob, filename){
+    var downloadsReady = (window.claude && window.claude.use) ? window.claude.use('downloads') : Promise.resolve(null);
+    return Promise.resolve(downloadsReady).then(function(downloads){
+      if(!downloads){
+        // self-hosted copy: a plain download link works here
+        try{
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url; a.download = filename;
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+          showToast('Saved to your device ♡');
+        }catch(e){
+          showToast("Couldn't save the file. Press and hold the picture to save it ♡");
+        }
+        return;
+      }
+      return downloads.save({ filename:filename, data: blob }).then(function(){
+        showToast('Saved to your device ♡');
+      }, function(err){
+        var code = err && err.code;
+        if(code === 'declined'){ /* no message needed */ }
+        else if(code === 'rate_limited'){ showToast('Please wait a moment and try again.'); }
+        else { showToast("Couldn't save the file. Please try again."); }
+      });
+    });
+  }
+
+  $('downloadBtn').addEventListener('click', function(){
+    var canvas = $('resultCanvas');
+    drawFrame(canvas, 0);   // save the "resting" pose, not a random mid-wiggle frame
+    canvas.toBlob(function(blob){
+      if(!blob){ showToast("Couldn't create the image. Please try again."); return; }
+      saveBlob(blob, 'our-little-photo-booth.png');
+    }, 'image/png');
+  });
+
+  /* moving stickers → a short video, recorded straight from a canvas */
+  function pickVideoType(){
+    if(!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) return '';
+    var types = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
+    for(var i=0;i<types.length;i++){ if(MediaRecorder.isTypeSupported(types[i])) return types[i]; }
+    return '';
+  }
+  var recording = false;
+  $('videoBtn').addEventListener('click', function(){
+    var type = pickVideoType();
+    if(recording || !type) return;
+    recording = true;
+    var btn = this;
+    btn.disabled = true; btn.textContent = 'RECORDING… ✨';
+    var scale = Math.min(1, 1440 / Math.max(base.w, base.h));
+    var rc = document.createElement('canvas');
+    drawFrame(rc, 0, scale);
+    var stream = rc.captureStream(30);
+    var rec = new MediaRecorder(stream, {mimeType:type, videoBitsPerSecond:5000000});
+    var chunks = [];
+    rec.ondataavailable = function(e){ if(e.data && e.data.size) chunks.push(e.data); };
+    rec.onstop = function(){
+      stream.getTracks().forEach(function(tr){ tr.stop(); });
+      recording = false;
+      btn.disabled = false; btn.textContent = 'DOWNLOAD VIDEO ✨';
+      var ext = type.indexOf('mp4') !== -1 ? 'mp4' : 'webm';
+      saveBlob(new Blob(chunks, {type:type.split(';')[0]}), 'our-little-photo-booth.' + ext);
+    };
+    var start = performance.now();
+    rec.start();
+    (function tick(now){
+      var t = (now - start)/1000;
+      if(t >= LOOP*2){ rec.stop(); return; }   // two full loops
+      drawFrame(rc, t % LOOP, scale);
+      requestAnimationFrame(tick);
+    })(start);
+  });
+
+  $('shareBtn').addEventListener('click', function(){
+    var canvas = $('resultCanvas');
+    drawFrame(canvas, 0);
+    canvas.toBlob(async function(blob){
+      if(!blob) return;
+      if(navigator.canShare && navigator.share){
+        try{
+          var file = new File([blob], 'our-little-photo-booth.png', {type:'image/png'});
+          if(navigator.canShare({files:[file]})){
+            await navigator.share({ files:[file], title:'Our Little Photo Booth', text:'A little memory, just for us ♡' });
+            return;
+          }
+        }catch(e){ /* user cancelled or share failed, fall through */ return; }
+      }
+      showToast('Sharing isn\'t supported here — try downloading instead ♡');
+    }, 'image/png');
+  });
+
+  /* init */
+  goToStep('count', true);
+})();
+</script>
+
+</body></html>
