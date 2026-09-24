@@ -528,6 +528,16 @@
   .inapp-actions .btn{flex:1; min-width:130px; min-height:44px; padding:10px 12px; font-size:.78rem; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;}
   .inapp-close{position:absolute; top:4px; right:4px; width:40px; height:40px; border:none; background:none; color:#5C3A06; font-size:1.3rem; line-height:1;}
   .welcome-card .inapp{margin:14px 0 4px; padding-right:14px;}
+  /* sending / receiving a design in the live room */
+  .live-design{margin-top:14px;}
+  .live-design .btn{min-height:48px; padding:12px 16px; font-size:.82rem;}
+  .live-design .btn[disabled]{opacity:.55;}
+  .live-design-hint{font-size:.76rem; color:var(--rose-800); opacity:.8; text-align:center; margin-top:6px; line-height:1.4;}
+  .design-modal{overflow-y:auto; z-index:90;}   /* above the custom frame editor, below "are you sure?" */
+  .design-modal .code-card{margin:auto;}
+  .design-preview{display:flex; justify-content:center; margin:4px 0 12px;}
+  .design-preview canvas{max-height:42vh; width:auto; max-width:100%; border-radius:12px; box-shadow:var(--shadow-soft);}
+  .design-modal .switch-row{font-size:.84rem; line-height:1.35;}
   .welcome-card.with-inapp{padding:26px 22px;}
   .welcome-card.with-inapp h2{margin-bottom:0;}
   /* a taller card (e.g. with the note above) scrolls instead of being cut off on short screens */
@@ -581,6 +591,20 @@
       <div class="code-actions">
         <button class="btn btn-ghost" id="confirmYes"></button>
         <button class="btn btn-primary" id="confirmNo"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- a design your love sent from the live room: shown on your own photos, you choose -->
+  <div class="code-modal design-modal" id="designModal" role="dialog" aria-modal="true" aria-labelledby="designTitle" hidden>
+    <div class="code-card">
+      <h3 id="designTitle">Your love sent a design ♡</h3>
+      <p>Here it is with your photos:</p>
+      <div class="design-preview"><canvas id="designCanvas" width="10" height="10"></canvas></div>
+      <label class="switch-row" id="designSaveRow" hidden><input type="checkbox" id="designSave" checked><span id="designSaveText">Also save their frame to my frames</span></label>
+      <div class="code-actions">
+        <button class="btn btn-ghost" id="designKeep">KEEP MINE</button>
+        <button class="btn btn-primary" id="designUse">USE THEIRS ♡</button>
       </div>
     </div>
   </div>
@@ -718,7 +742,7 @@
       <div class="privacy-note">🔒 Your photos stay on your device. We don't upload or store your photos.</div>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.3.2</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.4</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -932,6 +956,11 @@
                 <option value="Love Day">Love Day</option>
                 <option value="Best Day">Best Day</option>
               </select>
+            </div>
+            <!-- only while you're in a live room together -->
+            <div class="live-design" id="liveDesign" hidden>
+              <button type="button" class="btn btn-secondary btn-block" id="sendDesignBtn">SEND MY DESIGN TO MY LOVE ♡</button>
+              <p class="live-design-hint">They'll see it on their own photos and choose whether to use it.</p>
             </div>
             <button type="button" class="ldr-toggle" id="ldrToggle" aria-expanded="false">♡ Long distance — swap photo codes</button>
             <div class="ldr-row" id="ldrCustomize" hidden>
@@ -2343,6 +2372,7 @@
         ? 'Waiting for your love to join…'
         : 'Joining room ' + live.code + '…';
     }
+    syncLiveDesign();
     updateShutter();
   }
   function updateShutter(){
@@ -2590,6 +2620,10 @@
         }
         break;
       case 'photo': receivePhoto(msg); break;
+      case 'design': receiveDesign(msg); break;
+      case 'design-reply':
+        showToast(msg.used === true ? 'Your love is using your design ♡' : 'Your love kept their own design ♡');
+        break;
       case 'full':
         failLive('That room already has two people in it ♡');
         break;
@@ -2656,10 +2690,17 @@
       blob.arrayBuffer().then(function(buf){ sendLive({type:'photo', round:r, buf:buf}); });
     }, 'image/jpeg', 0.9);
   }
+  // PeerJS hands binary data over as an ArrayBuffer — or as a Uint8Array when a big message
+  // arrived in pieces (photos always do). Accept both; anything else can't be a picture.
+  function binaryOf(x){
+    if(x instanceof ArrayBuffer) return new Uint8Array(x);
+    if(x instanceof Uint8Array) return x;
+    return null;
+  }
   function receivePhoto(msg){
-    var buf = msg.buf;
-    if(!(buf instanceof ArrayBuffer) || buf.byteLength > 4*1024*1024 || typeof msg.round !== 'number') return;
-    fileToShot(new Blob([buf], {type:'image/jpeg'})).then(function(c){
+    var bytes = binaryOf(msg.buf);
+    if(!bytes || bytes.byteLength > 4*1024*1024 || typeof msg.round !== 'number') return;
+    fileToShot(new Blob([bytes], {type:'image/jpeg'})).then(function(c){
       c.dataset.from = 'you';
       if(!replaceTheirs(msg.round, c)) live.early[msg.round] = c;   // arrived before our own CLICK
     }).catch(function(){ /* keep the video-call frame */ });
@@ -4017,7 +4058,7 @@
   var CF_BASES = ['classic','minimal','film','grid'];   // plus every illustrated theme (added below)
   function cfUid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
   function openCfEditor(rec){
-    cf.draft = rec ? JSON.parse(JSON.stringify({id:rec.id, name:rec.name, baseId:rec.baseId, colorId:rec.colorId, wiggle:rec.wiggle, created:rec.created}))
+    cf.draft = rec ? JSON.parse(JSON.stringify({id:rec.id, srcId:rec.srcId, name:rec.name, baseId:rec.baseId, colorId:rec.colorId, wiggle:rec.wiggle, created:rec.created}))
                    : {id:cfUid(), name:'', baseId:'classic', colorId:'pink', wiggle:true, created:Date.now()};
     cf.draft.items = rec ? rec.items.map(function(it){ return {id:it.id, pos:it.pos, size:it.size, blob:it.blob}; }) : [];
     cf.isNew = !rec;
@@ -4159,6 +4200,7 @@
     if(!d.items.length){ showToast('Add at least one image first ♡'); return; }
     d.name = (d.name || '').trim() || 'My frame';
     var rec = {id:d.id, name:d.name, baseId:d.baseId, colorId:d.colorId, wiggle:d.wiggle, created:d.created,
+               srcId:d.srcId,   // set on a frame your love sent you, so a newer version replaces this copy
                items:d.items.map(function(it){ return {id:it.id, pos:it.pos, size:it.size, blob:it.blob}; })};
     var old = TEMPLATES.filter(function(t){ return t.id === 'custom-' + rec.id; })[0];
     if(old) old.rec.items.forEach(function(it){   // forget images this edit removed
@@ -4195,6 +4237,223 @@
     });
   });
   loadCustomFrames();
+
+  /* ================= SEND MY DESIGN (live room) =================
+     In a live room, "Send my design" sends your choices — frame, color, filter, stickers, text,
+     date — to your love. Their phone shows the design on THEIR photos and asks USE THEIRS /
+     KEEP MINE. If it uses one of your custom frames, the images travel along phone to phone
+     (like the photos) and they can keep the frame.
+     Everything that arrives is checked first: only known ids, short texts, and real images of a
+     sensible size, which we re-draw ourselves — a message can't make the app do anything else. */
+  var DESIGN_KEYS = ['templateId','colorId','showTitle','popout','filterId','stickers','customText','showDate','dateLabel','animated'];
+  var DATE_LABELS = ['date','Our Date','Love Day','Best Day'];
+  var MAX_FRAME_IMG = 2*1024*1024, MAX_FRAME_TOTAL = 10*1024*1024;
+  var designOffer = null;   // {design, rec} waiting for USE THEIRS / KEEP MINE
+
+  function copyStickers(src){
+    var out = {};
+    STICKERS.forEach(function(s){ if(src && src[s.id] === true) out[s.id] = true; });
+    return out;
+  }
+  function currentDesign(){
+    var d = {};
+    DESIGN_KEYS.forEach(function(k){ d[k] = k === 'stickers' ? copyStickers(state.stickers) : state[k]; });
+    return d;
+  }
+  function findCustomRec(test){
+    for(var i=0;i<TEMPLATES.length;i++){ if(TEMPLATES[i].custom && test(TEMPLATES[i].rec)) return TEMPLATES[i].rec; }
+    return null;
+  }
+
+  /* ---- sending ---- */
+  function packFrame(rec){
+    return Promise.all(rec.items.map(function(it){ return it.blob.arrayBuffer(); })).then(function(bufs){
+      return {id:rec.srcId || rec.id, name:rec.name, baseId:rec.baseId, colorId:rec.colorId, wiggle:!!rec.wiggle,
+              items:rec.items.map(function(it, i){ return {pos:it.pos, size:it.size, buf:bufs[i]}; })};
+    });
+  }
+  $('sendDesignBtn').addEventListener('click', function(){
+    var btn = this;
+    if(!live.connected){ showToast("Your love isn't in the room right now ♡"); return; }
+    var d = currentDesign(), t = templateById(d.templateId);
+    btn.disabled = true;
+    (t.custom ? packFrame(t.rec) : Promise.resolve(null)).then(function(frame){
+      sendLive({type:'design', design:d, frame:frame});
+      showToast('Sent to your love ♡');
+    }).catch(function(){
+      showToast("Couldn't send your design. Please try again ♡");
+    }).then(function(){
+      setTimeout(function(){ btn.disabled = false; }, 2500);   // no accidental double sends
+    });
+  });
+  function syncLiveDesign(){ $('liveDesign').hidden = !live.connected; }
+
+  /* ---- receiving: check everything ---- */
+  function cleanDesign(raw){
+    if(!raw || typeof raw !== 'object') return null;
+    function bool(v, dflt){ return typeof v === 'boolean' ? v : dflt; }
+    return {
+      templateId: typeof raw.templateId === 'string' ? raw.templateId.slice(0, 60) : '',
+      colorId: COLOR_OPTIONS.some(function(c){ return c.id === raw.colorId; }) ? raw.colorId : null,
+      showTitle: bool(raw.showTitle, true),
+      popout: bool(raw.popout, true),
+      filterId: FILTERS.some(function(f){ return f.id === raw.filterId; }) ? raw.filterId : 'original',
+      stickers: copyStickers(raw.stickers),
+      customText: typeof raw.customText === 'string' ? raw.customText.replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 40) : '',
+      showDate: bool(raw.showDate, true),
+      dateLabel: DATE_LABELS.indexOf(raw.dateLabel) !== -1 ? raw.dateLabel : 'date',
+      animated: bool(raw.animated, true)
+    };
+  }
+  function unpackFrame(f){
+    var srcId = f && typeof f.id === 'string' && /^[a-z0-9]{4,32}$/.test(f.id) ? f.id : null;
+    if(!srcId || !Array.isArray(f.items) || !f.items.length || f.items.length > 12) return Promise.reject(new Error('frame'));
+    // one of your own frames coming back to you: just use yours
+    var own = findCustomRec(function(r){ return r.id === srcId && !r.srcId; });
+    if(own) return Promise.resolve(own);
+    var baseOk = CF_BASES.indexOf(f.baseId) !== -1 ||
+      TEMPLATES.some(function(t){ return t.id === f.baseId && t.tab === 'illustrated'; });
+    var total = 0;
+    var itemsOk = f.items.every(function(it){
+      var bytes = it && binaryOf(it.buf);
+      if(!bytes || bytes.byteLength > MAX_FRAME_IMG) return false;
+      total += bytes.byteLength;
+      return CUSTOM_POSITIONS.some(function(p){ return p.id === it.pos; }) && typeof it.size === 'number' && isFinite(it.size);
+    });
+    if(!baseOk || !itemsOk || total > MAX_FRAME_TOTAL) return Promise.reject(new Error('frame'));
+    var old = findCustomRec(function(r){ return r.srcId === srcId; });   // they sent it before: update that copy
+    var rec = {
+      id: old ? old.id : cfUid(), srcId: srcId,
+      name: (typeof f.name === 'string' ? f.name.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 24) : '') || 'Their frame',
+      baseId: f.baseId,
+      colorId: COLOR_OPTIONS.some(function(c){ return c.id === f.colorId; }) ? f.colorId : templateById(f.baseId).color,
+      wiggle: f.wiggle === true, created: old ? old.created : Date.now(), items: []
+    };
+    // every image is decoded and re-drawn by us (prepareImage), so what we keep is always a clean PNG
+    return Promise.all(f.items.map(function(it){
+      return prepareImage(new Blob([binaryOf(it.buf)])).then(function(blob){
+        var item = {id:cfUid(), pos:it.pos, size:clamp(Math.round(it.size), 12, 60), blob:blob};
+        return loadImage(blob).then(function(img){ customImages[item.id] = img; return item; });
+      });
+    })).then(function(items){ rec.items = items; return rec; });
+  }
+  function receiveDesign(msg){
+    var d = cleanDesign(msg.design);
+    if(!d) return;
+    var ready;
+    if(/^custom-/.test(d.templateId)){
+      ready = unpackFrame(msg.frame).then(function(rec){ d.templateId = 'custom-' + rec.id; return rec; });
+    } else if(TEMPLATES.some(function(t){ return t.id === d.templateId && !t.custom; })){
+      ready = Promise.resolve(null);
+    } else {
+      // most likely your love's page is a newer version with a frame this one doesn't have yet
+      showToast("Your love sent a frame this page doesn't know yet — reload to update ♡");
+      return;
+    }
+    ready.then(function(rec){ offerDesign(d, rec); }, function(){
+      showToast("Your love sent a design, but it couldn't be opened ♡");
+    });
+  }
+
+  /* ---- showing it on your own photos ---- */
+  // run `work` with the design's choices, then put yours back exactly as they were
+  function withDesign(d, work){
+    var saved = {};
+    DESIGN_KEYS.forEach(function(k){ saved[k] = state[k]; state[k] = d[k]; });
+    try{ return work(); }
+    finally{ DESIGN_KEYS.forEach(function(k){ state[k] = saved[k]; }); }
+  }
+  function renderDesignPreview(d, rec){
+    var t = rec ? customTemplate(rec) : templateById(d.templateId);
+    withDesign(d, function(){
+      var b = makeBase(t, d.colorId || t.color, 1);
+      var k = Math.min(0.6, 1100 / b.h);   // sharp on phones, without a huge canvas
+      var c = $('designCanvas'), ctx = c.getContext('2d');
+      c.width = Math.round(b.w*k); c.height = Math.round(b.h*k);
+      ctx.setTransform(k, 0, 0, k, 0, 0);
+      ctx.drawImage(b.canvas, 0, 0);
+      drawDecorLayer(ctx, b, 0, false);
+      drawStickerPicks(ctx, b.w, b.h, b.accent, '#fff', 0, false);
+      drawLabels(ctx, b);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+    });
+  }
+  function forgetImages(rec){ rec.items.forEach(function(it){ delete customImages[it.id]; }); }
+  function offerDesign(d, rec){
+    if(live.running){ setTimeout(function(){ offerDesign(d, rec); }, 1000); return; }   // not during a countdown
+    // a newer design replaces one that's still waiting
+    if(designOffer && designOffer.rec && designOffer.rec.srcId && designOffer.rec !== rec) forgetImages(designOffer.rec);
+    designOffer = {design:d, rec:rec};
+    var canSave = !!(rec && rec.srcId);
+    $('designSaveRow').hidden = !canSave;
+    $('designSave').checked = true;
+    if(canSave) $('designSaveText').textContent = 'Also save their frame "' + rec.name + '" to my frames';
+    renderDesignPreview(d, rec);
+    $('designModal').hidden = false;
+    $('designModal').scrollTop = 0;
+  }
+
+  /* ---- USE THEIRS / KEEP MINE ---- */
+  function syncDesignControls(){
+    Array.prototype.forEach.call($('filterChips').children, function(b){
+      var on = b.dataset.filter === state.filterId;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    Array.prototype.forEach.call($('stickerChips').children, function(b, i){
+      b.classList.toggle('active', !!state.stickers[STICKERS[i].id]);
+    });
+    $('customText').value = state.customText;
+    $('dateLabelSelect').value = state.dateLabel;
+    $('animToggle').checked = state.animated;
+    $('showDateToggle').checked = state.showDate;
+    $('titleToggle').checked = state.showTitle;
+    $('popoutToggle').checked = state.popout;
+    syncFrameSelection();
+    syncColorUI();
+  }
+  function applyDesign(d){
+    var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    DESIGN_KEYS.forEach(function(k){
+      if(k === 'animated' && reduce) return;   // this phone asked for less motion: keep its own choice
+      state[k] = k === 'stickers' ? copyStickers(d.stickers) : d[k];
+    });
+    if(!state.colorId) state.colorId = templateById(state.templateId).color;
+    syncDesignControls();
+    if(state.currentStep === 'customize'){ prepCustomizeDefaults(); showFrameTab(templateById(state.templateId).tab); renderPreview(); }
+    else if(state.currentStep === 'result') renderResult();
+  }
+  function saveReceivedFrame(rec){
+    var old = TEMPLATES.filter(function(t){ return t.id === 'custom-' + rec.id; })[0];
+    if(old && old.rec !== rec) forgetImages(old.rec);   // the older copy's images
+    registerCustom(rec);
+    return customDbRun('readwrite', function(store){ return store.put(rec); }).then(function(res){
+      if(res !== null) keepStorage();
+      return res !== null;
+    }, function(){ return false; });
+  }
+  function answerDesign(used){
+    var o = designOffer;
+    if(!o) return;
+    designOffer = null;
+    $('designModal').hidden = true;
+    var theirFrame = o.rec && o.rec.srcId;
+    var saving = theirFrame && $('designSave').checked;
+    var saved = saving ? saveReceivedFrame(o.rec) : Promise.resolve(false);
+    if(theirFrame && !saving){
+      if(used) registerCustom(o.rec);   // used just this time: it stays until the page is closed
+      else forgetImages(o.rec);
+    }
+    if(used) applyDesign(o.design);
+    sendLive({type:'design-reply', used:used});
+    saved.then(function(ok){
+      if(saving && !ok) showToast("Couldn't save their frame on this device — it works until you close the page");
+      else if(used) showToast(saving ? "Using your love's design ♡ Their frame is in your frames" : "Using your love's design ♡");
+      else if(saving) showToast('Their frame is saved in your frames ♡');
+    });
+  }
+  $('designUse').addEventListener('click', function(){ answerDesign(true); });
+  $('designKeep').addEventListener('click', function(){ answerDesign(false); });
 
   /* ---------------- frame decorations while posing ----------------
      The frame's illustrations are drawn on top of the camera, lined up exactly where they'll
