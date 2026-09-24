@@ -512,6 +512,25 @@
   .live-tiles .countdown, .live-tiles .flash{z-index:2; border-radius:18px;}
   .live-rounds{justify-content:center; margin-top:14px;}
   .live-leave{text-align:center; margin-top:14px;}
+  .live-tips{background:var(--white); border-radius:14px; padding:10px 14px 2px; margin:16px 0 0; box-shadow:var(--shadow-soft); font-size:.8rem; line-height:1.45; color:var(--plum-900);}
+  .live-tips-title{font-weight:600; color:var(--rose-800);}
+  .live-tips ul{margin:4px 0 0; padding-left:18px;}
+  .live-tips li{margin-bottom:2px;}
+  .live-tips .btn-text{display:block; margin-left:auto; padding:10px 6px; opacity:.85;}
+
+  /* opened inside Instagram / Facebook / LINE / TikTok: their built-in browsers may block the camera */
+  .inapp{position:relative; background:#FFF3DC; border:1.5px solid #F2C46B; color:#5C3A06; border-radius:var(--radius-md); padding:12px 44px 12px 14px; font-size:.82rem; line-height:1.45; text-align:left;}
+  .inapp-banner{margin:10px 12px 0;}
+  .inapp-title{font-weight:600;}
+  .inapp-actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+  .inapp-actions .btn{flex:1; min-width:130px; min-height:44px; padding:10px 12px; font-size:.78rem; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;}
+  .inapp-close{position:absolute; top:4px; right:4px; width:40px; height:40px; border:none; background:none; color:#5C3A06; font-size:1.3rem; line-height:1;}
+  .welcome-card .inapp{margin:14px 0 4px; padding-right:14px;}
+  .welcome-card.with-inapp{padding:26px 22px;}
+  .welcome-card.with-inapp h2{margin-bottom:0;}
+  /* a taller card (e.g. with the note above) scrolls instead of being cut off on short screens */
+  .welcome-overlay{overflow-y:auto;}
+  .welcome-card{margin:auto;}
   /* the app has its own ← button; the landing-page menu would only jump to hidden sections */
   .app[data-view="app"] .nav-links, .app[data-view="app"] .hamburger{display:none !important;}
   /* computers rarely have a second camera to switch to */
@@ -610,10 +629,13 @@
     <div class="welcome-card">
       <span class="eyebrow-script">Hey love ♡</span>
       <h2 id="welcomeTitle">Ready to make a memory?</h2>
+      <div class="inapp" id="welcomeInapp" hidden></div>
       <button class="btn btn-primary" id="welcomeStart">LET'S TAKE A PHOTO</button>
       <button class="btn-text" id="welcomeDismiss">maybe later</button>
     </div>
   </div>
+
+  <div class="inapp inapp-banner" id="inappBanner" role="note" hidden></div>
 
   <header class="nav">
     <a class="brand" href="#top">♡ Our Booth</a>
@@ -694,7 +716,7 @@
       <div class="privacy-note">🔒 Your photos stay on your device. We don't upload or store your photos.</div>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.2</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.3</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -845,6 +867,17 @@
             <button class="btn btn-shutter" id="liveShutter" aria-label="Start the countdown for both of you" disabled></button>
             <button class="icon-btn" id="liveMicBtn" aria-label="Mute microphone">🎙</button>
           </div>
+          <!-- below the controls, so it never pushes the heart button off a phone screen -->
+          <div class="live-tips" id="liveTips" hidden>
+            <p class="live-tips-title">Good to know ♡</p>
+            <ul>
+              <li>Stay on this screen until you see "Swapping photos…".</li>
+              <li>Your love's photo turns sharp a moment after the click.</li>
+              <li>While you decorate, your picture pauses — your voice stays on.</li>
+              <li>WiFi on both phones works best.</li>
+            </ul>
+            <button type="button" class="btn-text" id="liveTipsOk">Got it ♡</button>
+          </div>
         </div>
 
         <p class="live-leave"><button class="btn-text" id="liveLeaveBtn" hidden>leave room</button></p>
@@ -885,6 +918,7 @@
               <div class="chip-row" id="stickerChips"></div>
               <label class="switch-row"><input type="checkbox" id="animToggle" checked><span>Moving stickers and decorations ✨</span></label>
               <p class="motion-note" id="motionNote" hidden>Your phone or browser has <b>Reduce motion</b> turned on, so movement starts switched off. Turn it on with the switch above — or turn off Reduce motion in your device's accessibility settings (iPhone: Settings → Accessibility → Motion · Android: Settings → Accessibility → Remove animations). Battery saver can also slow animations down.</p>
+              <p class="motion-note" id="liteNote" hidden>This phone looked a little busy, so the moving previews now update less often to keep everything smooth. Your saved photo and video aren't affected ♡</p>
             </div>
             <div class="tool-panel" data-panel="text" role="tabpanel" hidden>
               <label class="switch-row" id="titleToggleRow" hidden><input type="checkbox" id="titleToggle" checked><span>Show frame title</span></label>
@@ -1085,6 +1119,16 @@
   document.documentElement.classList.add(IS_PHONE ? 'is-phone' : 'is-desktop');
   var IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
   if(IS_IOS) document.documentElement.classList.add('is-ios');
+  var IS_ANDROID = /Android/i.test(navigator.userAgent);
+  // apps that open links in their own built-in browser, which often blocks the camera and downloads
+  var IN_APP = (function(ua){
+    if(/Instagram/i.test(ua)) return 'Instagram';
+    if(/Messenger/i.test(ua) && /FBAN|FBAV|FB_IAB/.test(ua)) return 'Messenger';
+    if(/FBAN|FBAV|FB_IAB|FBIOS|FB4A/.test(ua)) return 'Facebook';
+    if(/\sLine\/\d/.test(ua)) return 'LINE';
+    if(/musical_ly|TikTok|BytedanceWebview|trill_/i.test(ua)) return 'TikTok';
+    return '';
+  })(navigator.userAgent || '');
   // Safari before iOS 18 ignores canvas filters — then we apply them pixel by pixel ourselves
   var CANVAS_FILTER = (function(){
     try{ var c = document.createElement('canvas').getContext('2d'); return typeof c.filter === 'string'; }catch(e){ return false; }
@@ -2016,6 +2060,12 @@
       input.value = text;
       input.readOnly = true;
       $('codeApply').textContent = 'DONE';
+    } else if(mode === 'link'){
+      $('codeModalTitle').textContent = 'The booth link ♡';
+      $('codeModalText').textContent = 'Copy this link and open it in Chrome or Safari.';
+      input.value = text;
+      input.readOnly = true;
+      $('codeApply').textContent = 'DONE';
     } else {
       $('codeModalTitle').textContent = 'Your invite ♡';
       $('codeModalText').textContent = 'Copy this message and send it to your love.';
@@ -2208,8 +2258,10 @@
     fx.parts = [];
     for(var i=0;i<fxTarget();i++) fx.parts.push(spawnFx(state.fxId, true));
     fx.last = performance.now();
+    var pacer = makePacer();
     (function tick(now){
-      var dt = Math.min(0.05, (now - fx.last)/1000);   // cap dt so a hidden tab doesn't teleport particles
+      if(!paceFrame(pacer, now)){ fx.raf = requestAnimationFrame(tick); return; }
+      var dt = Math.min(motion.lite ? 0.1 : 0.05, (now - fx.last)/1000);   // cap dt so a hidden tab doesn't teleport particles
       fx.last = now;
       var dpr = window.devicePixelRatio || 1;
       var cw = Math.round(fxCanvas.clientWidth*dpr), ch = Math.round(fxCanvas.clientHeight*dpr);
@@ -2743,11 +2795,92 @@
     $('welcomeStart').textContent = "JOIN MY LOVE ♡";
     $('welcomeOverlay').classList.add('show');
   }
+  // "Open in Chrome" (from an app's built-in browser) can't carry a #hash, so it sends ?room= instead
+  (function roomFromQuery(){
+    var m = /[?&]room=([A-Za-z0-9]{6})/.exec(location.search);
+    if(m) history.replaceState(history.state, '', siteUrl() + '#room=' + cleanCode(m[1]));
+  })();
   readRoomLink();
   // the page may already be open when the invite link is tapped — then only the #hash changes
   window.addEventListener('hashchange', readRoomLink);
   // leaving the page closes the room right away, so the code is free again
   window.addEventListener('pagehide', function(){ if(live.peer) destroyLive(); });
+  // the "good to know" card shows until it's been read once on this device
+  (function initLiveTips(){
+    var seen = false;
+    try{ seen = localStorage.getItem('oob-live-tips') === '1'; }catch(e){}
+    $('liveTips').hidden = seen;
+    $('liveTipsOk').addEventListener('click', function(){
+      $('liveTips').hidden = true;
+      try{ localStorage.setItem('oob-live-tips', '1'); }catch(e){}
+    });
+  })();
+
+  /* ---------------- opened inside Instagram, Facebook, LINE or TikTok ----------------
+     Those apps show links in their own small browser, which often blocks the camera and
+     downloads. We say so at the top of the page (and on the welcome card), with the best
+     way out for this phone:
+       Android → a Chrome "intent" link, which asks Android to open the page in Chrome
+       LINE    → LINE's own switch: adding ?openExternalBrowser=1 opens the normal browser
+       iPhone  → no link can open Safari, so we explain the ••• menu and offer "copy link" */
+  function inappLink(){ return pendingRoom ? roomLink(pendingRoom) : siteUrl(); }
+  function fillInappNote(box, closable){
+    box.innerHTML = '';
+    function add(tag, cls, text){
+      var el = document.createElement(tag);
+      if(cls) el.className = cls;
+      if(text) el.textContent = text;
+      box.appendChild(el);
+      return el;
+    }
+    add('p', 'inapp-title', 'Open in your browser for the camera ♡');
+    var how = IN_APP + "'s built-in browser may block the camera and downloads.";
+    if(IS_IOS && IN_APP !== 'LINE') how += ' Tap ••• (or the share icon) and choose Open in Safari / Open in browser.';
+    add('p', '', how);
+    var row = add('div', 'inapp-actions');
+    if(IN_APP === 'LINE' || IS_ANDROID){
+      var open = document.createElement('a');
+      open.className = 'btn btn-primary';
+      open.textContent = IN_APP === 'LINE' ? 'OPEN IN BROWSER' : 'OPEN IN CHROME';
+      open.href = siteUrl();
+      // build the link at tap time, so a room code that arrived later is included
+      open.addEventListener('click', function(){
+        if(IN_APP === 'LINE'){
+          open.href = siteUrl() + '?openExternalBrowser=1' + (pendingRoom ? '#room=' + pendingRoom : '');
+        } else {
+          open.href = 'intent://' + location.host + location.pathname + (pendingRoom ? '?room=' + pendingRoom : '') +
+            '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(inappLink()) + ';end';
+        }
+      });
+      row.appendChild(open);
+    }
+    var copy = document.createElement('button');
+    copy.type = 'button'; copy.className = 'btn btn-secondary'; copy.textContent = 'COPY LINK';
+    copy.addEventListener('click', function(){
+      var link = inappLink();
+      copyText(link).then(function(){
+        showToast('Link copied — paste it in ' + (IS_IOS ? 'Safari' : 'Chrome') + ' ♡');
+      }).catch(function(){ openCodeModal('link', link); });
+    });
+    row.appendChild(copy);
+    if(closable){
+      var x = add('button', 'inapp-close', '×');
+      x.type = 'button'; x.setAttribute('aria-label', 'Hide this message');
+      x.addEventListener('click', function(){
+        box.hidden = true;
+        try{ sessionStorage.setItem('oob-inapp-hidden', '1'); }catch(e){}
+      });
+    }
+  }
+  (function initInappNote(){
+    if(!IN_APP) return;
+    var hidden = false;
+    try{ hidden = sessionStorage.getItem('oob-inapp-hidden') === '1'; }catch(e){}
+    if(!hidden){ fillInappNote($('inappBanner'), true); $('inappBanner').hidden = false; }
+    fillInappNote($('welcomeInapp'), false);
+    $('welcomeInapp').hidden = false;
+    document.querySelector('.welcome-card').classList.add('with-inapp');
+  })();
 
   /* ---------------- drawing helpers ---------------- */
   function drawHeart(ctx,x,y,size,color,alpha){
@@ -3746,6 +3879,14 @@
       });
     });
   }
+  // ask the browser not to clear our saved frames when the phone runs low on space
+  // (Chrome decides by itself, Firefox may ask the user, Safari mostly for Home Screen apps)
+  function keepStorage(){
+    try{
+      if(!navigator.storage || !navigator.storage.persist) return;
+      navigator.storage.persisted().then(function(yes){ if(!yes) return navigator.storage.persist(); }).catch(function(){});
+    }catch(e){}
+  }
   function loadImage(blob){
     if(window.createImageBitmap) return createImageBitmap(blob);
     return new Promise(function(resolve, reject){
@@ -4021,7 +4162,7 @@
     });
     customDbRun('readwrite', function(store){ return store.put(rec); }).then(function(res){
       if(res === null) showToast("Saved for now — this browser can't keep it after you close the page");
-      else showToast('Saved on this device ♡');
+      else { showToast('Saved on this device ♡'); keepStorage(); }
     }, function(){
       showToast("Couldn't save to this device (storage full?) — it works until you close the page");
     });
@@ -4063,8 +4204,9 @@
       var t = templateById(state.templateId);
       if(!t.decor || !state.popout) return;   // nothing would show inside the photo anyway
       o.base = makeBase(t, state.colorId, 1, n);
-      var start = performance.now();
+      var start = performance.now(), pacer = makePacer();
       (function tick(now){
+        if(!paceFrame(pacer, now)){ o.raf = requestAnimationFrame(tick); return; }
         var dpr = window.devicePixelRatio || 1;
         var size = Math.round(canvasEl.clientWidth * dpr);
         if(canvasEl.width !== size || canvasEl.height !== size){ canvasEl.width = size; canvasEl.height = size; }
@@ -4461,13 +4603,49 @@
     ctx.globalAlpha = 1;
   }
 
+  /* ---------------- adaptive motion ----------------
+     Old phones can't redraw the moving previews 60 times a second — then everything stutters,
+     the camera too. Every preview loop reports how long its frames take. If the phone stays
+     under ~20 frames a second for about 6 seconds, previews switch to "lite" and redraw only
+     ~15 times a second for the rest of the visit (the motion keeps its speed, it's just less
+     smooth). Saving a photo or video doesn't go through these loops, so files aren't affected. */
+  var motion = {lite:false, dts:[], sum:0, strikes:0};
+  var LITE_FRAME_MS = 66;
+  function makePacer(){ return {last:0, drawn:0}; }
+  // call once per animation frame; false means "skip drawing this one"
+  function paceFrame(p, now){
+    if(p.last && now - p.last < 500) noteFrameTime(now - p.last);   // longer gaps: app switched, not a slow phone
+    p.last = now;
+    if(!motion.lite) return true;
+    if(now - p.drawn < LITE_FRAME_MS) return false;
+    p.drawn = now;
+    return true;
+  }
+  function noteFrameTime(dt){
+    if(motion.lite) return;
+    motion.dts.push(dt); motion.sum += dt;
+    if(motion.sum < 3000) return;
+    // the middle value ignores one-off hiccups, like the pause while a new frame design is built
+    var sorted = motion.dts.sort(function(a, b){ return a - b; });
+    var median = sorted[Math.floor(sorted.length/2)];
+    motion.dts = []; motion.sum = 0;
+    motion.strikes = median > 50 ? motion.strikes + 1 : 0;
+    if(motion.strikes >= 2) goLite();
+  }
+  function goLite(){
+    motion.lite = true;
+    $('liteNote').hidden = false;
+    showToast('Your phone looked busy — previews now move more gently ♡');
+  }
+
   /* ---------------- preview / result render ---------------- */
   var anim = {raf:0};
   function playAnim(target){
     stopAnim();
     if(!hasMotion()){ drawFrame(target, 0); return; }
-    var start = performance.now();
+    var start = performance.now(), pacer = makePacer();
     (function tick(now){
+      if(!paceFrame(pacer, now)){ anim.raf = requestAnimationFrame(tick); return; }
       drawFrame(target, ((now - start)/1000) % LOOP);
       anim.raf = requestAnimationFrame(tick);
     })(start);
