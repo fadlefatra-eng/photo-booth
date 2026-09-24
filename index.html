@@ -383,10 +383,14 @@
   .cf-editor{position:fixed; inset:0; z-index:88; background:var(--blush-50); overflow-y:auto; -webkit-overflow-scrolling:touch;}
   .cf-inner{max-width:560px; margin:0 auto; padding:0 16px 40px;}
   .cf-head{position:sticky; top:0; z-index:3; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; background:var(--blush-50); border-bottom:1px solid var(--blush-100);}
-  .cf-head h3{font-size:1.1rem; color:var(--plum-900);}
-  .cf-save{min-height:44px; padding:10px 20px; font-size:.85rem;}
+  /* one line only: the head must stay 64px tall, because the preview sticks right below it (top:64px) */
+  .cf-head h3{font-size:1.1rem; color:var(--plum-900); flex:1; min-width:0; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .cf-head .btn-text{white-space:nowrap;}
+  .cf-save{min-height:44px; padding:10px 18px; font-size:.85rem; white-space:nowrap;}
   /* the preview stays in view while you change position and size below it */
-  .cf-preview{position:sticky; top:64px; z-index:2; display:flex; justify-content:center; padding:10px 0 8px; background:linear-gradient(var(--blush-50) 88%, rgba(255,247,249,0));}
+  /* solid, with a closing line: whatever scrolls up disappears cleanly under the preview
+     (a fade-out let the cards show through half-cut, especially in forced-dark browsers) */
+  .cf-preview{position:sticky; top:64px; z-index:2; display:flex; justify-content:center; padding:10px 0 10px; background:var(--blush-50); border-bottom:1px solid var(--pink-200); box-shadow:0 10px 14px -12px rgba(147,38,79,.35);}
   .cf-preview canvas{max-height:30vh; width:auto; border-radius:12px; box-shadow:var(--shadow-pink);}
   .cf-section{background:var(--white); border-radius:var(--radius-md); padding:14px; margin-top:12px; box-shadow:var(--shadow-soft);}
   .cf-section > * + *{margin-top:10px;}
@@ -529,9 +533,13 @@
   .inapp-close{position:absolute; top:4px; right:4px; width:40px; height:40px; border:none; background:none; color:#5C3A06; font-size:1.3rem; line-height:1;}
   .welcome-card .inapp{margin:14px 0 4px; padding-right:14px;}
   /* sending / receiving a design in the live room */
-  .live-design{margin-top:14px;}
-  .live-design .btn{min-height:48px; padding:12px 16px; font-size:.82rem;}
+  .live-design{margin-top:14px; background:var(--white); border-radius:var(--radius-md); padding:12px 14px; box-shadow:var(--shadow-soft);}
+  .live-design-title{font-family:var(--font-script); font-size:1.3rem; color:var(--rose-800); text-align:center;}
+  .live-design-row{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;}
+  .live-design .btn{min-height:48px; padding:10px 8px; font-size:.74rem; letter-spacing:.02em; box-shadow:none;}
   .live-design .btn[disabled]{opacity:.55;}
+  .together-status{font-size:.86rem; font-weight:600; color:var(--rose-600); text-align:center; line-height:1.4;}
+  #togetherOn .btn-text{display:block; margin:2px auto 0;}
   .live-design-hint{font-size:.76rem; color:var(--rose-800); opacity:.8; text-align:center; margin-top:6px; line-height:1.4;}
   .design-modal{overflow-y:auto; z-index:90;}   /* above the custom frame editor, below "are you sure?" */
   .design-modal .code-card{margin:auto;}
@@ -599,7 +607,7 @@
   <div class="code-modal design-modal" id="designModal" role="dialog" aria-modal="true" aria-labelledby="designTitle" hidden>
     <div class="code-card">
       <h3 id="designTitle">Your love sent a design ♡</h3>
-      <p>Here it is with your photos:</p>
+      <p id="designText">Here it is with your photos:</p>
       <div class="design-preview"><canvas id="designCanvas" width="10" height="10"></canvas></div>
       <label class="switch-row" id="designSaveRow" hidden><input type="checkbox" id="designSave" checked><span id="designSaveText">Also save their frame to my frames</span></label>
       <div class="code-actions">
@@ -742,7 +750,7 @@
       <div class="privacy-note">🔒 Your photos stay on your device. We don't upload or store your photos.</div>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.4</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.5</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -959,8 +967,19 @@
             </div>
             <!-- only while you're in a live room together -->
             <div class="live-design" id="liveDesign" hidden>
-              <button type="button" class="btn btn-secondary btn-block" id="sendDesignBtn">SEND MY DESIGN TO MY LOVE ♡</button>
-              <p class="live-design-hint">They'll see it on their own photos and choose whether to use it.</p>
+              <div id="togetherOff">
+                <p class="live-design-title">With your love ♡</p>
+                <div class="live-design-row">
+                  <button type="button" class="btn btn-primary" id="togetherBtn">DESIGN TOGETHER ♡</button>
+                  <button type="button" class="btn btn-secondary" id="sendDesignBtn">SEND MY DESIGN</button>
+                </div>
+                <p class="live-design-hint">Together: every change shows on both phones. Send: they see your design on their photos and choose.</p>
+              </div>
+              <div id="togetherOn" hidden>
+                <p class="together-status">♡ Designing together — your changes show on both phones</p>
+                <button type="button" class="btn-text" id="togetherSaveFrame" hidden>Save their frame to my frames</button>
+                <button type="button" class="btn-text" id="togetherStop">Stop designing together</button>
+              </div>
             </div>
             <button type="button" class="ldr-toggle" id="ldrToggle" aria-expanded="false">♡ Long distance — swap photo codes</button>
             <div class="ldr-row" id="ldrCustomize" hidden>
@@ -2565,6 +2584,7 @@
     var conn = live.conn, call = live.call;
     live.conn = null; live.call = null; live.remoteStream = null;
     live.connected = false; live.partnerReady = false;
+    endTogether();   // designing together needs both of you (your design stays as it is)
     $('liveRemote').srcObject = null;
     $('liveUnmute').hidden = true;
     try{ if(conn) conn.close(); }catch(e){}
@@ -2623,6 +2643,33 @@
       case 'design': receiveDesign(msg); break;
       case 'design-reply':
         showToast(msg.used === true ? 'Your love is using your design ♡' : 'Your love kept their own design ♡');
+        break;
+      case 'together-invite':
+        if(together.on) break;
+        if(together.inviting){
+          // you both tapped "Design together" at once: the room's host keeps theirs, the guest joins it
+          if(live.role === 'host') break;
+          together.inviting = false; clearTimeout(together.inviteTimer); syncLiveDesign();
+        }
+        receiveDesign(msg, 'invite');
+        break;
+      case 'together-reply':
+        if(!together.inviting) break;
+        if(msg.join === true){
+          startTogether(together.inviteDesign);
+          showToast('Your love joined ♡ Your changes now show on both phones');
+        } else {
+          together.inviting = false; clearTimeout(together.inviteTimer); syncLiveDesign();
+          showToast('Your love said not now ♡');
+        }
+        break;
+      case 'together-change':
+        queueTogether(function(){ return receiveTogetherChange(msg); });
+        break;
+      case 'together-stop':
+        if(!together.on) break;
+        endTogether();
+        showToast('Your love stopped designing together ♡');
         break;
       case 'full':
         failLive('That room already has two people in it ♡');
@@ -4248,7 +4295,12 @@
   var DESIGN_KEYS = ['templateId','colorId','showTitle','popout','filterId','stickers','customText','showDate','dateLabel','animated'];
   var DATE_LABELS = ['date','Our Date','Love Day','Best Day'];
   var MAX_FRAME_IMG = 2*1024*1024, MAX_FRAME_TOTAL = 10*1024*1024;
-  var designOffer = null;   // {design, rec} waiting for USE THEIRS / KEEP MINE
+  var designOffer = null;   // {design, rec, kind} waiting for USE THEIRS / KEEP MINE (or JOIN / NOT NOW)
+  // Design together (below): on = in a session, inviting = waiting for an answer, last = the design both
+  // phones agreed on (changes are measured from it), sentFrames = custom frames the other phone already has,
+  // unsaved = their frames you're using but haven't saved, queue = incoming changes, handled in order
+  var together = {on:false, inviting:false, inviteTimer:0, inviteDesign:null, last:null, timer:0, sentFrames:{}, unsaved:{}, queue:Promise.resolve()};
+  var INVITE_TIMEOUT = 45000;
 
   function copyStickers(src){
     var out = {};
@@ -4286,7 +4338,16 @@
       setTimeout(function(){ btn.disabled = false; }, 2500);   // no accidental double sends
     });
   });
-  function syncLiveDesign(){ $('liveDesign').hidden = !live.connected; }
+  function syncLiveDesign(){
+    $('liveDesign').hidden = !live.connected;
+    $('togetherOff').hidden = together.on;
+    $('togetherOn').hidden = !together.on;
+    $('togetherBtn').disabled = together.inviting;
+    $('togetherBtn').textContent = together.inviting ? 'WAITING… ♡' : 'DESIGN TOGETHER ♡';
+    var unsaved = together.on && together.unsaved[state.templateId];
+    $('togetherSaveFrame').hidden = !unsaved;
+    if(unsaved) $('togetherSaveFrame').textContent = 'Save their frame "' + unsaved.name + '" to my frames';
+  }
 
   /* ---- receiving: check everything ---- */
   function cleanDesign(raw){
@@ -4337,7 +4398,8 @@
       });
     })).then(function(items){ rec.items = items; return rec; });
   }
-  function receiveDesign(msg){
+  // kind: 'send' (Send my design) or 'invite' (Design together)
+  function receiveDesign(msg, kind){
     var d = cleanDesign(msg.design);
     if(!d) return;
     var ready;
@@ -4350,8 +4412,9 @@
       showToast("Your love sent a frame this page doesn't know yet — reload to update ♡");
       return;
     }
-    ready.then(function(rec){ offerDesign(d, rec); }, function(){
+    ready.then(function(rec){ offerDesign(d, rec, kind || 'send'); }, function(){
       showToast("Your love sent a design, but it couldn't be opened ♡");
+      if(kind === 'invite') sendLive({type:'together-reply', join:false});
     });
   }
 
@@ -4379,11 +4442,19 @@
     });
   }
   function forgetImages(rec){ rec.items.forEach(function(it){ delete customImages[it.id]; }); }
-  function offerDesign(d, rec){
-    if(live.running){ setTimeout(function(){ offerDesign(d, rec); }, 1000); return; }   // not during a countdown
-    // a newer design replaces one that's still waiting
+  function offerDesign(d, rec, kind){
+    if(live.running){ setTimeout(function(){ offerDesign(d, rec, kind); }, 1000); return; }   // not during a countdown
+    // a newer design replaces one that's still waiting (an unanswered invite gets a "not now")
     if(designOffer && designOffer.rec && designOffer.rec.srcId && designOffer.rec !== rec) forgetImages(designOffer.rec);
-    designOffer = {design:d, rec:rec};
+    if(designOffer && designOffer.kind === 'invite') sendLive({type:'together-reply', join:false});
+    designOffer = {design:d, rec:rec, kind:kind};
+    var invite = kind === 'invite';
+    $('designTitle').textContent = invite ? 'Design together? ♡' : 'Your love sent a design ♡';
+    $('designText').textContent = invite
+      ? "Your love wants to decorate with you. You'll start from their design (here on your photos) — then every change shows on both phones."
+      : 'Here it is with your photos:';
+    $('designUse').textContent = invite ? 'JOIN ♡' : 'USE THEIRS ♡';
+    $('designKeep').textContent = invite ? 'NOT NOW' : 'KEEP MINE';
     var canSave = !!(rec && rec.srcId);
     $('designSaveRow').hidden = !canSave;
     $('designSave').checked = true;
@@ -4444,13 +4515,164 @@
       if(used) registerCustom(o.rec);   // used just this time: it stays until the page is closed
       else forgetImages(o.rec);
     }
+    var invite = o.kind === 'invite';
     if(used) applyDesign(o.design);
-    sendLive({type:'design-reply', used:used});
+    if(invite){
+      sendLive({type:'together-reply', join:used});
+      if(used){
+        startTogether();
+        if(theirFrame && !saving){ together.unsaved['custom-' + o.rec.id] = o.rec; syncLiveDesign(); }
+        if(state.currentStep === 'result') goToStep('customize');   // designing happens in the editor
+      }
+    } else {
+      sendLive({type:'design-reply', used:used});
+    }
     saved.then(function(ok){
       if(saving && !ok) showToast("Couldn't save their frame on this device — it works until you close the page");
+      else if(invite && used) showToast("Designing together ♡ Your changes show on both phones");
       else if(used) showToast(saving ? "Using your love's design ♡ Their frame is in your frames" : "Using your love's design ♡");
       else if(saving) showToast('Their frame is saved in your frames ♡');
     });
+  }
+
+  /* ================= DESIGN TOGETHER (live room) =================
+     One of you invites, the other taps JOIN and starts from the inviter's design. From then on,
+     every change on either phone is sent to the other — only the parts that changed (a "patch"),
+     so if you change the color while your love changes the filter at the same moment, both
+     changes survive. Each phone keeps its own photo order ("me" first).
+     A custom frame travels along the first time it's picked; the other phone can use it right
+     away and save it with one tap. Messages are handled strictly in order (a queue), because a
+     frame with images takes a moment to unpack. */
+  $('togetherBtn').addEventListener('click', function(){
+    if(!live.connected){ showToast("Your love isn't in the room right now ♡"); return; }
+    if(together.on || together.inviting) return;
+    var d = currentDesign(), t = templateById(d.templateId);
+    together.inviting = true; together.inviteDesign = d; syncLiveDesign();
+    (t.custom ? packFrame(t.rec) : Promise.resolve(null)).then(function(frame){
+      if(!together.inviting) return;
+      if(t.custom) together.sentFrames[t.rec.id] = true;
+      sendLive({type:'together-invite', design:d, frame:frame});
+      showToast('Invite sent — waiting for your love ♡');
+      clearTimeout(together.inviteTimer);
+      together.inviteTimer = setTimeout(function(){
+        if(!together.inviting) return;
+        together.inviting = false; syncLiveDesign();
+        showToast("No answer yet — your love's page may need a reload (v4.5 or newer) ♡");
+      }, INVITE_TIMEOUT);
+    }).catch(function(){
+      together.inviting = false; syncLiveDesign();
+      showToast("Couldn't send the invite. Please try again ♡");
+    });
+  });
+  $('togetherStop').addEventListener('click', function(){
+    sendLive({type:'together-stop'});
+    endTogether();
+    showToast('Stopped designing together — your design stays as it is ♡');
+  });
+  $('togetherSaveFrame').addEventListener('click', function(){
+    var rec = together.unsaved[state.templateId];
+    if(!rec) return;
+    delete together.unsaved[state.templateId];
+    syncLiveDesign();
+    saveReceivedFrame(rec).then(function(ok){
+      showToast(ok ? 'Their frame is saved in your frames ♡' : "Couldn't save their frame on this device — it works until you close the page");
+    });
+  });
+
+  // base: the design both phones start from (the inviter passes the one it sent with the invite, so
+  // anything it changed while waiting is sent right away)
+  function startTogether(base){
+    together.on = true; together.inviting = false;
+    clearTimeout(together.inviteTimer);
+    together.last = base || currentDesign();
+    var t = templateById(state.templateId);
+    if(t.custom) together.sentFrames[t.rec.id] = true;   // they have it: it came with the invite
+    syncLiveDesign();
+    noteDesignChange();
+  }
+  function endTogether(){
+    together.on = false; together.inviting = false; together.inviteDesign = null;
+    clearTimeout(together.inviteTimer); clearTimeout(together.timer);
+    together.unsaved = {}; together.sentFrames = {};
+    syncLiveDesign();
+  }
+  // a frame's id is the same on both phones: the maker's own id (a copy remembers it as srcId)
+  function frameKey(rec){ return rec.srcId || rec.id; }
+  function templateForFrameKey(key){
+    var r = findCustomRec(function(r){ return (r.id === key && !r.srcId) || r.srcId === key; });
+    return r ? 'custom-' + r.id : null;
+  }
+
+  // called whenever the editor redraws the preview: send what changed since the last time
+  function noteDesignChange(){
+    if(!together.on) return;
+    syncLiveDesign();   // e.g. show "save their frame" when you pick one of theirs
+    clearTimeout(together.timer);
+    together.timer = setTimeout(sendTogetherChanges, 120);   // typing sends one message, not one per letter
+  }
+  function sendTogetherChanges(){
+    if(!together.on || !live.connected) return;
+    var d = currentDesign(), patch = {}, changed = false;
+    DESIGN_KEYS.forEach(function(k){
+      if(JSON.stringify(d[k]) !== JSON.stringify(together.last[k])){ patch[k] = d[k]; changed = true; }
+    });
+    if(!changed) return;
+    together.last = d;
+    var t = templateById(d.templateId);
+    var custom = patch.templateId && t.custom;
+    var needsFrame = custom && !together.sentFrames[t.rec.id];
+    (needsFrame ? packFrame(t.rec) : Promise.resolve(null)).then(function(frame){
+      if(frame) together.sentFrames[t.rec.id] = true;
+      sendLive({type:'together-change', patch:patch, frameId:custom ? frameKey(t.rec) : null, frame:frame});
+    }).catch(function(){ /* the next change sends everything that differs again */ });
+  }
+  function receiveTogetherChange(msg){
+    if(!together.on || !msg.patch || typeof msg.patch !== 'object') return;
+    // start from what's on screen now and lay the (checked) changes on top
+    var merged = currentDesign(), p = msg.patch, keys = [];
+    DESIGN_KEYS.forEach(function(k){ if(Object.prototype.hasOwnProperty.call(p, k)){ merged[k] = p[k]; keys.push(k); } });
+    if(!keys.length) return;
+    var d = cleanDesign(merged);
+    if(!d) return;
+    var ready = Promise.resolve();
+    if(keys.indexOf('templateId') !== -1){
+      if(/^custom-/.test(d.templateId)){
+        var key = typeof msg.frameId === 'string' && /^[a-z0-9]{4,32}$/.test(msg.frameId) ? msg.frameId : null;
+        if(msg.frame){
+          ready = unpackFrame(msg.frame).then(function(rec){
+            if(!rec.srcId) return;   // one of your own frames
+            var id = 'custom-' + rec.id;
+            var saved = TEMPLATES.some(function(t){ return t.id === id; }) && !together.unsaved[id];
+            registerCustom(rec);   // their frame: usable right away, saved only if you tap "save"
+            if(!saved) together.unsaved[id] = rec;
+          });
+        }
+        ready = ready.then(function(){
+          var local = key && templateForFrameKey(key);
+          if(!local) throw new Error('frame');
+          d.templateId = local;
+        });
+      } else if(!TEMPLATES.some(function(t){ return t.id === d.templateId && !t.custom; })){
+        ready = Promise.reject(new Error('frame'));
+      }
+    }
+    return ready.then(function(){
+      if(!together.on) return;
+      applyDesign(d);
+      together.last = currentDesign();   // what we just received isn't "our" change: don't send it back
+      syncLiveDesign();
+    }, function(){
+      // a frame we couldn't open: take the other changes, keep our frame
+      if(!together.on) return;
+      d.templateId = state.templateId; d.colorId = keys.indexOf('colorId') !== -1 ? d.colorId : state.colorId;
+      applyDesign(d);
+      together.last = currentDesign();
+      showToast("Your love picked a frame this page can't open — reload to update ♡");
+    });
+  }
+  // everything from the room goes through here in order
+  function queueTogether(work){
+    together.queue = together.queue.then(work).catch(function(){});
   }
   $('designUse').addEventListener('click', function(){ answerDesign(true); });
   $('designKeep').addEventListener('click', function(){ answerDesign(false); });
@@ -4928,6 +5150,7 @@
 
   var previewTimer = null;
   function renderPreview(){
+    noteDesignChange();   // designing together: tell your love what changed
     clearTimeout(previewTimer);
     previewTimer = setTimeout(function(){ buildBase(); playAnim($('previewCanvas')); }, 60);
   }
