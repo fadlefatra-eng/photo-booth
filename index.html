@@ -173,7 +173,10 @@
   .gallery-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:16px;}
   @media (max-width:720px){.gallery-grid{grid-template-columns:repeat(2,1fr);}}
   .gallery-card{background:var(--white); border-radius:16px; padding:12px; text-align:center; box-shadow:var(--shadow-soft); border:1px solid var(--blush-100);}
-  .gallery-thumb{border-radius:10px; height:96px; margin-bottom:10px;}
+  .gallery-thumb{border-radius:10px; height:150px; margin-bottom:10px;}
+  /* real mini previews of each frame, drawn on a canvas */
+  .gallery-thumb, .frame-thumb{display:flex; align-items:center; justify-content:center; background:var(--blush-50);}
+  .gallery-thumb canvas, .frame-thumb canvas{max-width:100%; max-height:100%; width:auto; height:auto; border-radius:4px; box-shadow:0 4px 10px -4px rgba(147,38,79,.35);}
   .gallery-card span{font-size:.78rem; font-weight:600; color:var(--rose-800);}
 
   /* ---------- about ---------- */
@@ -227,7 +230,12 @@
     box-shadow:var(--shadow-soft); text-align:center;
   }
   .frame-card.selected{border-color:var(--rose-600);}
-  .frame-thumb{border-radius:10px; height:86px; margin-bottom:8px; position:relative; overflow:hidden;}
+  .frame-thumb{border-radius:10px; height:150px; margin-bottom:8px; padding:6px; position:relative; overflow:hidden;}
+  /* the same frame cards, as a sideways-scrolling row on the customize step */
+  .frame-pick-row{display:flex; gap:10px; overflow-x:auto; padding:4px 2px 10px; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch;}
+  .frame-pick-row .frame-card{flex:0 0 96px; padding:6px; scroll-snap-align:start;}
+  .frame-pick-row .frame-thumb{height:110px; padding:4px;}
+  .frame-pick-row .frame-card span{display:block; font-size:.68rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .frame-card span{font-size:.76rem; font-weight:600; color:var(--rose-800);}
 
   /* camera */
@@ -269,6 +277,9 @@
   .btn-shutter::after{content:'♡'; font-size:1.8rem;}
   .btn-shutter[disabled]{opacity:.5;}
   .btn-shutter.fallback::after{content:'📷'; font-size:1.6rem;}
+  /* phone vs. computer: set once on <html> by the script */
+  .is-phone .desktop-only, .is-desktop .phone-only{display:none !important;}
+  .fallback-row:not(.highlight) .when-failed, .fallback-row.highlight .when-ok{display:none !important;}
   .fallback-row.highlight{border-style:solid; border-color:var(--rose-600); box-shadow:0 0 0 4px rgba(225,79,122,.12);}
   .mute-state-off::after{content:'🔇';}
 
@@ -346,6 +357,37 @@
   .camera-permission .permission-actions{display:flex; flex-direction:column; gap:8px; width:100%; max-width:260px;}
   .camera-permission .btn{width:100%; font-size:.78rem; padding:13px 14px; min-height:46px;}
 
+  /* live room */
+  .live-panel{margin-top:18px; text-align:center;}
+  .live-panel .step-sub{margin-bottom:16px;}
+  .live-or{margin:24px 0 10px; font-size:.82rem; color:var(--rose-800); opacity:.7;}
+  .live-join-row{display:flex; gap:10px;}
+  .live-join-row input{flex:1; min-width:0; text-transform:uppercase; letter-spacing:.3em; text-align:center; font-weight:600;}
+  .live-join-row .btn{padding:12px 24px; min-height:48px;}
+  .live-code{
+    font-family:var(--font-display); font-size:2.5rem; font-weight:700; letter-spacing:.18em; color:var(--rose-800);
+    background:var(--white); border-radius:var(--radius-md); padding:14px 10px; margin-bottom:16px;
+    box-shadow:var(--shadow-soft); user-select:all;
+  }
+  .live-status{text-align:center; font-size:.88rem; color:var(--rose-800); margin-top:14px; min-height:1.3em;}
+  .live-error{
+    margin-top:16px; padding:12px 14px; border-radius:12px; text-align:center; font-size:.85rem; line-height:1.5;
+    background:var(--white); border:1.5px solid var(--rose-600); color:var(--rose-600);
+  }
+  .live-tiles{position:relative; display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:6px;}
+  .live-tile{position:relative; aspect-ratio:1; border-radius:18px; overflow:hidden; background:var(--plum-900); box-shadow:var(--shadow-pink);}
+  .live-tile video{width:100%; height:100%; object-fit:cover;}
+  .live-tile video.mirror{transform:scaleX(-1);}
+  .live-tag{position:absolute; left:8px; bottom:8px; background:rgba(59,22,38,.55); color:#fff; font-size:.72rem; font-weight:600; padding:4px 10px; border-radius:999px;}
+  .live-unmute{position:absolute; right:8px; top:8px; border:none; border-radius:999px; padding:6px 10px; font-size:.72rem; font-weight:600; background:#fff; color:var(--rose-800);}
+  .live-tiles .countdown, .live-tiles .flash{z-index:2; border-radius:18px;}
+  .live-rounds{justify-content:center; margin-top:14px;}
+  .live-leave{text-align:center; margin-top:14px;}
+  /* the app has its own ← button; the landing-page menu would only jump to hidden sections */
+  .app[data-view="app"] .nav-links, .app[data-view="app"] .hamburger{display:none !important;}
+  /* computers rarely have a second camera to switch to */
+  .is-desktop #switchCameraBtn, .is-desktop #liveSwitchBtn{visibility:hidden;}
+
   /* toast */
   .toast{
     position:fixed; left:50%; bottom:28px; transform:translate(-50%,20px); background:var(--plum-900); color:#fff;
@@ -382,6 +424,17 @@
     </div>
   </div>
 
+  <div class="code-modal" id="confirmModal" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmText" hidden>
+    <div class="code-card">
+      <h3 id="confirmTitle"></h3>
+      <p id="confirmText"></p>
+      <div class="code-actions">
+        <button class="btn btn-ghost" id="confirmYes"></button>
+        <button class="btn btn-primary" id="confirmNo"></button>
+      </div>
+    </div>
+  </div>
+
   <div class="welcome-overlay" id="welcomeOverlay" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
     <div class="welcome-card">
       <span class="eyebrow-script">Hey love ♡</span>
@@ -412,7 +465,7 @@
         <p class="hero-sub">Capture little moments, keep them forever.</p>
         <div class="hero-actions">
           <button class="btn btn-primary" id="startBtn">START PHOTO BOOTH ♡</button>
-          <button class="btn btn-secondary" id="inviteBtn">INVITE YOUR LOVE ♡</button>
+          <button class="btn btn-secondary" id="liveBtn">LIVE WITH MY LOVE ♡</button>
           <button class="btn btn-secondary" id="howBtn">HOW IT WORKS</button>
         </div>
         <div class="mockup" aria-hidden="true">
@@ -461,7 +514,7 @@
       <div class="about-card">
         <span class="kicker">Made for Two ♡</span>
         <p>A tiny digital photo booth for two people who want to turn ordinary moments into little memories.</p>
-        <p>Far apart tonight? Take your shots on your own phones, swap codes, and you'll still land on the same strip ♡</p>
+        <p>Far apart tonight? Open a live room, see each other on screen, and smile on the same countdown — you'll land on the same strip ♡</p>
         <p class="tag">Take a picture. Laugh a little. Keep the memory forever.</p>
       </div>
     </section>
@@ -536,9 +589,13 @@
         </div>
 
         <div class="fallback-row" id="fallbackRow">
-          <p class="fallback-hint">Camera blocked here? Use your phone's own camera app or photos you already have — same frames, same strip ♡</p>
+          <!-- which hint shows depends on the device (is-phone / is-desktop on <html>)
+               and on whether the live camera works (.highlight = camera failed) -->
+          <p class="fallback-hint desktop-only">Camera not working on this computer? Choose photos you already have — or open this page on your phone. Same frames, same strip ♡</p>
+          <p class="fallback-hint phone-only when-failed">Camera blocked? Use your phone's own camera app or your gallery — same frames, same strip ♡</p>
+          <p class="fallback-hint phone-only when-ok">Or use photos you already have ♡</p>
           <div class="fallback-buttons">
-            <button class="btn btn-secondary" id="useCameraAppBtn">TAKE WITH PHONE CAMERA</button>
+            <button class="btn btn-secondary phone-only when-failed" id="useCameraAppBtn">TAKE WITH PHONE CAMERA</button>
             <button class="btn btn-ghost" id="useGalleryBtn">CHOOSE FROM GALLERY</button>
           </div>
           <div class="tray" id="tray" hidden>
@@ -551,20 +608,70 @@
         </div>
         <div class="ldr-row">
           <p class="ldr-title">Long distance ♡</p>
-          <p class="ldr-hint">Far apart? Open this page on both phones, take your own shots, then swap codes — you'll end up on the same strip.</p>
+          <p class="ldr-hint">Want to see each other while you pose? Open a live room together.</p>
+          <button class="btn btn-primary btn-block js-go-live">GO LIVE TOGETHER ♡</button>
+          <p class="ldr-hint" style="margin-top:16px;">Not online at the same time? Take your own shots, then swap codes — you'll end up on the same strip.</p>
           <div class="fallback-buttons">
-            <button class="btn btn-secondary" id="copyMyCodeBtn">COPY MY PHOTO CODE</button>
-            <button class="btn btn-ghost" id="pasteCodeBtn">PASTE THEIR CODE</button>
+            <button class="btn btn-secondary js-copy-code" id="copyMyCodeBtn">COPY MY PHOTO CODE</button>
+            <button class="btn btn-ghost js-paste-code" id="pasteCodeBtn">PASTE THEIR CODE</button>
           </div>
           <ol class="ldr-steps">
-            <li>Both take photos here, on your own phones.</li>
-            <li>One of you taps "Copy my photo code" and sends it by chat.</li>
+            <li>Each of you takes 2 photos here, on your own phone (one strip holds 4).</li>
+            <li>One of you taps "Copy my photo code" and sends it by WhatsApp.</li>
             <li>The other taps "Paste their code" — one strip, two people ♡</li>
           </ol>
         </div>
 
         <input type="file" id="cameraAppInput" accept="image/*" capture="user" class="sr-only" tabindex="-1" aria-hidden="true">
         <input type="file" id="galleryInput" accept="image/*" multiple class="sr-only" tabindex="-1" aria-hidden="true">
+      </section>
+
+      <!-- LIVE ROOM: two phones, one countdown -->
+      <section class="step" id="step-live" data-step="live">
+        <h2 class="camera-title">LIVE WITH MY LOVE ♡</h2>
+
+        <!-- a) create or join -->
+        <div class="live-panel" id="livePick">
+          <p class="step-sub">See each other on screen and smile on the same countdown — even when you're far apart.</p>
+          <button class="btn btn-primary btn-block" id="liveCreateBtn">CREATE A ROOM ♡</button>
+          <p class="live-or">or join your love's room</p>
+          <div class="live-join-row">
+            <input type="text" id="liveCodeInput" maxlength="6" placeholder="CODE" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Room code">
+            <button class="btn btn-secondary" id="liveJoinBtn">JOIN</button>
+          </div>
+        </div>
+
+        <!-- b) waiting: host shows the code, guest sees "joining" -->
+        <div class="live-panel" id="liveWaiting" hidden>
+          <div id="liveHostInfo">
+            <p class="step-sub">Your room code:</p>
+            <div class="live-code" id="liveCode">------</div>
+            <button class="btn btn-primary btn-block" id="liveShareBtn">SEND INVITE LINK ♡</button>
+          </div>
+          <p class="live-status" id="liveWaitStatus">Waiting for your love to join…</p>
+        </div>
+
+        <p class="live-error" id="liveError" role="alert" hidden></p>
+
+        <!-- c) together -->
+        <div id="liveStage" hidden>
+          <div class="live-tiles">
+            <div class="live-tile"><video id="liveLocal" playsinline autoplay muted aria-label="Your camera"></video><span class="live-tag">me ♡</span></div>
+            <div class="live-tile"><video id="liveRemote" playsinline autoplay aria-label="Your love's camera"></video><span class="live-tag">you ♡</span>
+              <button class="live-unmute" id="liveUnmute" hidden>🔈 Tap to hear</button></div>
+            <div class="countdown" id="liveCountdown" aria-live="polite"></div>
+            <div class="flash" id="liveFlash" aria-hidden="true"></div>
+          </div>
+          <p class="live-status" id="liveStatus"></p>
+          <div class="chip-row live-rounds" id="liveRounds" role="group" aria-label="How many photos"></div>
+          <div class="camera-controls">
+            <button class="icon-btn" id="liveSwitchBtn" aria-label="Switch camera">↻</button>
+            <button class="btn btn-shutter" id="liveShutter" aria-label="Start the countdown for both of you" disabled></button>
+            <button class="icon-btn" id="liveMicBtn" aria-label="Mute microphone">🎙</button>
+          </div>
+        </div>
+
+        <p class="live-leave"><button class="btn-text" id="liveLeaveBtn" hidden>leave room</button></p>
       </section>
 
       <!-- STEP 4: customize -->
@@ -576,6 +683,10 @@
             <p class="ready-note">your memories are ready ♡</p>
           </div>
           <div>
+            <div class="control-group">
+              <h3>Frame</h3>
+              <div class="frame-pick-row" id="framePickRow" role="group" aria-label="Choose a frame"></div>
+            </div>
             <div class="control-group">
               <h3>Frame Color</h3>
               <div class="swatch-row" id="colorSwatches"></div>
@@ -606,6 +717,14 @@
                 <option value="Best Day">Best Day</option>
               </select>
             </div>
+          </div>
+        </div>
+        <div class="ldr-row">
+          <p class="ldr-title">Long distance ♡</p>
+          <p class="ldr-hint">Send your photos to your love, or add theirs to this strip.</p>
+          <div class="fallback-buttons">
+            <button class="btn btn-secondary js-copy-code">COPY MY PHOTO CODE</button>
+            <button class="btn btn-ghost js-paste-code">PASTE THEIR CODE</button>
           </div>
         </div>
         <div class="step-footer">
@@ -720,6 +839,12 @@
   try{ state.muted = localStorage.getItem('oob-muted') === '1'; }catch(e){}
   if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) state.animated = false;
 
+  // phones & tablets get phone wording; laptops/PCs get computer wording (see .phone-only / .desktop-only)
+  var IS_PHONE = !!((navigator.userAgentData && navigator.userAgentData.mobile) ||
+    /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+    (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent)));   // iPads pretend to be Macs
+  document.documentElement.classList.add(IS_PHONE ? 'is-phone' : 'is-desktop');
+
   /* ---------------- utils ---------------- */
   function $(id){ return document.getElementById(id); }
   function wait(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
@@ -789,7 +914,11 @@
       $('welcomeOverlay').classList.remove('show');
       try{ sessionStorage.setItem('oob-welcomed','1'); }catch(e){}
     }
-    $('welcomeStart').addEventListener('click', function(){ dismiss(); enterApp(); });
+    $('welcomeStart').addEventListener('click', function(){
+      dismiss();
+      if(pendingRoom) enterLive(pendingRoom);   // opened from a room invite link
+      else enterApp();
+    });
     $('welcomeDismiss').addEventListener('click', dismiss);
   })();
 
@@ -803,44 +932,51 @@
     a.addEventListener('click', function(){ $('navLinks').classList.remove('open'); });
   });
   $('startBtn').addEventListener('click', enterApp);
+  // the brand link leaves the app; ask first if there are photos that would be lost
+  document.querySelector('.brand').addEventListener('click', function(e){
+    if($('app').dataset.view !== 'app') return;
+    e.preventDefault();
+    function goHome(){ exitApp(); history.pushState({pid:PAGE_ID, view:'landing'}, ''); window.scrollTo(0,0); }
+    if(!state.shots.length){ goHome(); return; }
+    confirmBox({
+      title: 'Leave your photos? ♡',
+      text: "Going back to the home page clears the photos you haven't downloaded yet.",
+      yes: 'LEAVE', no: 'STAY ♡'
+    }).then(function(yes){ if(yes) goHome(); });
+  });
   $('howBtn').addEventListener('click', function(){
     document.getElementById('howitworks').scrollIntoView({behavior:'smooth'});
   });
 
-  /* ---------------- gallery thumbnails (landing) ---------------- */
+  /* ---------------- frame thumbnails ----------------
+     Every thumbnail is the real strip, drawn by the same code as the final photo
+     (just smaller), so what you pick is exactly what you get. Before any photos
+     exist, pink placeholders stand in for them. */
+  function fillThumbs(container, scale){
+    Array.prototype.forEach.call(container.children, function(card){
+      var box = card.querySelector('.frame-thumb, .gallery-thumb');
+      box.innerHTML = '';
+      box.appendChild(makeBase(templateById(card.dataset.template), null, scale).canvas);
+    });
+  }
   (function buildGallery(){
     var grid = $('galleryGrid');
     TEMPLATES.forEach(function(t){
       var card = document.createElement('div');
       card.className = 'gallery-card';
+      card.dataset.template = t.id;
       var thumb = document.createElement('div');
       thumb.className = 'gallery-thumb';
-      thumb.style.background = thumbBackground(t);
       card.appendChild(thumb);
       var label = document.createElement('span');
       label.textContent = t.name;
       card.appendChild(label);
       grid.appendChild(card);
     });
+    // wait for the web fonts, otherwise the canvas draws headers in a fallback font
+    var fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+    fontsReady.then(function(){ fillThumbs(grid, 0.2); });
   })();
-  function thumbBackground(t){
-    var base = colorHex(t.color);
-    var fill;
-    if(t.color === 'romantic') fill = 'linear-gradient(160deg,#FFF6F8,#FFD1E3)';
-    else if(t.layout === 'polaroid') fill = 'linear-gradient(160deg,' + base + ',' + shade(base,-0.08) + ')';
-    else fill = 'linear-gradient(160deg,' + shade(base,0.12) + ',' + shade(base,-0.1) + ')';
-    // extra CSS gradient layers hint at the layout: a cross for the grid, sprocket holes for film
-    var line = 'rgba(255,255,255,.85)';
-    if(t.layout === 'grid'){
-      return 'linear-gradient(90deg,transparent 47%,' + line + ' 47% 53%,transparent 53%),' +
-             'linear-gradient(0deg,transparent 47%,' + line + ' 47% 53%,transparent 53%),' + fill;
-    }
-    if(t.layout === 'film'){
-      var hole = 'radial-gradient(circle,rgba(255,246,248,.85) 3px,transparent 3.5px)';
-      return hole + ' left 4px top 0/12px 14px repeat-y,' + hole + ' right 4px top 0/12px 14px repeat-y,' + fill;
-    }
-    return fill;
-  }
 
   /* ---------------- build step-count ---------------- */
   (function buildCounts(){
@@ -864,29 +1000,42 @@
     });
   }
 
-  /* ---------------- build step-frame ---------------- */
-  (function buildFrameGrid(){
-    var grid = $('frameGrid');
+  /* ---------------- frame pickers (frame step + customize step) ---------------- */
+  function buildFrameCards(container){
     TEMPLATES.forEach(function(t){
       var card = document.createElement('button');
       card.type = 'button';
-      card.className = 'frame-card' + (t.id===state.templateId ? ' selected':'');
+      card.className = 'frame-card';
+      card.dataset.template = t.id;
       var thumb = document.createElement('div');
       thumb.className = 'frame-thumb';
-      thumb.style.background = thumbBackground(t);
       card.appendChild(thumb);
       var label = document.createElement('span');
       label.textContent = t.name;
       card.appendChild(label);
-      card.addEventListener('click', function(){
-        state.templateId = t.id;
-        state.colorId = t.color;
-        Array.prototype.forEach.call(grid.children, function(c){ c.classList.remove('selected'); });
-        card.classList.add('selected');
-      });
-      grid.appendChild(card);
+      card.addEventListener('click', function(){ selectTemplate(t.id); });
+      container.appendChild(card);
     });
-  })();
+  }
+  buildFrameCards($('frameGrid'));
+  buildFrameCards($('framePickRow'));
+
+  function syncFrameSelection(){
+    ['frameGrid','framePickRow'].forEach(function(id){
+      Array.prototype.forEach.call($(id).children, function(c){
+        var on = c.dataset.template === state.templateId;
+        c.classList.toggle('selected', on);
+        c.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    });
+  }
+  function selectTemplate(id){
+    state.templateId = id;
+    state.colorId = templateById(id).color;   // a new frame starts in its own color
+    syncFrameSelection();
+    if(state.currentStep === 'customize'){ prepCustomizeDefaults(); renderPreview(); }
+  }
+  syncFrameSelection();
 
   /* ---------------- build customize controls ---------------- */
   (function buildCustomize(){
@@ -967,41 +1116,142 @@
   /* ---------------- navigation ---------------- */
   function enterApp(){
     $('app').setAttribute('data-view','app');
-    goToStep('count', true);
+    goToStep('count');
   }
   function exitApp(){
     stopStream();
     if(state.currentStep === 'camera') leaveCamera();
+    destroyLive();
     stopAnim();
+    state.shots = [];
     $('app').setAttribute('data-view','landing');
   }
-  function goToStep(step, skipStop){
+  // opts.noHistory: we got here *because* of the back button, so don't add a new history entry
+  function goToStep(step, opts){
+    opts = opts || {};
     if(state.currentStep === 'camera' && step !== 'camera'){
-      if(!skipStop) stopStream();
+      stopStream();
       leaveCamera();
     }
+    if(state.currentStep === 'live' && step !== 'live') leaveLiveStep();
     stopAnim();
     state.currentStep = step;
+    if(!opts.noHistory) history.pushState({pid:PAGE_ID, step:step}, '');
     Array.prototype.forEach.call(document.querySelectorAll('.step'), function(s){
       s.classList.toggle('active', s.dataset.step === step);
     });
     renderDots();
     if(step === 'count'){ syncCountGrid(); }
+    if(step === 'frame'){
+      fillThumbs($('frameGrid'), 0.2);
+      $('toCameraBtn').textContent = state.shots.length >= state.shotCount ? 'CONTINUE ♡' : 'START PHOTO BOOTH ♡';
+    }
     if(step === 'camera'){ initCamera(); updateTray(); startFx(); }
-    if(step === 'customize'){ prepCustomizeDefaults(); renderPreview(); }
+    if(step === 'live'){ enterLiveStep(); }
+    if(step === 'customize'){ prepCustomizeDefaults(); fillThumbs($('framePickRow'), 0.14); renderPreview(); }
     if(step === 'result'){ renderResult(); }
     window.scrollTo(0,0);
   }
+
+  /* ---------------- phone back button + "are you sure?" ----------------
+     Every step gets its own browser history entry (pushState), so the phone's back
+     button moves one step back inside the app instead of leaving the site.
+     Underneath the home page sits one extra "guard" entry: landing on it means the
+     next back press would leave the site, so we ask first. */
+  var PAGE_ID = Date.now() + '-' + Math.random().toString(36).slice(2);   // ignores entries left over from before a reload
+  var leaving = false;
+  history.replaceState({pid:PAGE_ID, view:'landing'}, '');
+  // browsers skip history entries added before the visitor touches the page, so wait for a first tap
+  function installGuard(){
+    document.removeEventListener('click', installGuard, true);
+    document.removeEventListener('keydown', installGuard, true);
+    history.replaceState({pid:PAGE_ID, guard:true}, '');
+    history.pushState({pid:PAGE_ID, view:'landing'}, '');
+  }
+  document.addEventListener('click', installGuard, true);
+  document.addEventListener('keydown', installGuard, true);
+
+  function currentEntry(){
+    return $('app').dataset.view === 'app' ? {pid:PAGE_ID, step:state.currentStep} : {pid:PAGE_ID, view:'landing'};
+  }
+  window.addEventListener('popstate', function(e){
+    var s = e.state || {};
+    closeCodeModal();   // back button should close an open code box, not leave it floating over another step
+    if(s.guard){ askToLeave(); return; }
+    if(s.pid === PAGE_ID && s.step){
+      $('app').setAttribute('data-view','app');
+      goToStep(s.step, {noHistory:true});
+      return;
+    }
+    // back to the home page (or an entry from before a reload)
+    if($('app').dataset.view !== 'app') return;
+    if(!state.shots.length){ exitApp(); return; }
+    var here = currentEntry();
+    confirmBox({
+      title: 'Leave your photos? ♡',
+      text: "Going back to the home page clears the photos you haven't downloaded yet.",
+      yes: 'LEAVE', no: 'STAY ♡'
+    }).then(function(yes){
+      if(yes === null) return;
+      if(yes) exitApp();
+      else history.pushState(here, '');
+    });
+  });
+  function askToLeave(){
+    var here = currentEntry();
+    confirmBox({
+      title: 'Leave the photo booth?',
+      text: state.shots.length ? "Your photos haven't been downloaded yet — they'll be gone." : 'You can come back anytime ♡',
+      yes: 'LEAVE', no: 'STAY ♡'
+    }).then(function(yes){
+      if(yes === null) return;
+      if(!yes){ history.pushState(here, ''); return; }
+      leaving = true;
+      history.back();
+      // if there's no page before ours, history.back() does nothing — let them know how to exit
+      setTimeout(function(){ showToast('Tap back once more to leave'); }, 400);
+    });
+  }
+  // refresh, closing the tab, or typing a new address: the browser shows its own "Leave site?" box
+  window.addEventListener('beforeunload', function(e){
+    if(state.shots.length && !leaving){ e.preventDefault(); e.returnValue = ''; }
+  });
+
+  var confirmResolve = null;
+  function confirmBox(o){
+    if(confirmResolve) confirmResolve(null);   // a newer question replaces an open one
+    $('confirmTitle').textContent = o.title;
+    $('confirmText').textContent = o.text;
+    $('confirmYes').textContent = o.yes;
+    $('confirmNo').textContent = o.no;
+    $('confirmModal').hidden = false;
+    setTimeout(function(){ $('confirmNo').focus(); }, 30);
+    return new Promise(function(resolve){ confirmResolve = resolve; });
+  }
+  function closeConfirm(answer){
+    $('confirmModal').hidden = true;
+    var r = confirmResolve;
+    confirmResolve = null;
+    if(r) r(answer);
+  }
+  $('confirmYes').addEventListener('click', function(){ closeConfirm(true); });
+  $('confirmNo').addEventListener('click', function(){ closeConfirm(false); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && !$('confirmModal').hidden) closeConfirm(false);
+  });
   function renderDots(){
     var wrap = $('progressDots');
     wrap.innerHTML = '';
+    var current = state.currentStep === 'live' ? 'camera' : state.currentStep;   // the live room takes the camera's place
     STEP_ORDER.forEach(function(s){
       var d = document.createElement('span');
-      if(s === state.currentStep) d.classList.add('active');
+      if(s === current) d.classList.add('active');
       wrap.appendChild(d);
     });
   }
+  // the on-screen ← behaves exactly like the phone's back button
   $('backBtn').addEventListener('click', function(){
+    if(history.state && history.state.pid === PAGE_ID && history.state.step){ history.back(); return; }
     var i = STEP_ORDER.indexOf(state.currentStep);
     if(i <= 0){ exitApp(); return; }
     goToStep(STEP_ORDER[i-1]);
@@ -1009,16 +1259,24 @@
   $('toFrameBtn').addEventListener('click', function(){ goToStep('frame'); });
   $('toCameraBtn').addEventListener('click', function(){
     if(!state.colorId) state.colorId = templateById(state.templateId).color;
-    state.shots = [];
-    goToStep('camera');
+    // keep photos you already took; only drop extras if you picked a smaller count
+    if(state.shots.length > state.shotCount) state.shots = state.shots.slice(0, state.shotCount);
+    goToStep(state.shots.length >= state.shotCount ? 'customize' : 'camera');
   });
   $('changeFrameFromCamera').addEventListener('click', function(){ goToStep('frame'); });
   $('toResultBtn').addEventListener('click', function(){ goToStep('result'); });
-  $('changeFrameBtn').addEventListener('click', function(){ goToStep('frame'); });
-  $('retakeBtn').addEventListener('click', function(){ state.shots = []; goToStep('camera'); });
+  $('changeFrameBtn').addEventListener('click', function(){
+    goToStep('customize');
+    setTimeout(function(){ $('framePickRow').scrollIntoView({behavior:'smooth', block:'center'}); }, 80);
+  });
+  $('retakeBtn').addEventListener('click', function(){
+    state.shots = [];
+    goToStep(live.connected ? 'live' : 'camera');   // still in a live room? shoot again together
+  });
 
   function prepCustomizeDefaults(){
     if(!state.colorId) state.colorId = templateById(state.templateId).color;
+    syncFrameSelection();
     var swatchRow = $('colorSwatches');
     Array.prototype.forEach.call(swatchRow.children, function(s,i){
       s.classList.toggle('selected', COLOR_OPTIONS[i].id === state.colorId);
@@ -1081,11 +1339,11 @@
       $('takePhotoBtn').classList.remove('fallback');
       $('fallbackRow').classList.remove('highlight');
     } else {
-      // live camera is unavailable: turn the shutter into the phone-camera button
+      // live camera is unavailable: turn the shutter into the phone-camera / pick-a-photo button
       state.cameraFallbackMode = true;
       $('takePhotoBtn').disabled = false;
       $('takePhotoBtn').classList.add('fallback');
-      $('takePhotoBtn').setAttribute('aria-label', "Take a photo with your phone's camera");
+      $('takePhotoBtn').setAttribute('aria-label', IS_PHONE ? "Take a photo with your phone's camera" : 'Choose a photo');
       $('fallbackRow').classList.add('highlight');
     }
   }
@@ -1098,10 +1356,15 @@
     $('fallbackRow').classList.remove('highlight');
     $('switchCameraBtn').disabled = false;
   }
+  // what to suggest when the live camera fails, worded for the device
+  var ALT_CAPTURE = IS_PHONE
+    ? "use your phone's own camera below — it works without any permission here."
+    : 'choose photos from your computer below, or open this page on your phone.';
+  $('permissionUpload').textContent = IS_PHONE ? 'USE PHONE CAMERA INSTEAD' : 'CHOOSE PHOTOS INSTEAD';
   function initCamera(){
     if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
       showPermission('unsupported', "Your camera isn't reachable here ♡",
-        "This browser doesn't support live camera access. Use your phone's own camera below, or try Chrome or Safari.", false);
+        "This browser doesn't support live camera access. Try Chrome or Safari, or " + ALT_CAPTURE, false);
       return;
     }
     showPermission('asking', "We'd love to see your smile ♡", "Please allow camera access when your browser asks.", false);
@@ -1118,10 +1381,10 @@
       var name = err && err.name;
       if(name === 'NotAllowedError' || name === 'PermissionDeniedError' || name === 'SecurityError'){
         showPermission('denied', "Oops! We can't access your camera ♡",
-          "Allow camera permission in your browser settings, or just use your phone's own camera below — it works without any permission here.", true);
+          'Allow camera permission in your browser settings, or ' + ALT_CAPTURE, true);
       }else if(name === 'NotFoundError' || name === 'DevicesNotFoundError'){
         showPermission('missing', "No camera found ♡",
-          "We couldn't find a camera here — use your phone's own camera below instead, it works without any permission.", true);
+          "We couldn't find a camera here — " + ALT_CAPTURE, true);
       }else{
         showPermission('error', "Something went wrong ♡",
           "We couldn't start the camera. Please try again.", true);
@@ -1217,7 +1480,8 @@
   }
   $('useCameraAppBtn').addEventListener('click', function(){ $('cameraAppInput').click(); });
   $('useGalleryBtn').addEventListener('click', function(){ $('galleryInput').click(); });
-  $('permissionUpload').addEventListener('click', function(){ $('galleryInput').click(); });
+  // the label said "phone camera" but used to open the gallery — now it does what it says
+  $('permissionUpload').addEventListener('click', function(){ $(IS_PHONE ? 'cameraAppInput' : 'galleryInput').click(); });
   $('cameraAppInput').addEventListener('change', function(){ addFilesAsShots(this.files); this.value = ''; });
   $('galleryInput').addEventListener('change', function(){ addFilesAsShots(this.files); this.value = ''; });
   $('trayContinue').addEventListener('click', function(){
@@ -1246,22 +1510,8 @@
       });
     }
   }
-  function inviteMessage(){
-    return "I made us a little photo booth ♡ Open this and let's take photos together: " + location.href;
-  }
-  $('inviteBtn').addEventListener('click', function(){
-    var msg = inviteMessage();
-    if(navigator.share){
-      navigator.share({ title:'Our Little Photo Booth', text:"I made us a little photo booth ♡ Let's take photos together:", url: location.href })
-        .catch(function(){ /* cancelled */ });
-      return;
-    }
-    copyText(msg).then(function(){
-      showToast('Invite link copied — send it to your love ♡');
-    }).catch(function(){
-      openCodeModal('invite', msg);
-    });
-  });
+  // the clean page address — without a leftover #frames or ?query from browsing around
+  function siteUrl(){ return location.origin + location.pathname; }
 
   function encodeShot(canvas, size, quality){
     var t = document.createElement('canvas');
@@ -1281,9 +1531,13 @@
   }
   function unpackCode(raw){
     var code = (raw || '').replace(/\s+/g, '');
-    var parts = code.split('|');
-    if(parts[0] !== 'LB1' || parts.length < 2) return Promise.reject(new Error('format'));
-    var pieces = parts.slice(1).filter(Boolean);
+    // chat apps sometimes add text around the code — start at the marker, keep only base64 characters
+    var start = code.indexOf('LB1|');
+    if(start === -1) return Promise.reject(new Error('format'));
+    var pieces = code.slice(start + 4).split('|').map(function(p){
+      var m = p.match(/^[A-Za-z0-9+\/]+={0,2}/);
+      return m ? m[0] : '';
+    }).filter(function(p){ return p.length > 100; });
     if(!pieces.length) return Promise.reject(new Error('empty'));
     return Promise.all(pieces.map(function(b64){
       return new Promise(function(resolve, reject){
@@ -1298,7 +1552,7 @@
       });
     }));
   }
-  $('copyMyCodeBtn').addEventListener('click', function(){
+  function copyMyCode(){
     // only send your own photos — not the ones your partner already sent you
     var mine = state.shots.filter(function(c){ return c.dataset.from !== 'you'; });
     if(!mine.length){ showToast('Take a photo first, then copy your code ♡'); return; }
@@ -1310,11 +1564,45 @@
       return;
     }
     copyText(code).then(function(){
-      showToast('Code copied — send it to your love by chat ♡');
+      showToast('Code copied — send it to your love by WhatsApp ♡');
     }).catch(function(){
       openCodeModal('show', code);
     });
+  }
+  // the long-distance buttons appear twice (camera step + customize step), so wire them up by class
+  Array.prototype.forEach.call(document.querySelectorAll('.js-copy-code'), function(b){ b.addEventListener('click', copyMyCode); });
+  Array.prototype.forEach.call(document.querySelectorAll('.js-paste-code'), function(b){
+    b.addEventListener('click', function(){ openCodeModal('paste'); });
   });
+
+  /* Their photos replace any earlier ones from them (so pasting twice doesn't duplicate).
+     If both of you took too many for one strip, keep an even share and alternate
+     me / you / me / you so the strip reads like a little conversation. */
+  function mergePartnerShots(theirs){
+    var mine = state.shots.filter(function(c){ return c.dataset.from !== 'you'; });
+    var keepMine = mine.length, keepTheirs = theirs.length;
+    if(keepMine + keepTheirs > MAX_SHOTS){
+      keepMine = Math.min(mine.length, Math.max(MAX_SHOTS/2, MAX_SHOTS - theirs.length));
+      keepTheirs = MAX_SHOTS - keepMine;
+    }
+    var a = mine.slice(0, keepMine), b = theirs.slice(0, keepTheirs), out = [];
+    for(var i=0; i<Math.max(a.length, b.length); i++){
+      if(a[i]) out.push(a[i]);
+      if(b[i]) out.push(b[i]);
+    }
+    return {shots:out, keepMine:keepMine, keepTheirs:keepTheirs, trimmed:(mine.length - keepMine) + (theirs.length - keepTheirs)};
+  }
+  function applyPartnerShots(merged){
+    state.shots = merged.shots;
+    state.shotCount = merged.shots.length;
+    updateTray();
+    showToast('Their photos are in — you are on one strip now ♡');
+    setTimeout(function(){
+      // already on the customize step? just redraw it instead of stacking another history entry
+      if(state.currentStep === 'customize'){ prepCustomizeDefaults(); fillThumbs($('framePickRow'), 0.14); renderPreview(); }
+      else goToStep('customize');
+    }, 800);
+  }
 
   var codeModalMode = 'paste';
   function openCodeModal(mode, text){
@@ -1344,7 +1632,6 @@
     setTimeout(function(){ input.focus(); if(mode !== 'paste') input.select(); }, 60);
   }
   function closeCodeModal(){ $('codeModal').hidden = true; }
-  $('pasteCodeBtn').addEventListener('click', function(){ openCodeModal('paste'); });
   $('codeCancel').addEventListener('click', closeCodeModal);
   $('codeModal').addEventListener('click', function(e){ if(e.target === this) closeCodeModal(); });
   document.addEventListener('keydown', function(e){
@@ -1355,32 +1642,36 @@
     var raw = $('codeInput').value;
     if(!raw.trim()){ showToast('Paste the code first ♡'); return; }
     unpackCode(raw).then(function(canvases){
-      var room = MAX_SHOTS - state.shots.length;
-      if(room <= 0){ showToast('Your strip is full — remove a photo first ♡'); return; }
-      var added = canvases.slice(0, room);
-      added.forEach(function(c){ state.shots.push(c); });
-      state.shotCount = Math.max(state.shotCount, state.shots.length);
       closeCodeModal();
-      updateTray();
-      showToast(added.length < canvases.length
-        ? 'Only ' + added.length + ' of their photos fit (max ' + MAX_SHOTS + ') ♡'
-        : 'Their photos are in — you are on one strip now ♡');
-      setTimeout(function(){ goToStep('customize'); }, 800);
+      var merged = mergePartnerShots(canvases);
+      if(!merged.trimmed){ applyPartnerShots(merged); return; }
+      confirmBox({
+        title: 'One strip holds ' + MAX_SHOTS + ' photos ♡',
+        text: "Together you have more than that. We'll keep " + merged.keepMine + ' of yours and ' +
+              merged.keepTheirs + ' of theirs, side by side.',
+        yes: 'OKAY ♡', no: 'CANCEL'
+      }).then(function(ok){ if(ok) applyPartnerShots(merged); });
     }).catch(function(){
       showToast("That code doesn't look right. Copy the whole thing and try again ♡");
     });
   });
 
   /* ---------------- capture / countdown sequence ---------------- */
-  function captureShot(){
-    var vw = video.videoWidth || 640, vh = video.videoHeight || 640;
+  // grab the center square of a <video> as a 640x640 photo; front cameras are mirrored like a selfie
+  function captureVideo(videoEl, mirror){
+    var vw = videoEl.videoWidth || 640, vh = videoEl.videoHeight || 640;
     var size = Math.min(vw, vh);
     var sx = (vw - size)/2, sy = (vh - size)/2;
     var c = document.createElement('canvas');
     c.width = 640; c.height = 640;
     var cx = c.getContext('2d');
-    if(state.facingMode === 'user'){ cx.translate(640,0); cx.scale(-1,1); }
-    cx.drawImage(video, sx, sy, size, size, 0, 0, 640, 640);
+    if(mirror){ cx.translate(640,0); cx.scale(-1,1); }
+    cx.drawImage(videoEl, sx, sy, size, size, 0, 0, 640, 640);
+    return c;
+  }
+  function captureShot(){
+    var c = captureVideo(video, state.facingMode === 'user');
+    var cx = c.getContext('2d');
     if(state.fxId !== 'none'){
       // bake the live effect into the photo — un-mirrored, so hearts don't flip
       cx.setTransform(1,0,0,1,0,0);
@@ -1390,22 +1681,24 @@
     state.shots.push(c);
     updateTray();
   }
-  function triggerFlash(){
-    var f = $('flash');
+  // flash / countdown take an element id, so the solo camera and the live room can share them
+  function triggerFlash(id){
+    var f = $(id || 'flash');
     f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
   }
-  function showCountdownText(txt){
-    var el = $('countdown');
+  function showCountdownText(txt, id){
+    var el = $(id || 'countdown');
     el.textContent = txt;
     el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
   }
-  function countdownFrom(n){
+  function countdownFrom(n, id){
     var p = Promise.resolve();
     var seq = [];
     for(var i=n;i>=1;i--){ seq.push(i); }
     return seq.reduce(function(chain, num){
-      return chain.then(function(){ showCountdownText(String(num)); return wait(650); });
-    }, p).then(function(){ showCountdownText('CLICK!'); return wait(220); });
+      return chain.then(function(){ showCountdownText(String(num), id); return wait(650); });
+    }, p).then(function(){ showCountdownText('CLICK!', id); return wait(220); })
+      .then(function(){ $(id || 'countdown').classList.remove('show'); });   // don't leave "CLICK!" hanging on screen
   }
   function setShotIndicator(txt){ $('shotIndicator').textContent = txt; }
   function showTransition(l1, l2){
@@ -1418,7 +1711,7 @@
   var booting = false;
   var boothRun = 0;   // bumped when we leave the camera, so an old countdown knows to stop
   $('takePhotoBtn').addEventListener('click', function(){
-    if(state.cameraFallbackMode){ $('cameraAppInput').click(); return; }
+    if(state.cameraFallbackMode){ $(IS_PHONE ? 'cameraAppInput' : 'galleryInput').click(); return; }
     if(booting || $('takePhotoBtn').disabled) return;
     if(state.shots.length >= state.shotCount){
       showToast('You already have ' + state.shotCount + ' photos ♡');
@@ -1534,6 +1827,523 @@
     })(fx.last);
   }
   function stopFx(){ cancelAnimationFrame(fx.raf); fx.raf = 0; }
+
+  /* ================= LIVE ROOM =================
+     Two phones see each other and share one countdown. It's built on WebRTC
+     (the browser's built-in video calling), with PeerJS to make it simpler:
+
+       host  : new Peer('our-little-booth-k7x2mq')  → waits in the room
+       guest : peer.connect(hostId) + peer.call(hostId, myCamera)
+       both  : a "data connection" for messages (start countdown, photos)
+               and a "media call" for the live video + voice.
+
+     The free PeerJS server only introduces the two phones (signaling); the video
+     then flows directly phone-to-phone and is never stored anywhere. */
+  var ICE_SERVERS = [
+    {urls:'stun:stun.l.google.com:19302'},
+    {urls:'stun:stun1.l.google.com:19302'}
+    // Stage 2: TURN relay servers go here, for phones on mobile data that can't connect directly
+  ];
+  var PEERJS_URL = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js';
+  var ROOM_PREFIX = 'our-little-booth-';
+  var ROOM_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // no 0/O or 1/I look-alikes
+  var CONNECT_TIMEOUT = 25000;
+  var live = {
+    peer:null, conn:null, call:null, localStream:null, remoteStream:null,
+    role:null, code:'', connected:false, partnerReady:false, remoteFacing:'user',
+    rtt:200, rounds:2, running:false, runId:0, pending:{}, early:{}, connectTimer:0
+  };
+  var pendingRoom = null;   // room code from an invite link (#room=K7X2MQ)
+
+  // only download PeerJS when someone actually opens a live room
+  function loadPeerJs(){
+    if(window.Peer) return Promise.resolve();
+    if(loadPeerJs.p) return loadPeerJs.p;
+    loadPeerJs.p = new Promise(function(resolve, reject){
+      var s = document.createElement('script');
+      s.src = PEERJS_URL;
+      s.onload = function(){ window.Peer ? resolve() : reject(new Error('load')); };
+      s.onerror = function(){ loadPeerJs.p = null; reject(new Error('load')); };
+      document.head.appendChild(s);
+    });
+    return loadPeerJs.p;
+  }
+  function makeRoomCode(){
+    var bytes = new Uint8Array(6), code = '';
+    crypto.getRandomValues(bytes);
+    for(var i=0;i<6;i++) code += ROOM_ALPHABET[bytes[i] % ROOM_ALPHABET.length];
+    return code;
+  }
+  function cleanCode(v){ return String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6); }
+  function roomLink(code){ return siteUrl() + '#room=' + code; }
+
+  /* ---- panels ---- */
+  function setLiveError(msg){ $('liveError').textContent = msg || ''; $('liveError').hidden = !msg; }
+  function setLiveStatus(msg){ $('liveStatus').textContent = msg || ''; }
+  function updateLivePanels(){
+    var mode = !live.peer ? 'pick' : (live.connected ? 'stage' : 'waiting');
+    $('livePick').hidden = mode !== 'pick';
+    $('liveWaiting').hidden = mode !== 'waiting';
+    $('liveStage').hidden = mode !== 'stage';
+    $('liveLeaveBtn').hidden = mode === 'pick';
+    $('liveHostInfo').hidden = live.role !== 'host';
+    if(mode === 'waiting'){
+      $('liveWaitStatus').textContent = live.role === 'host'
+        ? 'Waiting for your love to join…'
+        : 'Joining room ' + live.code + '…';
+    }
+    updateShutter();
+  }
+  function updateShutter(){
+    var canShoot = live.connected && live.partnerReady && !live.running;
+    $('liveShutter').disabled = !canShoot;
+    if(!live.connected || live.running) return;
+    setLiveStatus(live.partnerReady
+      ? 'Both of you are here ♡ Either one can press the heart.'
+      : 'Waiting for your love to come back to the camera…');
+  }
+
+  /* ---- camera + mic ---- */
+  function getLiveStream(){
+    var v = {facingMode: state.facingMode, width:{ideal:1280}, height:{ideal:720}};
+    return navigator.mediaDevices.getUserMedia({video:v, audio:{echoCancellation:true, noiseSuppression:true}})
+      .catch(function(err){
+        if(err && err.name === 'NotAllowedError') throw err;   // camera itself was refused
+        return navigator.mediaDevices.getUserMedia({video:v, audio:false});   // e.g. no microphone
+      })
+      .then(function(stream){
+        live.localStream = stream;
+        var el = $('liveLocal');
+        el.srcObject = stream;
+        el.classList.toggle('mirror', state.facingMode === 'user');
+        var hasMic = stream.getAudioTracks().length > 0;
+        $('liveMicBtn').hidden = !hasMic;
+        setMicIcon(hasMic);
+        return stream;
+      });
+  }
+  function setMicIcon(on){
+    $('liveMicBtn').textContent = on ? '🎙' : '🔇';
+    $('liveMicBtn').setAttribute('aria-label', on ? 'Mute microphone' : 'Unmute microphone');
+  }
+  function setLocalVideoEnabled(on){
+    if(!live.localStream) return;
+    live.localStream.getVideoTracks().forEach(function(t){ t.enabled = on; });
+  }
+  function showRemote(stream){
+    live.remoteStream = stream;
+    var el = $('liveRemote');
+    el.srcObject = stream;
+    el.classList.toggle('mirror', live.remoteFacing === 'user');
+    el.muted = false;
+    var p = el.play();
+    // browsers may block sound until the viewer taps; play muted and offer a button
+    if(p && p.catch) p.catch(function(){
+      el.muted = true;
+      el.play().catch(function(){});
+      $('liveUnmute').hidden = false;
+    });
+  }
+
+  /* ---- create / join ---- */
+  function startLive(role, code){
+    setLiveError('');
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.RTCPeerConnection){
+      setLiveError("This browser can't do live video. Try Chrome or Safari ♡");
+      return;
+    }
+    $('liveCreateBtn').disabled = true; $('liveJoinBtn').disabled = true;
+    Promise.all([loadPeerJs(), getLiveStream()]).then(function(){
+      if(role === 'host') openHostPeer(makeRoomCode(), 0);
+      else openGuestPeer(code);
+    }).catch(function(err){
+      destroyLive();
+      if(err && err.message === 'load') setLiveError("Couldn't load the live feature. Check your internet and try again ♡");
+      else if(err && err.name === 'NotAllowedError') setLiveError('Please allow camera access to go live ♡');
+      else setLiveError("Couldn't start your camera. Close other apps using it and try again ♡");
+    }).then(function(){
+      $('liveCreateBtn').disabled = false; $('liveJoinBtn').disabled = false;
+    });
+  }
+  function openHostPeer(code, attempt){
+    var peer = new Peer(ROOM_PREFIX + code.toLowerCase(), {config:{iceServers:ICE_SERVERS}, debug:1});
+    live.peer = peer; live.role = 'host'; live.code = code;
+    peer.on('open', function(){
+      $('liveCode').textContent = code;
+      updateLivePanels();
+    });
+    peer.on('connection', function(conn){
+      // a room is for two — politely turn away a third phone
+      if(live.conn && live.conn.open){
+        conn.on('open', function(){ conn.send({type:'full'}); setTimeout(function(){ conn.close(); }, 500); });
+        return;
+      }
+      bindConn(conn);
+      startConnectTimer();
+    });
+    peer.on('call', function(call){
+      if(live.call && live.call.open){ call.close(); return; }
+      call.answer(live.localStream);
+      bindCall(call);
+    });
+    peer.on('error', function(err){
+      if(err.type === 'unavailable-id' && attempt < 3 && live.peer === peer){   // code already taken: roll a new one
+        peer.destroy();
+        openHostPeer(makeRoomCode(), attempt + 1);
+        return;
+      }
+      peerError(err);
+    });
+    peer.on('disconnected', function(){ if(live.peer === peer && !peer.destroyed) peer.reconnect(); });
+  }
+  function openGuestPeer(code){
+    var peer = new Peer({config:{iceServers:ICE_SERVERS}, debug:1});
+    live.peer = peer; live.role = 'guest'; live.code = code;
+    updateLivePanels();
+    peer.on('open', function(){
+      var hostId = ROOM_PREFIX + code.toLowerCase();
+      bindConn(peer.connect(hostId, {reliable:true}));
+      bindCall(peer.call(hostId, live.localStream));
+      startConnectTimer();
+    });
+    peer.on('error', function(err){
+      if(err.type === 'peer-unavailable'){
+        failLive("Room " + code + " wasn't found. Check the code, or ask your love to open the room again ♡");
+        return;
+      }
+      peerError(err);
+    });
+    peer.on('disconnected', function(){ if(live.peer === peer && !peer.destroyed) peer.reconnect(); });
+  }
+  function peerError(err){
+    var type = err && err.type;
+    // the introduction server dropping out doesn't matter once the phones are talking directly
+    if(live.connected && /network|socket|server/.test(type || '')) return;
+    if(type === 'browser-incompatible') failLive("This browser can't do live video. Try Chrome or Safari ♡");
+    else if(/network|socket|server/.test(type || '')) failLive("Can't reach the room server. Check your internet and try again ♡");
+    else failLive('Something went wrong with the room. Please try again ♡');
+  }
+  function failLive(msg){
+    destroyLive();
+    setLiveError(msg);
+  }
+
+  /* ---- the two connections ---- */
+  function bindConn(conn){
+    live.conn = conn;
+    conn.on('open', function(){
+      sendLive({type:'hello', facing:state.facingMode});
+      sendLive({type:'ping', t:Date.now()});
+      sendLive({type:'ready', ready: state.currentStep === 'live'});
+      checkConnected();
+    });
+    conn.on('data', onLiveData);
+    conn.on('close', function(){ if(live.conn === conn) partnerLeft(); });
+    conn.on('error', function(){ /* 'close' follows */ });
+  }
+  function bindCall(call){
+    live.call = call;
+    call.on('stream', function(stream){
+      showRemote(stream);
+      checkConnected();
+    });
+    call.on('close', function(){ if(live.call === call) partnerLeft(); });
+    call.on('error', function(){ /* 'close' follows */ });
+    var pc = call.peerConnection;
+    if(pc) pc.addEventListener('iceconnectionstatechange', function(){
+      if(live.call === call && pc.iceConnectionState === 'failed') networkFail();
+    });
+  }
+  function checkConnected(){
+    if(live.connected || !live.conn || !live.conn.open || !live.remoteStream) return;
+    live.connected = true;
+    clearTimeout(live.connectTimer);
+    setLocalVideoEnabled(state.currentStep === 'live');
+    setLiveError('');
+    updateLivePanels();
+    showToast("You're together now ♡");
+  }
+  function startConnectTimer(){
+    clearTimeout(live.connectTimer);
+    live.connectTimer = setTimeout(function(){ if(!live.connected) networkFail(); }, CONNECT_TIMEOUT);
+  }
+  // the phones found each other but couldn't open a direct line (typical on mobile data)
+  function networkFail(){
+    var msg = "We couldn't connect your phones. This often happens on mobile data — try again with both phones on WiFi ♡";
+    if(live.role === 'host' && live.peer){
+      dropPartner();
+      updateLivePanels();
+      setLiveError(msg);
+    } else {
+      failLive(msg);
+    }
+  }
+  function dropPartner(){
+    live.runId++; live.running = false;
+    clearTimeout(live.connectTimer);
+    var conn = live.conn, call = live.call;
+    live.conn = null; live.call = null; live.remoteStream = null;
+    live.connected = false; live.partnerReady = false;
+    $('liveRemote').srcObject = null;
+    $('liveUnmute').hidden = true;
+    try{ if(conn) conn.close(); }catch(e){}
+    try{ if(call) call.close(); }catch(e){}
+  }
+  function partnerLeft(){
+    var wasConnected = live.connected;
+    dropPartner();
+    if(live.role === 'host'){ updateLivePanels(); }   // keep the room open so they can come back
+    else { destroyLive(); setLiveError('Your love left the room ♡'); }
+    if(wasConnected) showToast('Your love left the room ♡');
+  }
+  function destroyLive(){
+    var peer = live.peer;
+    dropPartner();
+    live.peer = null; live.role = null; live.code = '';
+    if(peer && !peer.destroyed){ try{ peer.destroy(); }catch(e){} }
+    if(live.localStream){ live.localStream.getTracks().forEach(function(t){ t.stop(); }); live.localStream = null; }
+    $('liveLocal').srcObject = null;
+    if(/room=/.test(location.hash)) history.replaceState(history.state, '', siteUrl());
+    updateLivePanels();
+  }
+
+  /* ---- messages between the phones ---- */
+  function sendLive(msg){
+    try{ if(live.conn && live.conn.open) live.conn.send(msg); }catch(e){}
+  }
+  function onLiveData(msg){
+    if(!msg || typeof msg !== 'object') return;
+    switch(msg.type){
+      case 'hello':
+        live.remoteFacing = msg.facing === 'environment' ? 'environment' : 'user';
+        $('liveRemote').classList.toggle('mirror', live.remoteFacing === 'user');
+        break;
+      case 'facing':
+        live.remoteFacing = msg.facing === 'environment' ? 'environment' : 'user';
+        $('liveRemote').classList.toggle('mirror', live.remoteFacing === 'user');
+        break;
+      case 'ping': sendLive({type:'pong', t:msg.t}); break;
+      case 'pong': if(typeof msg.t === 'number') live.rtt = Math.min(2000, Math.max(0, Date.now() - msg.t)); break;
+      case 'ready':
+        var wasReady = live.partnerReady;
+        live.partnerReady = !!msg.ready;
+        if(live.partnerReady && !wasReady && state.currentStep !== 'live' && live.connected){
+          showToast('Your love is at the camera ♡ Tap ← or TAKE AGAIN to join');
+        }
+        updateShutter();
+        break;
+      case 'start':
+        if(state.currentStep === 'live' && live.connected && !live.running){
+          runLiveSession(msg.rounds === 1 ? 1 : 2);
+        }
+        break;
+      case 'photo': receivePhoto(msg); break;
+      case 'full':
+        failLive('That room already has two people in it ♡');
+        break;
+    }
+  }
+
+  /* ---- shooting together ----
+     Whoever presses the heart sends "start" and waits half a round-trip before
+     starting its own countdown, so both countdowns hit CLICK at about the same moment. */
+  function pressLiveShutter(){
+    if($('liveShutter').disabled) return;
+    var rounds = live.rounds;
+    sendLive({type:'start', rounds:rounds});
+    live.running = true; updateShutter();
+    setTimeout(function(){ runLiveSession(rounds); }, Math.round(live.rtt/2));
+  }
+  function runLiveSession(rounds){
+    var id = ++live.runId;
+    live.running = true; live.pending = {}; live.early = {};
+    state.shots = [];
+    updateShutter();
+    var r = 0;
+    function still(){ return id === live.runId && state.currentStep === 'live' && live.connected; }
+    function round(){
+      if(!still()) return;
+      if(r >= rounds) return finish();
+      setLiveStatus('Photo ' + (r+1) + ' of ' + rounds + ' — smile ♡');
+      return countdownFrom(3, 'liveCountdown').then(function(){
+        if(!still()) return;
+        playShutter();
+        triggerFlash('liveFlash');
+        var mine = captureVideo($('liveLocal'), state.facingMode === 'user');
+        mine.dataset.from = 'me';
+        // their frame from the video call, right now — swapped for their sharp photo when it arrives
+        var theirs = captureVideo($('liveRemote'), live.remoteFacing === 'user');
+        theirs.dataset.from = 'you'; theirs.dataset.round = String(r);
+        state.shots.push(mine, theirs);
+        live.pending[r] = true;
+        if(live.early[r]){ replaceTheirs(r, live.early[r]); delete live.early[r]; }
+        sendPhoto(mine, r);
+        r++;
+        return wait(1200).then(round);
+      });
+    }
+    function finish(){
+      setLiveStatus('That was cute ♡ Swapping photos…');
+      var waited = 0;
+      (function check(){
+        if(id !== live.runId) return;
+        if(Object.keys(live.pending).length && waited < 5000){ waited += 250; setTimeout(check, 250); return; }
+        live.running = false;
+        state.shotCount = state.shots.length;
+        if(state.currentStep === 'live') goToStep('customize');
+      })();
+    }
+    round();
+  }
+  function sendPhoto(canvas, r){
+    canvas.toBlob(function(blob){
+      if(!blob) return;
+      blob.arrayBuffer().then(function(buf){ sendLive({type:'photo', round:r, buf:buf}); });
+    }, 'image/jpeg', 0.9);
+  }
+  function receivePhoto(msg){
+    var buf = msg.buf;
+    if(!(buf instanceof ArrayBuffer) || buf.byteLength > 4*1024*1024 || typeof msg.round !== 'number') return;
+    fileToShot(new Blob([buf], {type:'image/jpeg'})).then(function(c){
+      c.dataset.from = 'you';
+      if(!replaceTheirs(msg.round, c)) live.early[msg.round] = c;   // arrived before our own CLICK
+    }).catch(function(){ /* keep the video-call frame */ });
+  }
+  function replaceTheirs(r, canvas){
+    for(var i=0;i<state.shots.length;i++){
+      var s = state.shots[i];
+      if(s.dataset.from === 'you' && s.dataset.round === String(r)){
+        canvas.dataset.round = String(r);
+        state.shots[i] = canvas;
+        delete live.pending[r];
+        if(state.currentStep === 'customize') renderPreview();
+        if(state.currentStep === 'result') renderResult();
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /* ---- entering / leaving the live step ---- */
+  function enterLive(code){
+    $('app').setAttribute('data-view','app');
+    // a 2x2 grid puts "me" and "you" side by side on each row
+    if(!state.shots.length){ state.templateId = 'sweet-grid'; state.colorId = null; syncFrameSelection(); }
+    goToStep('live');
+    if(!code && pendingRoom && !live.peer) $('liveCodeInput').value = pendingRoom;   // they tapped "maybe later" on the invite
+    if(code && !live.peer){ $('liveCodeInput').value = code; startLive('guest', code); }
+  }
+  function enterLiveStep(){
+    updateLivePanels();
+    // always turn the picture back on — even if your love isn't connected (yet), they'll need it when they join
+    setLocalVideoEnabled(true);
+    if(live.connected) sendLive({type:'ready', ready:true});
+  }
+  function leaveLiveStep(){
+    live.runId++;                    // stop a countdown that's still going
+    live.running = false;
+    setLocalVideoEnabled(false);     // stop sending your picture while you customize (voice stays on)
+    sendLive({type:'ready', ready:false});
+    updateShutter();
+  }
+
+  /* ---- buttons ---- */
+  $('liveBtn').addEventListener('click', function(){ enterLive(); });
+  Array.prototype.forEach.call(document.querySelectorAll('.js-go-live'), function(b){
+    b.addEventListener('click', function(){ goToStep('live'); });
+  });
+  $('liveCreateBtn').addEventListener('click', function(){ startLive('host'); });
+  $('liveJoinBtn').addEventListener('click', function(){
+    var code = cleanCode($('liveCodeInput').value);
+    if(code.length !== 6){ setLiveError('Room codes have 6 letters and numbers ♡'); return; }
+    startLive('guest', code);
+  });
+  $('liveCodeInput').addEventListener('input', function(){ this.value = cleanCode(this.value); });
+  $('liveCodeInput').addEventListener('keydown', function(e){ if(e.key === 'Enter') $('liveJoinBtn').click(); });
+  $('liveShareBtn').addEventListener('click', function(){
+    var url = roomLink(live.code);
+    var text = 'Join my live photo booth ♡ Room ' + live.code;
+    if(navigator.share){
+      navigator.share({title:'Our Little Photo Booth', text:text, url:url}).catch(function(){ /* cancelled */ });
+      return;
+    }
+    copyText(text + ': ' + url).then(function(){
+      showToast('Invite link copied — send it to your love ♡');
+    }).catch(function(){ openCodeModal('invite', text + ': ' + url); });
+  });
+  $('liveLeaveBtn').addEventListener('click', function(){
+    destroyLive();
+    setLiveError('');
+    showToast('You left the room');
+  });
+  $('liveShutter').addEventListener('click', pressLiveShutter);
+  $('liveMicBtn').addEventListener('click', function(){
+    if(!live.localStream) return;
+    var tracks = live.localStream.getAudioTracks();
+    var on = !(tracks[0] && tracks[0].enabled);
+    tracks.forEach(function(t){ t.enabled = on; });
+    setMicIcon(on);
+  });
+  $('liveUnmute').addEventListener('click', function(){
+    var el = $('liveRemote');
+    el.muted = false;
+    el.play().catch(function(){});
+    this.hidden = true;
+  });
+  $('liveSwitchBtn').addEventListener('click', function(){
+    if(!live.localStream || live.running) return;
+    var next = state.facingMode === 'user' ? 'environment' : 'user';
+    var old = live.localStream.getVideoTracks()[0];
+    if(old) old.stop();   // many phones can't open two cameras at once
+    function useFacing(facing){
+      return navigator.mediaDevices.getUserMedia({video:{facingMode:facing, width:{ideal:1280}, height:{ideal:720}}}).then(function(s){
+        var track = s.getVideoTracks()[0];
+        // the video "sender" of the call still points at the old camera track — swap it without hanging up
+        var pc = live.call && live.call.peerConnection;
+        var sender = pc ? pc.getSenders().filter(function(x){ return x.track === old || (x.track && x.track.kind === 'video'); })[0] : null;
+        if(old) live.localStream.removeTrack(old);
+        live.localStream.addTrack(track);
+        state.facingMode = facing;
+        $('liveLocal').srcObject = live.localStream;
+        $('liveLocal').classList.toggle('mirror', facing === 'user');
+        sendLive({type:'facing', facing:facing});
+        return sender ? sender.replaceTrack(track) : null;
+      });
+    }
+    useFacing(next).catch(function(){
+      showToast("Couldn't switch camera ♡");
+      return useFacing(state.facingMode);   // bring the old camera back
+    }).catch(function(){});
+  });
+  (function buildRounds(){
+    var row = $('liveRounds');
+    [{r:1, label:'2 photos'}, {r:2, label:'4 photos'}].forEach(function(o){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip' + (o.r === live.rounds ? ' active' : '');
+      b.textContent = o.label;
+      b.addEventListener('click', function(){
+        live.rounds = o.r;
+        Array.prototype.forEach.call(row.children, function(c){ c.classList.remove('active'); });
+        b.classList.add('active');
+      });
+      row.appendChild(b);
+    });
+  })();
+  // opened from an invite link? greet them with a "join" button instead of the usual welcome
+  function readRoomLink(){
+    var m = /room=([A-Za-z0-9]{6})/.exec(location.hash);
+    if(!m || live.peer) return;
+    pendingRoom = cleanCode(m[1]);
+    document.querySelector('#welcomeOverlay .eyebrow-script').textContent = 'Your love is waiting ♡';
+    $('welcomeTitle').textContent = 'Join room ' + pendingRoom + '?';
+    $('welcomeStart').textContent = "JOIN MY LOVE ♡";
+    $('welcomeOverlay').classList.add('show');
+  }
+  readRoomLink();
+  // the page may already be open when the invite link is tapped — then only the #hash changes
+  window.addEventListener('hashchange', readRoomLink);
+  // leaving the page closes the room right away, so the code is free again
+  window.addEventListener('pagehide', function(){ if(live.peer) destroyLive(); });
 
   /* ---------------- drawing helpers ---------------- */
   function drawHeart(ctx,x,y,size,color,alpha){
@@ -1794,24 +2604,37 @@
     polaroid: drawPolaroidLayout
   };
 
-  function buildBase(){
-    var t = templateById(state.templateId);
-    var hex = colorHex(state.colorId || t.color);
+  // draws template `t` into a new canvas; `scale` < 1 gives a small thumbnail of the exact same design
+  function makeBase(t, colorId, scale){
+    colorId = colorId || t.color;
+    var hex = colorHex(colorId);
     var dark = isDarkHex(hex);
     var filter = FILTERS.filter(function(f){ return f.id===state.filterId; })[0] || FILTERS[0];
     var look = {
       t: t,
       hex: hex,
       filterCss: filter.css,
-      isWhite: state.colorId === 'white',
-      isRomantic: state.colorId === 'romantic',
-      accent: dark ? '#FF8FB3' : (state.colorId === 'white' ? '#E14F7A' : shade(hex,-0.28)),
+      isWhite: colorId === 'white',
+      isRomantic: colorId === 'romantic',
+      accent: dark ? '#FF8FB3' : (colorId === 'white' ? '#E14F7A' : shade(hex,-0.28)),
       textColor: dark ? '#FFF6F8' : '#3B1626',
-      n: Math.max(state.shots.length, 1)
+      n: state.shots.length || state.shotCount,   // no photos yet → placeholders for the chosen count
+      scale: scale || 1
     };
     var canvas = document.createElement('canvas');
-    (LAYOUTS[t.layout] || drawStripLayout)(canvas, look);
-    base = {canvas:canvas, w:canvas.width, h:canvas.height, accent:look.accent};
+    var size = (LAYOUTS[t.layout] || drawStripLayout)(canvas, look);
+    return {canvas:canvas, w:size.w, h:size.h, accent:look.accent};
+  }
+  function buildBase(){
+    base = makeBase(templateById(state.templateId), state.colorId);
+  }
+  // layouts work in full-size units; this shrinks the canvas and everything drawn on it
+  function prepCanvas(canvas, w, h, scale){
+    canvas.width = Math.round(w*scale);
+    canvas.height = Math.round(h*scale);
+    var ctx = canvas.getContext('2d');
+    ctx.scale(scale, scale);
+    return ctx;
   }
 
   function evenPx(v){ return Math.max(2, Math.round(v/2)*2); }   // video encoders want even sizes
@@ -1824,7 +2647,7 @@
     ctx.setTransform(1,0,0,1,0,0);
     ctx.clearRect(0,0,w,h);
     ctx.setTransform(w/base.w, 0, 0, h/base.h, 0, 0);
-    ctx.drawImage(base.canvas, 0, 0);
+    ctx.drawImage(base.canvas, 0, 0, base.w, base.h);
     drawStickerPicks(ctx, base.w, base.h, base.accent, '#fff', t, state.animated);
     ctx.setTransform(1,0,0,1,0,0);
   }
@@ -1876,8 +2699,7 @@
     var footerH = (state.showDate || state.customText) ? 130 : 60;
     var W = CELL + PAD*2;
     var H = headerH + L.n*CELL + (L.n-1)*GAP + footerH + PAD;
-    canvas.width = W; canvas.height = H;
-    var ctx = canvas.getContext('2d');
+    var ctx = prepCanvas(canvas, W, H, L.scale);
     paintBackground(ctx, W, H, L.hex, L.isRomantic, L.isWhite);
     if(film) drawSprockets(ctx, W, H);
     else drawBorder(ctx, W, H, L.accent, L.t.thin);
@@ -1891,6 +2713,7 @@
     }
     scatterDecor(ctx, L.t.decor, W, H, L.accent);
     drawFooter(ctx, W, headerH + L.n*CELL + (L.n-1)*GAP + 46, L.textColor);
+    return {w:W, h:H};
   }
 
   // two photos per row; an odd last photo sits centered
@@ -1903,8 +2726,7 @@
     var footerH = (state.showDate || state.customText) ? 130 : 60;
     var W = PAD*2 + 700;
     var H = headerH + rows*CELL + (rows-1)*GAP + footerH + PAD;
-    canvas.width = W; canvas.height = H;
-    var ctx = canvas.getContext('2d');
+    var ctx = prepCanvas(canvas, W, H, L.scale);
     paintBackground(ctx, W, H, L.hex, L.isRomantic, L.isWhite);
     drawBorder(ctx, W, H, L.accent, L.t.thin);
     drawHeader(ctx, L.t.header, W, L.textColor);
@@ -1921,6 +2743,7 @@
     }
     scatterDecor(ctx, L.t.decor, W, H, L.accent);
     drawFooter(ctx, W, headerH + rows*CELL + (rows-1)*GAP + 46, L.textColor);
+    return {w:W, h:H};
   }
 
   function drawPolaroidLayout(canvas, L){
@@ -1929,8 +2752,7 @@
     var cardW = 300, cardH = 360, gap = 34, pad = 44, headerH = 90;
     var w = cols*cardW + (cols+1)*gap;
     var h = headerH + rows*cardH + (rows+1)*gap + pad;
-    canvas.width = w; canvas.height = h;
-    var ctx = canvas.getContext('2d');
+    var ctx = prepCanvas(canvas, w, h, L.scale);
     paintBackground(ctx, w, h, L.hex, L.isRomantic, L.isWhite);
     ctx.fillStyle = L.textColor;
     ctx.font = "600 30px 'Dancing Script', cursive";
@@ -1960,6 +2782,7 @@
     }
     scatterDecor(ctx, L.t.decor, w, h, L.accent);
     if(state.showDate) drawFooterDate(ctx, w, h-14, L.textColor);
+    return {w:w, h:h};
   }
 
   function paintBackground(ctx,w,h,base,isRomantic,isWhite){
@@ -1992,6 +2815,7 @@
       var g = ctx.createLinearGradient(x,y,x+w,y+h);
       g.addColorStop(0,'#FFC2D6'); g.addColorStop(1,'#FF8FB3');
       ctx.fillStyle = g; ctx.fillRect(x,y,w,h);
+      drawHeart(ctx, x + w/2, y + h/2 - w*0.18, w*0.3, '#FFFFFF', 0.75);   // placeholder photo
     }
     ctx.restore();
   }
@@ -2125,7 +2949,7 @@
   });
 
   /* init */
-  goToStep('count', true);
+  goToStep('count', {noHistory:true});
 })();
 </script>
 
