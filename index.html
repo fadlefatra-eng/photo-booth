@@ -293,6 +293,26 @@
   .swatch-row{display:flex; gap:10px; flex-wrap:wrap;}
   .swatch{width:38px; height:38px; border-radius:50%; border:3px solid transparent; box-shadow:inset 0 0 0 1px rgba(147,38,79,.15);}
   .swatch.selected{border-color:var(--rose-600);}
+  .swatch{position:relative;}
+  .swatch.rec::after{content:'★'; position:absolute; top:-7px; right:-5px; font-size:.7rem; color:var(--rose-600);}
+  .swatch-hint{font-size:.76rem; color:var(--rose-800); margin-top:8px; display:flex; align-items:center; gap:8px;}
+  .swatch-hint .btn-text{font-size:.76rem; padding:2px 4px;}
+  .motion-note{font-size:.76rem; line-height:1.5; color:var(--rose-800); background:var(--blush-100); border-radius:12px; padding:10px 12px; margin-top:10px;}
+  .control-group .switch-row + .switch-row, .frame-pick-row + .switch-row{margin-top:10px;}
+  /* frame tabs */
+  .frame-tabs{display:flex; gap:6px; flex-wrap:wrap; margin:18px 0 0; justify-content:center;}
+  .control-group .frame-tabs{justify-content:flex-start; margin:0 0 10px;}
+  .frame-tab{background:var(--white); border:1.5px solid var(--blush-100); border-radius:999px; padding:8px 14px; font-size:.8rem; font-weight:600; color:var(--rose-800);}
+  .frame-tab.active{background:var(--rose-600); border-color:var(--rose-600); color:#fff;}
+  /* save as photo / animated */
+  .save-as{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:0 0 6px;}
+  .save-opt{display:flex; flex-direction:column; align-items:center; gap:2px; text-align:center; padding:12px 10px; border-radius:var(--radius-md); background:var(--white); border:2px solid var(--blush-100); color:var(--plum-900); box-shadow:var(--shadow-soft);}
+  .save-opt b{font-size:.9rem;}
+  .save-opt small{font-size:.7rem; color:var(--rose-800); opacity:.8; line-height:1.35;}
+  .save-ico{font-size:1.3rem;}
+  .save-opt.selected{border-color:var(--rose-600); background:linear-gradient(135deg,var(--pink-200),var(--white));}
+  .save-opt[disabled]{opacity:.45;}
+  .save-note{text-align:center; font-size:.76rem; color:var(--rose-800); margin:4px 0 0;}
   .chip-row{display:flex; gap:8px; flex-wrap:wrap;}
   .chip{
     background:var(--white); border:1.5px solid var(--blush-100); border-radius:999px; padding:9px 15px;
@@ -549,6 +569,7 @@
       <section class="step" id="step-frame" data-step="frame">
         <h2>Choose Frame</h2>
         <p class="step-sub">You can always change this later.</p>
+        <div class="frame-tabs" id="frameTabsStep" role="tablist" aria-label="Frame types"></div>
         <div class="frame-grid" id="frameGrid" role="group" aria-label="Choose a frame"></div>
         <div class="step-footer">
           <button class="btn btn-primary btn-block" id="toCameraBtn">START PHOTO BOOTH ♡</button>
@@ -685,11 +706,16 @@
           <div>
             <div class="control-group">
               <h3>Frame</h3>
+              <div class="frame-tabs" id="frameTabsCustomize" role="tablist" aria-label="Frame types"></div>
               <div class="frame-pick-row" id="framePickRow" role="group" aria-label="Choose a frame"></div>
+              <label class="switch-row" id="titleToggleRow" hidden><input type="checkbox" id="titleToggle" checked><span>Show frame title</span></label>
+              <label class="switch-row" id="popoutToggleRow" hidden><input type="checkbox" id="popoutToggle" checked><span>Let decorations peek over photos</span></label>
             </div>
             <div class="control-group">
               <h3>Frame Color</h3>
               <div class="swatch-row" id="colorSwatches"></div>
+              <p class="swatch-hint" id="swatchHint" hidden>★ suits this frame
+                <button type="button" class="btn-text" id="themeColorBtn" hidden>↺ Theme color</button></p>
             </div>
             <div class="control-group">
               <h3>Filter</h3>
@@ -701,7 +727,8 @@
             </div>
             <div class="control-group">
               <h3>Motion</h3>
-              <label class="switch-row"><input type="checkbox" id="animToggle" checked><span>Moving stickers ✨</span></label>
+              <label class="switch-row"><input type="checkbox" id="animToggle" checked><span>Moving stickers and decorations ✨</span></label>
+              <p class="motion-note" id="motionNote" hidden>Your phone or browser has <b>Reduce motion</b> turned on, so movement starts switched off. Turn it on with the switch above — or turn off Reduce motion in your device's accessibility settings (iPhone: Settings → Accessibility → Motion · Android: Settings → Accessibility → Remove animations). Battery saver can also slow animations down.</p>
             </div>
             <div class="control-group">
               <h3>Add Text</h3>
@@ -739,9 +766,18 @@
         <div class="result-frame">
           <canvas id="resultCanvas" width="720" height="900"></canvas>
         </div>
+        <!-- shown only when something on the strip moves -->
+        <div class="save-as" id="saveAs" role="radiogroup" aria-label="Save as" hidden>
+          <button type="button" class="save-opt" data-mode="photo" role="radio">
+            <span class="save-ico" aria-hidden="true">🖼</span><b>Photo</b><small>Still image — for printing or a wallpaper</small>
+          </button>
+          <button type="button" class="save-opt" data-mode="animated" role="radio">
+            <span class="save-ico" aria-hidden="true">✨</span><b>Animated</b><small>Short video — decorations move, photos stay still</small>
+          </button>
+        </div>
+        <p class="save-note" id="saveNote" hidden>This browser can't make videos, so you can save the photo only.</p>
         <div class="result-actions">
           <button class="btn btn-primary btn-block" id="downloadBtn">DOWNLOAD PHOTO ♡</button>
-          <button class="btn btn-secondary btn-block" id="videoBtn" hidden>DOWNLOAD VIDEO ✨</button>
           <div class="result-actions-row">
             <button class="btn btn-ghost" id="retakeBtn">TAKE AGAIN ↻</button>
             <button class="btn btn-ghost" id="changeFrameBtn">CHANGE FRAME</button>
@@ -764,10 +800,15 @@
     {id:'baby', label:'Baby Pink', hex:'#FFD1E3'},
     {id:'rose', label:'Rose', hex:'#E14F7A'},
     {id:'white', label:'White', hex:'#FFFFFF'},
-    {id:'romantic', label:'Romantic', hex:'#FFF0F5'},
-    {id:'cute', label:'Cute', hex:'#FFC2D6'},
-    {id:'lavender', label:'Lavender', hex:'#D9C8FF'},
+    {id:'cream', label:'Cream', hex:'#FFF6E5'},
+    {id:'peach', label:'Peach', hex:'#FFCBA4'},
+    {id:'butter', label:'Butter', hex:'#FFE9A8'},
     {id:'mint', label:'Mint', hex:'#BDEFD9'},
+    {id:'sky', label:'Sky', hex:'#BFE3FF'},
+    {id:'lavender', label:'Lavender', hex:'#D9C8FF'},
+    {id:'mocha', label:'Mocha', hex:'#A47E6B'},
+    {id:'cherry', label:'Cherry Red', hex:'#C8102E'},
+    {id:'navy', label:'Navy', hex:'#1F2A44'},
     {id:'midnight', label:'Midnight', hex:'#3B1626'}
   ];
   var FILTERS = [
@@ -792,19 +833,24 @@
     {id:'xoxo', label:'XOXO', kind:'word', text:'XOXO'},
     {id:'together', label:'TOGETHER', kind:'word', text:'TOGETHER'}
   ];
+  /* Every frame is a template:
+       tab     which tab it lives in (plain / illustrated / characters)
+       layout  how the photos are arranged (strip, film, grid, polaroid)
+       color   its starting color; `colors` = the ones that suit it (marked ★)
+       title   small heading above the photos (hidden with "Show frame title")
+       decor   (later stages) a function that draws its illustrations each frame,
+               so they can move and peek over the photo edges */
+  var FRAME_TABS = [
+    {id:'plain', label:'Plain'},
+    {id:'illustrated', label:'Illustrated'},
+    {id:'characters', label:'Characters'}
+  ];
   var TEMPLATES = [
-    {id:'classic-pink', name:'Classic Pink', layout:'strip', color:'pink', decor:['hearts-light'], header:'OUR LITTLE PHOTO BOOTH ♡'},
-    {id:'love-strip', name:'Love Strip', layout:'strip', color:'rose', decor:['hearts'], header:'LOVE', dateOn:true},
-    {id:'cute-heart', name:'Cute Heart', layout:'strip', color:'baby', decor:['hearts-dense']},
-    {id:'romantic', name:'Romantic', layout:'strip', color:'romantic', decor:['minimal']},
-    {id:'polaroid-love', name:'Polaroid Love', layout:'polaroid', color:'baby', decor:['sparkle']},
-    {id:'minimal-pink', name:'Minimal Pink', layout:'strip', color:'white', decor:[], thin:true},
-    {id:'couple-fun', name:'Couple Fun', layout:'strip', color:'pink', decor:['fun'], header:'xoxo'},
-    {id:'date-memory', name:'Date Memory', layout:'strip', color:'cute', decor:['hearts-light'], header:'Our Date', dateOn:true},
-    {id:'sweet-grid', name:'Sweet Grid', layout:'grid', color:'baby', decor:['sparkle'], header:'us ♡'},
-    {id:'film-night', name:'Film Night', layout:'film', color:'midnight', decor:[], header:'MOVIE NIGHT', dateOn:true},
-    {id:'lavender-dream', name:'Lavender Dream', layout:'strip', color:'lavender', decor:['sparkle'], header:'sweet dreams'},
-    {id:'mint-picnic', name:'Mint Picnic', layout:'grid', color:'mint', decor:['fun'], header:'Picnic Date'}
+    {id:'classic', tab:'plain', name:'Classic Strip', layout:'strip', color:'pink'},
+    {id:'minimal', tab:'plain', name:'Minimal Strip', layout:'strip', color:'white', thin:true},
+    {id:'grid', tab:'plain', name:'Grid 2×2', layout:'grid', color:'sky'},
+    {id:'polaroid', tab:'plain', name:'Polaroid', layout:'polaroid', color:'butter'},
+    {id:'film', tab:'plain', name:'Film', layout:'film', color:'midnight'}
   ];
   var FX_OPTIONS = [
     {id:'none', label:'None'},
@@ -820,7 +866,11 @@
   /* ---------------- state ---------------- */
   var state = {
     shotCount: 4,
-    templateId: 'classic-pink',
+    templateId: 'classic',
+    frameTab: 'plain',
+    showTitle: true,
+    popout: true,
+    resultMode: 'photo',
     colorId: null,
     filterId: 'original',
     stickers: {},
@@ -954,6 +1004,7 @@
      exist, pink placeholders stand in for them. */
   function fillThumbs(container, scale){
     Array.prototype.forEach.call(container.children, function(card){
+      if(card.hidden) return;   // cards in another tab get drawn when that tab opens
       var box = card.querySelector('.frame-thumb, .gallery-thumb');
       box.innerHTML = '';
       box.appendChild(makeBase(templateById(card.dataset.template), null, scale).canvas);
@@ -1020,6 +1071,43 @@
   buildFrameCards($('frameGrid'));
   buildFrameCards($('framePickRow'));
 
+  // tabs only appear for groups that actually have frames in them
+  function usedTabs(){
+    return FRAME_TABS.filter(function(tab){ return TEMPLATES.some(function(t){ return t.tab === tab.id; }); });
+  }
+  function buildFrameTabs(containerId){
+    var box = $(containerId);
+    var tabs = usedTabs();
+    box.hidden = tabs.length < 2;
+    tabs.forEach(function(tab){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'frame-tab'; b.dataset.tab = tab.id;
+      b.setAttribute('role', 'tab');
+      b.textContent = tab.label;
+      b.addEventListener('click', function(){ showFrameTab(tab.id); });
+      box.appendChild(b);
+    });
+  }
+  buildFrameTabs('frameTabsStep');
+  buildFrameTabs('frameTabsCustomize');
+  function showFrameTab(tabId){
+    state.frameTab = tabId;
+    ['frameTabsStep','frameTabsCustomize'].forEach(function(id){
+      Array.prototype.forEach.call($(id).children, function(b){
+        var on = b.dataset.tab === tabId;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+    });
+    ['frameGrid','framePickRow'].forEach(function(id){
+      Array.prototype.forEach.call($(id).children, function(c){
+        c.hidden = templateById(c.dataset.template).tab !== tabId;
+      });
+    });
+    if(state.currentStep === 'frame') fillThumbs($('frameGrid'), 0.2);
+    if(state.currentStep === 'customize') fillThumbs($('framePickRow'), 0.14);
+  }
+
   function syncFrameSelection(){
     ['frameGrid','framePickRow'].forEach(function(id){
       Array.prototype.forEach.call($(id).children, function(c){
@@ -1036,6 +1124,7 @@
     if(state.currentStep === 'customize'){ prepCustomizeDefaults(); renderPreview(); }
   }
   syncFrameSelection();
+  showFrameTab(templateById(state.templateId).tab);
 
   /* ---------------- build customize controls ---------------- */
   (function buildCustomize(){
@@ -1046,12 +1135,20 @@
       b.title = c.label; b.setAttribute('aria-label', c.label);
       b.addEventListener('click', function(){
         state.colorId = c.id;
-        Array.prototype.forEach.call(swatchRow.children, function(s){ s.classList.remove('selected'); });
-        b.classList.add('selected');
+        syncColorUI();
         renderPreview();
       });
       swatchRow.appendChild(b);
     });
+    $('themeColorBtn').addEventListener('click', function(){
+      state.colorId = templateById(state.templateId).color;
+      syncColorUI();
+      renderPreview();
+    });
+    $('titleToggle').addEventListener('change', function(){ state.showTitle = this.checked; renderPreview(); });
+    $('popoutToggle').addEventListener('change', function(){ state.popout = this.checked; renderPreview(); });
+    // the phone asked for less motion: say why things are still, and how to change it
+    $('motionNote').hidden = !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 
     var filterRow = $('filterChips');
     FILTERS.forEach(function(f){
@@ -1143,12 +1240,12 @@
     renderDots();
     if(step === 'count'){ syncCountGrid(); }
     if(step === 'frame'){
-      fillThumbs($('frameGrid'), 0.2);
+      showFrameTab(templateById(state.templateId).tab);   // opens the right tab and draws its thumbnails
       $('toCameraBtn').textContent = state.shots.length >= state.shotCount ? 'CONTINUE ♡' : 'START PHOTO BOOTH ♡';
     }
     if(step === 'camera'){ initCamera(); updateTray(); startFx(); }
     if(step === 'live'){ enterLiveStep(); }
-    if(step === 'customize'){ prepCustomizeDefaults(); fillThumbs($('framePickRow'), 0.14); renderPreview(); }
+    if(step === 'customize'){ prepCustomizeDefaults(); showFrameTab(templateById(state.templateId).tab); renderPreview(); }
     if(step === 'result'){ renderResult(); }
     window.scrollTo(0,0);
   }
@@ -1277,13 +1374,26 @@
   function prepCustomizeDefaults(){
     if(!state.colorId) state.colorId = templateById(state.templateId).color;
     syncFrameSelection();
-    var swatchRow = $('colorSwatches');
-    Array.prototype.forEach.call(swatchRow.children, function(s,i){
-      s.classList.toggle('selected', COLOR_OPTIONS[i].id === state.colorId);
-    });
+    syncColorUI();
     var t = templateById(state.templateId);
-    if(t.dateOn) state.showDate = true;
+    // these switches only matter for frames that have a title / illustrations
+    $('titleToggleRow').hidden = !t.title;
+    $('popoutToggleRow').hidden = !t.decor;
+    $('titleToggle').checked = state.showTitle;
+    $('popoutToggle').checked = state.popout;
     $('showDateToggle').checked = state.showDate;
+  }
+  // selected swatch, ★ on the colors that suit this frame, and the "back to theme color" button
+  function syncColorUI(){
+    var t = templateById(state.templateId);
+    var suits = t.colors || [];
+    Array.prototype.forEach.call($('colorSwatches').children, function(s, i){
+      var id = COLOR_OPTIONS[i].id;
+      s.classList.toggle('selected', id === state.colorId);
+      s.classList.toggle('rec', suits.indexOf(id) !== -1);
+    });
+    $('swatchHint').hidden = !suits.length;
+    $('themeColorBtn').hidden = state.colorId === t.color;
   }
 
   /* ---------------- mute ---------------- */
@@ -2228,7 +2338,7 @@
   function enterLive(code){
     $('app').setAttribute('data-view','app');
     // a 2x2 grid puts "me" and "you" side by side on each row
-    if(!state.shots.length){ state.templateId = 'sweet-grid'; state.colorId = null; syncFrameSelection(); }
+    if(!state.shots.length){ state.templateId = 'grid'; state.frameTab = 'plain'; state.colorId = null; syncFrameSelection(); }
     goToStep('live');
     if(!code && pendingRoom && !live.peer) $('liveCodeInput').value = pendingRoom;   // they tapped "maybe later" on the invite
     if(code && !live.peer){ $('liveCodeInput').value = code; startLive('guest', code); }
@@ -2518,38 +2628,6 @@
     ctx.lineTo(x,y+r.tl); ctx.arcTo(x,y,x+r.tl,y,r.tl);
     ctx.closePath();
   }
-  function seeded(i){ var x = Math.sin(i*999)*10000; return x - Math.floor(x); }
-
-  function scatterDecor(ctx, kinds, w, h, accent){
-    var items = [];
-    if(kinds.indexOf('hearts-light') !== -1) items.push({kind:'heart', n:6, size:16, area:'edge'});
-    if(kinds.indexOf('hearts') !== -1) items.push({kind:'heart', n:10, size:18, area:'edge'});
-    if(kinds.indexOf('hearts-dense') !== -1) items.push({kind:'heart', n:22, size:13, area:'border'});
-    if(kinds.indexOf('sparkle') !== -1) items.push({kind:'sparkle', n:10, size:9, area:'edge'});
-    if(kinds.indexOf('fun') !== -1) items.push({kind:'star', n:8, size:14, area:'edge'});
-    var seedBase = 1;
-    items.forEach(function(group){
-      for(var i=0;i<group.n;i++){
-        var rx = seeded(seedBase); var ry = seeded(seedBase+0.5); seedBase += 1.37;
-        var x,y;
-        if(group.area === 'border'){
-          var edge = Math.floor(rx*4);
-          if(edge===0){ x = rx*w; y = 14 + ry*10; }
-          else if(edge===1){ x = rx*w; y = h-14-ry*10; }
-          else if(edge===2){ x = 14+rx*10; y = ry*h; }
-          else { x = w-14-rx*10; y = ry*h; }
-        } else {
-          x = 20 + rx*(w-40);
-          y = 20 + ry*(h-40);
-          if(x > w*0.18 && x < w*0.82 && y > h*0.18 && y < h*0.82) continue;
-        }
-        var alpha = 0.55 + ry*0.35;
-        if(group.kind === 'heart') drawHeart(ctx,x,y,group.size,accent,alpha);
-        if(group.kind === 'sparkle') drawSparkleMark(ctx,x,y,group.size,accent,alpha);
-        if(group.kind === 'star') drawStar(ctx,x,y,group.size,accent,alpha);
-      }
-    });
-  }
 
   var STICKER_DRAWERS = {
     heart:drawHeart, star:drawStar, flower:drawFlower, bow:drawBow, sparkle:drawSparkleMark,
@@ -2557,6 +2635,10 @@
   };
   function hasStickers(){
     return STICKERS.some(function(s){ return state.stickers[s.id]; });
+  }
+  // anything on the strip that moves? (stickers, or a frame whose illustrations are animated)
+  function hasMotion(){
+    return state.animated && (hasStickers() || !!templateById(state.templateId).animated);
   }
   // t = seconds into the loop; when `moving` is false every sticker sits still (t is ignored)
   function drawStickerPicks(ctx, w, h, accent, textColor, t, moving){
@@ -2591,12 +2673,15 @@
   }
 
   /* ---------------- compose ----------------
-     The strip is drawn in two layers:
-     1. buildBase() paints everything that never moves (background, photos, text) once
-        into an offscreen canvas. Filters on big photos are slow, so we never redo them per frame.
-     2. drawFrame() copies that base and draws the stickers on top — cheap enough to run
-        60 times a second, which is what makes the stickers move. */
+     The strip is drawn in layers, bottom to top:
+     1. base   — background, photos, title, text, date. Painted once into an offscreen
+                 canvas by buildBase(); filters on big photos are slow, so never per frame.
+     2. decor  — the frame's illustrations (later stages). Drawn every frame so they can move,
+                 and allowed to peek over the photo edges ("pop-out").
+     3. stickers, then the "me ♡ / you ♡" labels on top so decorations never hide them.
+     Layers 2–3 are redrawn by drawFrame() up to 60 times a second. */
   var base = null;
+  var SAFE_INSET = 0.15;   // decorations may cover the outer 15% of a photo, never the middle (faces)
   var LAYOUTS = {
     strip: drawStripLayout,
     film: drawStripLayout,
@@ -2615,15 +2700,24 @@
       hex: hex,
       filterCss: filter.css,
       isWhite: colorId === 'white',
-      isRomantic: colorId === 'romantic',
       accent: dark ? '#FF8FB3' : (colorId === 'white' ? '#E14F7A' : shade(hex,-0.28)),
       textColor: dark ? '#FFF6F8' : '#3B1626',
+      title: state.showTitle && t.title ? t.title : '',
       n: state.shots.length || state.shotCount,   // no photos yet → placeholders for the chosen count
-      scale: scale || 1
+      scale: scale || 1,
+      rects: []                                    // where each photo landed: {cx, cy, w, h, rot}
     };
     var canvas = document.createElement('canvas');
     var size = (LAYOUTS[t.layout] || drawStripLayout)(canvas, look);
-    return {canvas:canvas, w:size.w, h:size.h, accent:look.accent};
+    var b = {canvas:canvas, w:size.w, h:size.h, t:t, hex:hex, dark:dark,
+             accent:look.accent, textColor:look.textColor, rects:look.rects};
+    // thumbnails are static pictures, so they get their decorations baked in right away
+    if(scale && scale < 1 && t.decor){
+      var ctx = canvas.getContext('2d');
+      ctx.setTransform(scale, 0, 0, scale, 0, 0);
+      drawDecorLayer(ctx, b, 0, false);
+    }
+    return b;
   }
   function buildBase(){
     base = makeBase(templateById(state.templateId), state.colorId);
@@ -2637,6 +2731,45 @@
     return ctx;
   }
 
+  // the four corners of a (possibly rotated) photo rectangle, shrunk by `inset` on each side
+  function rectCorners(r, inset){
+    var hw = r.w * (0.5 - inset), hh = r.h * (0.5 - inset);
+    var c = Math.cos(r.rot || 0), s = Math.sin(r.rot || 0);
+    return [[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]].map(function(p){
+      return [r.cx + p[0]*c - p[1]*s, r.cy + p[0]*s + p[1]*c];
+    });
+  }
+  /* Decorations are drawn through a stencil: the whole strip minus the "no-go" areas.
+     Pop-out on  → only the middle of each photo is off limits (faces stay clear).
+     Pop-out off → whole photos are off limits, so decorations stay around them. */
+  function drawDecorLayer(ctx, b, t, moving){
+    if(!b.t.decor) return;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, b.w, b.h);
+    var inset = state.popout ? SAFE_INSET : 0;
+    b.rects.forEach(function(r){
+      var pts = rectCorners(r, inset);
+      ctx.moveTo(pts[0][0], pts[0][1]);
+      for(var i=1;i<4;i++) ctx.lineTo(pts[i][0], pts[i][1]);
+      ctx.closePath();
+    });
+    ctx.clip('evenodd');   // "evenodd" turns each inner rectangle into a hole in the stencil
+    b.t.decor(ctx, {w:b.w, h:b.h, rects:b.rects, t:t, moving:moving, accent:b.accent,
+                    textColor:b.textColor, hex:b.hex, dark:b.dark, popout:state.popout});
+    ctx.restore();
+  }
+  function drawLabels(ctx, b){
+    if(!shotsAreMixed()) return;
+    b.rects.forEach(function(r, i){
+      ctx.save();
+      ctx.translate(r.cx, r.cy);
+      ctx.rotate(r.rot || 0);
+      drawSideLabel(ctx, -r.w/2 + 16, r.h/2 - 16, shotLabel(i), b.accent);
+      ctx.restore();
+    });
+  }
+
   function evenPx(v){ return Math.max(2, Math.round(v/2)*2); }   // video encoders want even sizes
   function drawFrame(target, t, scale){
     if(!base) buildBase();
@@ -2648,7 +2781,9 @@
     ctx.clearRect(0,0,w,h);
     ctx.setTransform(w/base.w, 0, 0, h/base.h, 0, 0);
     ctx.drawImage(base.canvas, 0, 0, base.w, base.h);
+    drawDecorLayer(ctx, base, t, state.animated);
     drawStickerPicks(ctx, base.w, base.h, base.accent, '#fff', t, state.animated);
+    drawLabels(ctx, base);
     ctx.setTransform(1,0,0,1,0,0);
   }
 
@@ -2656,7 +2791,7 @@
     if(!text) return;
     ctx.fillStyle = color;
     ctx.textAlign = 'center';
-    if(text === text.toUpperCase() && text !== 'xoxo'){
+    if(text === text.toUpperCase()){
       ctx.font = "700 30px 'Playfair Display', serif";
     } else {
       ctx.font = "600 40px 'Dancing Script', cursive";
@@ -2681,9 +2816,9 @@
     ctx.stroke();
     ctx.restore();
   }
-  function drawSprockets(ctx, w, h){
+  function drawSprockets(ctx, w, h, dark){
     ctx.save();
-    ctx.fillStyle = 'rgba(255,246,248,0.88)';
+    ctx.fillStyle = dark ? 'rgba(255,246,248,0.88)' : 'rgba(59,22,38,0.35)';   // light holes on dark film, dark on light
     for(var y = 24; y < h - 30; y += 46){
       roundRect(ctx, 22, y, 28, 20, 5); ctx.fill();
       roundRect(ctx, w - 50, y, 28, 20, 5); ctx.fill();
@@ -2695,23 +2830,21 @@
   function drawStripLayout(canvas, L){
     var film = L.t.layout === 'film';
     var PAD = film ? 76 : 40, CELL = 640, GAP = film ? 20 : 26;
-    var headerH = L.t.header ? 96 : 40;
+    var headerH = L.title ? 96 : 40;
     var footerH = (state.showDate || state.customText) ? 130 : 60;
     var W = CELL + PAD*2;
     var H = headerH + L.n*CELL + (L.n-1)*GAP + footerH + PAD;
     var ctx = prepCanvas(canvas, W, H, L.scale);
-    paintBackground(ctx, W, H, L.hex, L.isRomantic, L.isWhite);
-    if(film) drawSprockets(ctx, W, H);
+    paintBackground(ctx, W, H, L.hex, L.isWhite);
+    if(film) drawSprockets(ctx, W, H, isDarkHex(L.hex));
     else drawBorder(ctx, W, H, L.accent, L.t.thin);
-    drawHeader(ctx, L.t.header, W, L.textColor);
+    drawHeader(ctx, L.title, W, L.textColor);
 
-    var mixed = shotsAreMixed();
     for(var s=0; s<L.n; s++){
       var y = headerH + s*(CELL+GAP);
       drawPhotoInto(ctx, s, PAD, y, CELL, CELL, L.filterCss, film ? 6 : 16);
-      if(mixed) drawSideLabel(ctx, PAD + 18, y + CELL - 18, shotLabel(s), L.accent);
+      L.rects.push({cx:PAD + CELL/2, cy:y + CELL/2, w:CELL, h:CELL, rot:0});
     }
-    scatterDecor(ctx, L.t.decor, W, H, L.accent);
     drawFooter(ctx, W, headerH + L.n*CELL + (L.n-1)*GAP + 46, L.textColor);
     return {w:W, h:H};
   }
@@ -2722,16 +2855,15 @@
     var cols = L.n === 1 ? 1 : 2;
     var CELL = cols === 1 ? 700 : 340;
     var rows = Math.ceil(L.n / cols);
-    var headerH = L.t.header ? 96 : 40;
+    var headerH = L.title ? 96 : 40;
     var footerH = (state.showDate || state.customText) ? 130 : 60;
     var W = PAD*2 + 700;
     var H = headerH + rows*CELL + (rows-1)*GAP + footerH + PAD;
     var ctx = prepCanvas(canvas, W, H, L.scale);
-    paintBackground(ctx, W, H, L.hex, L.isRomantic, L.isWhite);
+    paintBackground(ctx, W, H, L.hex, L.isWhite);
     drawBorder(ctx, W, H, L.accent, L.t.thin);
-    drawHeader(ctx, L.t.header, W, L.textColor);
+    drawHeader(ctx, L.title, W, L.textColor);
 
-    var mixed = shotsAreMixed();
     for(var i=0; i<L.n; i++){
       var row = Math.floor(i/cols), col = i % cols;
       var inRow = Math.min(cols, L.n - row*cols);
@@ -2739,9 +2871,8 @@
       var x = (W - rowW)/2 + col*(CELL+GAP);
       var y = headerH + row*(CELL+GAP);
       drawPhotoInto(ctx, i, x, y, CELL, CELL, L.filterCss, 14);
-      if(mixed) drawSideLabel(ctx, x + 12, y + CELL - 12, shotLabel(i), L.accent);
+      L.rects.push({cx:x + CELL/2, cy:y + CELL/2, w:CELL, h:CELL, rot:0});
     }
-    scatterDecor(ctx, L.t.decor, W, H, L.accent);
     drawFooter(ctx, W, headerH + rows*CELL + (rows-1)*GAP + 46, L.textColor);
     return {w:W, h:H};
   }
@@ -2749,52 +2880,49 @@
   function drawPolaroidLayout(canvas, L){
     var cols = L.n <= 1 ? 1 : 2;
     var rows = Math.ceil(L.n/cols);
-    var cardW = 300, cardH = 360, gap = 34, pad = 44, headerH = 90;
+    var cardW = 300, cardH = 360, gap = 34, pad = 44;
+    var headerH = L.title ? 90 : 30;
     var w = cols*cardW + (cols+1)*gap;
     var h = headerH + rows*cardH + (rows+1)*gap + pad;
     var ctx = prepCanvas(canvas, w, h, L.scale);
-    paintBackground(ctx, w, h, L.hex, L.isRomantic, L.isWhite);
-    ctx.fillStyle = L.textColor;
-    ctx.font = "600 30px 'Dancing Script', cursive";
-    ctx.textAlign = 'center';
-    ctx.fillText('Our Little Photo Booth ♡', w/2, 54);
-    var mixed = shotsAreMixed();
+    paintBackground(ctx, w, h, L.hex, L.isWhite);
+    if(L.title){
+      ctx.fillStyle = L.textColor;
+      ctx.font = "600 30px 'Dancing Script', cursive";
+      ctx.textAlign = 'center';
+      ctx.fillText(L.title, w/2, 54);
+    }
+    var photoSize = cardW - 28;
     for(var i=0;i<L.n;i++){
       var col = i % cols, row = Math.floor(i/cols);
-      var cx0 = gap + col*(cardW+gap);
-      var cy0 = headerH + gap + row*(cardH+gap);
-      var rot = (i % 2 === 0 ? -1 : 1) * (2 + (i%3));
+      var ccx = gap + col*(cardW+gap) + cardW/2;
+      var ccy = headerH + gap + row*(cardH+gap) + cardH/2;
+      var rot = (i % 2 === 0 ? -1 : 1) * (2 + (i%3)) * Math.PI/180;
       ctx.save();
-      ctx.translate(cx0+cardW/2, cy0+cardH/2);
-      ctx.rotate(rot*Math.PI/180);
+      ctx.translate(ccx, ccy);
+      ctx.rotate(rot);
       ctx.fillStyle = '#FFFFFF';
       ctx.shadowColor = 'rgba(59,22,38,0.25)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 8;
       roundRect(ctx, -cardW/2, -cardH/2, cardW, cardH, 10); ctx.fill();
       ctx.shadowColor = 'transparent';
-      var photoSize = cardW - 28;
       drawPhotoInto(ctx, i, -photoSize/2, -cardH/2+14, photoSize, photoSize, L.filterCss);
-      if(mixed) drawSideLabel(ctx, -photoSize/2 + 12, -cardH/2 + 14 + photoSize - 12, shotLabel(i), L.accent);
       ctx.fillStyle = '#3B1626';   // the card is always white, so its caption is always dark
       ctx.font = "500 16px 'Dancing Script', cursive";
       ctx.textAlign = 'center';
       ctx.fillText(i===L.n-1 && state.customText ? state.customText.slice(0,20) : '♡', 0, cardH/2 - 18);
       ctx.restore();
+      // the photo sits 30px above the card's center; rotate that offset with the card
+      var off = -cardH/2 + 14 + photoSize/2;
+      L.rects.push({cx:ccx - Math.sin(rot)*off, cy:ccy + Math.cos(rot)*off, w:photoSize, h:photoSize, rot:rot});
     }
-    scatterDecor(ctx, L.t.decor, w, h, L.accent);
     if(state.showDate) drawFooterDate(ctx, w, h-14, L.textColor);
     return {w:w, h:h};
   }
 
-  function paintBackground(ctx,w,h,base,isRomantic,isWhite){
+  function paintBackground(ctx,w,h,base,isWhite){
     if(isWhite){
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0,0,w,h);
-      return;
-    }
-    if(isRomantic){
-      var g = ctx.createLinearGradient(0,0,0,h);
-      g.addColorStop(0,'#FFF6F8'); g.addColorStop(1, base);
-      ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
       return;
     }
     var g2 = ctx.createLinearGradient(0,0,w,h);
@@ -2834,7 +2962,7 @@
   var anim = {raf:0};
   function playAnim(target){
     stopAnim();
-    if(!state.animated || !hasStickers()){ drawFrame(target, 0); return; }
+    if(!hasMotion()){ drawFrame(target, 0); return; }
     var start = performance.now();
     (function tick(now){
       drawFrame(target, ((now - start)/1000) % LOOP);
@@ -2848,11 +2976,37 @@
     clearTimeout(previewTimer);
     previewTimer = setTimeout(function(){ buildBase(); playAnim($('previewCanvas')); }, 60);
   }
+  /* The result page offers Photo (still) or Animated (video) — the second one only when
+     something actually moves, and only if this browser can record video. The preview
+     follows the choice, so you see exactly what you'll save. */
   function renderResult(){
     buildBase();
-    playAnim($('resultCanvas'));
-    $('videoBtn').hidden = !(state.animated && hasStickers() && pickVideoType());
+    var moving = hasMotion(), canVideo = !!pickVideoType();
+    $('saveAs').hidden = !moving;
+    document.querySelector('.save-opt[data-mode="animated"]').disabled = !canVideo;
+    $('saveNote').hidden = !(moving && !canVideo);
+    if(!moving || !canVideo) state.resultMode = 'photo';
+    syncSaveAs();
   }
+  function syncSaveAs(){
+    Array.prototype.forEach.call(document.querySelectorAll('.save-opt'), function(b){
+      var on = b.dataset.mode === state.resultMode;
+      b.classList.toggle('selected', on);
+      b.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+    var animated = state.resultMode === 'animated';
+    if(!recording) $('downloadBtn').textContent = animated ? 'DOWNLOAD VIDEO ✨' : 'DOWNLOAD PHOTO ♡';
+    $('shareBtn').textContent = animated ? 'SHARE VIDEO' : 'SHARE';
+    if(animated) playAnim($('resultCanvas'));
+    else { stopAnim(); drawFrame($('resultCanvas'), 0); }   // the "resting" pose is what gets saved
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.save-opt'), function(b){
+    b.addEventListener('click', function(){
+      if(b.disabled || recording) return;
+      state.resultMode = b.dataset.mode;
+      syncSaveAs();
+    });
+  });
 
   /* ---------------- download / share ---------------- */
   function saveBlob(blob, filename){
@@ -2882,17 +3036,15 @@
       });
     });
   }
+  function photoBlob(){
+    return new Promise(function(resolve, reject){
+      var canvas = $('resultCanvas');
+      drawFrame(canvas, 0);
+      canvas.toBlob(function(blob){ blob ? resolve(blob) : reject(new Error('blob')); }, 'image/png');
+    });
+  }
 
-  $('downloadBtn').addEventListener('click', function(){
-    var canvas = $('resultCanvas');
-    drawFrame(canvas, 0);   // save the "resting" pose, not a random mid-wiggle frame
-    canvas.toBlob(function(blob){
-      if(!blob){ showToast("Couldn't create the image. Please try again."); return; }
-      saveBlob(blob, 'our-little-photo-booth.png');
-    }, 'image/png');
-  });
-
-  /* moving stickers → a short video, recorded straight from a canvas */
+  /* moving decorations → a short video, recorded straight from a canvas */
   function pickVideoType(){
     if(!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) return '';
     var types = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
@@ -2900,52 +3052,76 @@
     return '';
   }
   var recording = false;
-  $('videoBtn').addEventListener('click', function(){
+  var lastVideo = null;   // {base, blob, ext} — reused so SHARE doesn't record the same video twice
+  function recordVideo(){
+    if(lastVideo && lastVideo.base === base) return Promise.resolve(lastVideo);
     var type = pickVideoType();
-    if(recording || !type) return;
+    if(recording || !type) return Promise.reject(new Error('busy'));
     recording = true;
-    var btn = this;
-    btn.disabled = true; btn.textContent = 'RECORDING… ✨';
-    var scale = Math.min(1, 1440 / Math.max(base.w, base.h));
-    var rc = document.createElement('canvas');
-    drawFrame(rc, 0, scale);
-    var stream = rc.captureStream(30);
-    var rec = new MediaRecorder(stream, {mimeType:type, videoBitsPerSecond:5000000});
-    var chunks = [];
-    rec.ondataavailable = function(e){ if(e.data && e.data.size) chunks.push(e.data); };
-    rec.onstop = function(){
-      stream.getTracks().forEach(function(tr){ tr.stop(); });
-      recording = false;
-      btn.disabled = false; btn.textContent = 'DOWNLOAD VIDEO ✨';
-      var ext = type.indexOf('mp4') !== -1 ? 'mp4' : 'webm';
-      saveBlob(new Blob(chunks, {type:type.split(';')[0]}), 'our-little-photo-booth.' + ext);
-    };
-    var start = performance.now();
-    rec.start();
-    (function tick(now){
-      var t = (now - start)/1000;
-      if(t >= LOOP*2){ rec.stop(); return; }   // two full loops
-      drawFrame(rc, t % LOOP, scale);
-      requestAnimationFrame(tick);
-    })(start);
+    var btn = $('downloadBtn');
+    btn.disabled = true; btn.textContent = 'MAKING YOUR VIDEO… ✨';
+    return new Promise(function(resolve){
+      var forBase = base;
+      var scale = Math.min(1, 1440 / Math.max(base.w, base.h));
+      var rc = document.createElement('canvas');
+      drawFrame(rc, 0, scale);
+      var stream = rc.captureStream(30);
+      var rec = new MediaRecorder(stream, {mimeType:type, videoBitsPerSecond:5000000});
+      var chunks = [];
+      rec.ondataavailable = function(e){ if(e.data && e.data.size) chunks.push(e.data); };
+      rec.onstop = function(){
+        stream.getTracks().forEach(function(tr){ tr.stop(); });
+        recording = false;
+        btn.disabled = false;
+        syncSaveAs();
+        lastVideo = {base:forBase, blob:new Blob(chunks, {type:type.split(';')[0]}), ext:type.indexOf('mp4') !== -1 ? 'mp4' : 'webm'};
+        resolve(lastVideo);
+      };
+      var start = performance.now();
+      rec.start();
+      (function tick(now){
+        var t = (now - start)/1000;
+        if(t >= LOOP*2){ rec.stop(); return; }   // two full loops
+        drawFrame(rc, t % LOOP, scale);
+        requestAnimationFrame(tick);
+      })(start);
+    });
+  }
+
+  $('downloadBtn').addEventListener('click', function(){
+    if(recording) return;
+    if(state.resultMode === 'animated'){
+      recordVideo().then(function(v){ saveBlob(v.blob, 'our-little-photo-booth.' + v.ext); }, function(){});
+      return;
+    }
+    photoBlob().then(function(blob){ saveBlob(blob, 'our-little-photo-booth.png'); },
+      function(){ showToast("Couldn't create the image. Please try again."); });
   });
 
-  $('shareBtn').addEventListener('click', function(){
-    var canvas = $('resultCanvas');
-    drawFrame(canvas, 0);
-    canvas.toBlob(async function(blob){
-      if(!blob) return;
-      if(navigator.canShare && navigator.share){
-        try{
-          var file = new File([blob], 'our-little-photo-booth.png', {type:'image/png'});
-          if(navigator.canShare({files:[file]})){
-            await navigator.share({ files:[file], title:'Our Little Photo Booth', text:'A little memory, just for us ♡' });
-            return;
-          }
-        }catch(e){ /* user cancelled or share failed, fall through */ return; }
-      }
+  function shareFile(blob, name, type){
+    var file = new File([blob], name, {type:type});
+    if(!(navigator.canShare && navigator.share && navigator.canShare({files:[file]}))){
       showToast('Sharing isn\'t supported here — try downloading instead ♡');
-    }, 'image/png');
+      return Promise.resolve();
+    }
+    return navigator.share({files:[file], title:'Our Little Photo Booth', text:'A little memory, just for us ♡'});
+  }
+  $('shareBtn').addEventListener('click', function(){
+    if(recording) return;
+    if(state.resultMode === 'animated'){
+      var ready = lastVideo && lastVideo.base === base;
+      recordVideo().then(function(v){
+        var mime = v.ext === 'mp4' ? 'video/mp4' : 'video/webm';
+        return shareFile(v.blob, 'our-little-photo-booth.' + v.ext, mime).catch(function(err){
+          // phones only allow sharing right after a tap; recording takes a few seconds
+          if(!ready && err && err.name === 'NotAllowedError') showToast('Your video is ready ♡ Tap SHARE VIDEO again to send it');
+        });
+      }, function(){});
+      return;
+    }
+    photoBlob().then(function(blob){
+      return shareFile(blob, 'our-little-photo-booth.png', 'image/png');
+    }).catch(function(){ /* cancelled */ });
   });
 
   /* init */
