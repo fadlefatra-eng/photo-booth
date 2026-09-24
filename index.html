@@ -716,7 +716,7 @@
       <div class="privacy-note">🔒 Your photos stay on your device. We don't upload or store your photos.</div>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.3</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.3.1</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -1046,12 +1046,12 @@
   [
     {id:'garden', name:'Flower Garden', color:'mint', colors:['mint','cream','baby','white'], title:'in full bloom', decor:decorGarden},
     {id:'picnic', name:'Picnic', color:'white', colors:['white','cream','butter','baby'], title:'picnic date', pattern:patternGingham, decor:decorPicnic},
-    {id:'starry', name:'Starry Night', color:'navy', colors:['navy','midnight','lavender'], title:'sweet dreams', decor:decorStarry},
-    {id:'clouds', name:'Cloud Nine', color:'sky', colors:['sky','lavender','baby'], title:'on cloud nine', decor:decorClouds},
+    {id:'starry', name:'Starry Night', color:'navy', colors:['navy','midnight','lavender'], title:'sweet dreams', textW:320, decor:decorStarry},
+    {id:'clouds', name:'Cloud Nine', color:'sky', colors:['sky','lavender','baby'], title:'on cloud nine', textW:280, decor:decorClouds},
     {id:'scrapbook', name:'Scrapbook', color:'cream', colors:['cream','peach','butter','white'], title:'our little story', pattern:patternDots, decor:decorScrapbook},
     {id:'valentine', name:'Valentine', color:'cherry', colors:['cherry','rose','pink'], title:'be mine', decor:decorValentine},
     {id:'beach', name:'Beach', color:'butter', colors:['butter','cream','sky','peach'], title:'sea you soon', decor:decorBeach},
-    {id:'coffee', name:'Coffee Date', color:'mocha', colors:['mocha','cream','peach'], title:'coffee date', decor:decorCoffee},
+    {id:'coffee', name:'Coffee Date', color:'mocha', colors:['mocha','cream','peach'], title:'coffee date', textW:300, decor:decorCoffee},
     {id:'lebaran', name:'Lebaran', color:'mint', colors:['mint','cream','navy'], title:'Eid Mubarak ♡', decor:decorLebaran},
     {id:'retro', name:'Retro 70s', color:'peach', colors:['peach','butter','cream','mocha'], title:'groovy love', decor:decorRetro}
   ].forEach(function(t){
@@ -1072,6 +1072,7 @@
     {id:'hoodie-chick', name:'Hoodie: Chick', color:'butter', band:'#FFD84D', colors:['butter','cream','peach'], title:'fresh from the oven', labelAt:'tr', decor:decorHoodieChick}
   ].forEach(function(t){
     t.tab = 'characters'; t.layout = 'strip'; t.animated = true;
+    t.textW = 300;   // the characters sit in the bottom corners; text below the photos stays in this middle lane
     if(t.band) t.pattern = patternBand;
     TEMPLATES.push(t);
   });
@@ -3610,7 +3611,7 @@
     var A = corners(e.rects[0]), B = corners(e.rects[e.rects.length-1]);
     // positions keep every part inside the photo's outer band — nothing reaches the protected middle
     drawTeddyChar(ctx, A[0][0] + 118, A[0][1] - 2, 84, '#A47E6B', '#E8D5B7', e, 0, {paws:true});
-    drawTeddyChar(ctx, B[2][0] - 112, B[2][1] + 6, 74, '#C8A98B', '#FFF6E5', e, 0.5, {body:true, bow:true});
+    drawTeddyChar(ctx, B[2][0] - 82, B[2][1] + 6, 74, '#C8A98B', '#FFF6E5', e, 0.5, {body:true, bow:true});
     var beat = 1 + (e.moving ? Math.max(0, wave(e.t, 3, 0))*0.18 : 0);
     drawHeart(ctx, B[2][0] - 290, B[2][1] - 84, 70*beat, '#E14F7A', 1);
     e.rects.forEach(function(r, i){
@@ -3640,8 +3641,8 @@
   }
   function decorKitten(ctx, e){
     var A = corners(e.rects[0]), B = corners(e.rects[e.rects.length-1]);
-    drawKittenChar(ctx, B[3][0] + 140, B[3][1] - 8, 72, '#F0997B', '#D8663E', e, 0, false, -1);
-    drawKittenChar(ctx, B[2][0] - 140, B[2][1] - 8, 72, '#B4B2A9', null, e, 0.5);
+    drawKittenChar(ctx, B[3][0] + 92, B[3][1] - 8, 72, '#F0997B', '#D8663E', e, 0, false, -1);
+    drawKittenChar(ctx, B[2][0] - 92, B[2][1] - 8, 72, '#B4B2A9', null, e, 0.5);
     var beat = 1 + (e.moving ? Math.max(0, wave(e.t, 3, 0))*0.18 : 0);
     drawHeart(ctx, (B[3][0] + B[2][0])/2, B[2][1] - 84, 56*beat, '#E14F7A', 1);
     // a third kitten peeking in at the top, with paw prints trailing off to the side
@@ -3657,8 +3658,8 @@
       var sx = (k % 2 ? e.w - 16 - (k * 23) % 86 : 16 + (k * 23) % 86) + (e.moving ? Math.sin((p*2 + k) * Math.PI) * 8 : 0);
       blob(ctx, sx, p * e.h, 5 + (k % 3)*2, 5 + (k % 3)*2, 'rgba(255,255,255,.9)');
     }
-    drawPenguinChar(ctx, B[3][0] + 150, B[2][1] - 4, 84, '#E14F7A', e, 0);
-    drawPenguinChar(ctx, B[2][0] - 150, B[2][1] - 4, 84, '#378ADD', e, 0.5);
+    drawPenguinChar(ctx, B[3][0] + 87, B[2][1] - 4, 84, '#E14F7A', e, 0);
+    drawPenguinChar(ctx, B[2][0] - 87, B[2][1] - 4, 84, '#378ADD', e, 0.5);
   }
 
   /* ---- Hoodie Friends: a little hand-drawn style (brown outlines), drawn in small units and scaled up ---- */
@@ -3824,8 +3825,9 @@
     hoodStart(ctx, A[1][0] - 26, A[1][1] + e.rects[0].h*0.6 + sway(e, 2, 0.5, 9), foodScale, sway(e, 1, 1, 0.12));
     drawFood(ctx, blinkOpen(e, 0.45));
     ctx.restore();
-    // the big hoodie friend sits in the bottom-left corner, peeking into the photo
-    hoodStart(ctx, B[3][0] + 92, B[3][1] + 58, 4.5, sway(e, 1, 0, 0.05));   // inside the strip, clear of the date and the photo's middle
+    // the hoodie friend sits in the bottom-left corner, peeking into the photo — tucked into the
+    // corner so the text lane in the middle (textW) stays free, and clear of the photo's middle
+    hoodStart(ctx, B[3][0] + 64, B[3][1] + 40, 3.5, sway(e, 1, 0, 0.05));
     drawChar(ctx, blinkOpen(e, 0.1), sway(e, 2, 0, 0.18));
     ctx.restore();
   }
@@ -3960,7 +3962,7 @@
     return {
       id: 'custom-' + rec.id, tab: 'custom', custom: true, rec: rec,
       name: rec.name || 'My frame',
-      layout: baseT.layout, thin: baseT.thin, pattern: baseT.pattern, band: baseT.band,
+      layout: baseT.layout, thin: baseT.thin, pattern: baseT.pattern, band: baseT.band, textW: baseT.textW,
       color: rec.colorId || baseT.color, colors: baseT.colors, title: baseT.title,
       animated: !!(baseT.animated || rec.wiggle),
       labelAt: ['tl','tr','bl','br'].filter(function(p){ return used.indexOf(p) === -1; })[0] || 'bl',
@@ -4377,15 +4379,27 @@
     }
     ctx.fillText(text, w/2, 62);
   }
-  function drawFooter(ctx, w, y, color){
+  // one line of text that must fit `maxW`: the font shrinks (not below minPx), and the canvas
+  // squeezes the very last bit, so text never runs into a frame's characters or off the strip
+  function fillFitted(ctx, text, x, y, maxW, weight, px, minPx, family){
+    ctx.font = weight + ' ' + px + 'px ' + family;
+    var w = ctx.measureText(text).width;
+    if(w > maxW) ctx.font = weight + ' ' + Math.max(minPx, Math.floor(px * maxW / w)) + 'px ' + family;
+    ctx.fillText(text, x, y, maxW);
+  }
+  // how wide the text below the photos may be: frames with drawings in the bottom corners keep a
+  // middle lane free (textW, checked with the text-overlap audit); plain frames use nearly the full width
+  function textLane(t){ return t.textW || (t.decor ? 440 : 0); }
+  // maxW: the text lane width (0 = full width)
+  function drawFooter(ctx, w, y, color, maxW){
+    maxW = Math.min(maxW || w, w - 80);
     if(state.customText){
       ctx.fillStyle = color;
       ctx.textAlign = 'center';
-      ctx.font = "600 30px 'Dancing Script', cursive";
-      ctx.fillText(state.customText.slice(0,40), w/2, y);
+      fillFitted(ctx, state.customText.slice(0,40), w/2, y, maxW, 600, 30, 20, "'Dancing Script', cursive");
       y += 38;
     }
-    if(state.showDate) drawFooterDate(ctx, w, y, color);
+    if(state.showDate) drawFooterDate(ctx, w, y, color, maxW);
   }
   function drawBorder(ctx, w, h, color, thin){
     ctx.save();
@@ -4425,7 +4439,7 @@
       drawPhotoInto(ctx, s, PAD, y, CELL, CELL, L.filter, film ? 6 : 16);
       L.rects.push({cx:PAD + CELL/2, cy:y + CELL/2, w:CELL, h:CELL, rot:0});
     }
-    drawFooter(ctx, W, headerH + L.n*CELL + (L.n-1)*GAP + 46, L.textColor);
+    drawFooter(ctx, W, headerH + L.n*CELL + (L.n-1)*GAP + 46, L.textColor, textLane(L.t));
     return {w:W, h:H};
   }
 
@@ -4454,7 +4468,7 @@
       drawPhotoInto(ctx, i, x, y, CELL, CELL, L.filter, 14);
       L.rects.push({cx:x + CELL/2, cy:y + CELL/2, w:CELL, h:CELL, rot:0});
     }
-    drawFooter(ctx, W, headerH + rows*CELL + (rows-1)*GAP + 46, L.textColor);
+    drawFooter(ctx, W, headerH + rows*CELL + (rows-1)*GAP + 46, L.textColor, textLane(L.t));
     return {w:W, h:H};
   }
 
@@ -4593,13 +4607,12 @@
     return c;
   }
 
-  function drawFooterDate(ctx, w, y, textColor){
+  function drawFooterDate(ctx, w, y, textColor, maxW){
     var label = state.dateLabel && state.dateLabel !== 'date' ? state.dateLabel + ' — ' : '';
     ctx.fillStyle = textColor;
     ctx.globalAlpha = 0.85;
-    ctx.font = "600 20px Poppins, sans-serif";
     ctx.textAlign = 'center';
-    ctx.fillText(label + formatDate(), w/2, y);
+    fillFitted(ctx, label + formatDate(), w/2, y, maxW || w - 40, 600, 20, 14, 'Poppins, sans-serif');
     ctx.globalAlpha = 1;
   }
 
