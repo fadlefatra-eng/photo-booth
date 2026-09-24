@@ -241,12 +241,16 @@
   /* camera */
   .camera-title{font-size:1.15rem !important; margin:6px 0 14px;}
   .camera-stage{
-    position:relative; width:100%; aspect-ratio:3/4; max-height:58vh; border-radius:var(--radius-lg);
+    /* square, exactly like the photo that gets saved — what you see is what you get */
+    position:relative; width:min(100%, 58vh); margin:0 auto; aspect-ratio:1/1; border-radius:var(--radius-lg);
     overflow:hidden; background:var(--plum-900); box-shadow:var(--shadow-pink);
   }
   .camera-stage video{width:100%; height:100%; object-fit:cover;}
   .camera-stage video.mirror{transform:scaleX(-1);}
-  .camera-stage .fx-canvas{position:absolute; inset:0; width:100%; height:100%; pointer-events:none;}
+  /* effect + decoration layers over the solo camera and over your tile in the live room */
+  .camera-stage .fx-canvas, .live-tile .fx-canvas{position:absolute; inset:0; width:100%; height:100%; pointer-events:none;}
+  .mini-strip{position:absolute; top:12px; right:12px; z-index:3; width:auto; height:auto; max-width:22%; max-height:42%; border-radius:6px; box-shadow:0 6px 16px -6px rgba(0,0,0,.45); pointer-events:none;}
+  .mini-strip[hidden]{display:none;}
   .fx-row{margin-top:20px; text-align:center;}
   .fx-row h3{font-size:.82rem; text-transform:uppercase; letter-spacing:.06em; color:var(--rose-800); margin-bottom:10px; font-family:var(--font-body); font-weight:600;}
   .fx-row .chip-row{justify-content:center;}
@@ -269,6 +273,7 @@
     text-align:center; padding:28px; background:linear-gradient(160deg,rgba(255,143,179,.94),rgba(147,38,79,.94)); color:#fff; gap:14px;
   }
   .camera-permission.show{display:flex;}
+  .camera-permission{z-index:4;}   /* above the decorations and the mini strip */
   .camera-permission .icon{font-size:2.4rem;}
   .camera-permission h3{font-size:1.15rem; color:#fff;}
   .camera-permission p{font-size:.88rem; opacity:.92; max-width:280px; line-height:1.5;}
@@ -301,7 +306,27 @@
   .control-group .switch-row + .switch-row, .frame-pick-row + .switch-row{margin-top:10px;}
   /* frame tabs */
   .frame-tabs{display:flex; gap:6px; flex-wrap:wrap; margin:18px 0 0; justify-content:center;}
-  .control-group .frame-tabs{justify-content:flex-start; margin:0 0 10px;}
+  .tool-panel .frame-tabs{justify-content:flex-start; margin:0 0 10px;}
+  .skip-link{display:block; margin:8px auto 0;}
+  .skip-link[hidden]{display:none;}
+  /* "make it yours" editor */
+  .editor{display:flex; flex-direction:column; gap:12px; margin-top:12px;}
+  .editor .preview-pane{position:sticky; top:0; z-index:6; padding:8px 0 12px; background:linear-gradient(var(--blush-50) 88%, rgba(255,247,249,0));}
+  .editor .preview-pane canvas{max-height:38vh;}
+  .tool-tabs{display:flex; gap:3px; background:var(--white); border-radius:999px; padding:4px; box-shadow:var(--shadow-soft);}
+  .tool-tab{flex:1; min-width:0; border:none; background:none; border-radius:999px; padding:10px 2px; font-size:.76rem; font-weight:600; color:var(--rose-800);}
+  .tool-tab.active{background:var(--rose-600); color:#fff;}
+  .tool-panel{background:var(--white); border-radius:var(--radius-md); padding:14px; margin-top:10px; box-shadow:var(--shadow-soft);}
+  .tool-panel > * + *{margin-top:12px;}
+  .ldr-toggle{display:block; margin:14px auto 0; background:none; border:none; color:var(--rose-800); font-size:.82rem; font-weight:600; text-decoration:underline; padding:8px;}
+  @media (min-width:900px){
+    .app-stage.wide{max-width:1000px;}
+    .editor{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:start; gap:28px;}
+    .editor .preview-pane{top:12px; background:none;}
+    .editor .preview-pane canvas{max-height:calc(100vh - 330px);}   /* leave room for the title and the DONE button */
+  }
+  /* landing gallery groups */
+  .gallery-group{grid-column:1/-1; font-family:var(--font-script); font-size:1.35rem; color:var(--rose-600); margin-top:8px;}
   .frame-tab{background:var(--white); border:1.5px solid var(--blush-100); border-radius:999px; padding:8px 14px; font-size:.8rem; font-weight:600; color:var(--rose-800);}
   .frame-tab.active{background:var(--rose-600); border-color:var(--rose-600); color:#fff;}
   /* save as photo / animated */
@@ -568,11 +593,12 @@
       <!-- STEP 2: frame -->
       <section class="step" id="step-frame" data-step="frame">
         <h2>Choose Frame</h2>
-        <p class="step-sub">You can always change this later.</p>
+        <p class="step-sub">You'll see its decorations while you pose — and you can still change it after.</p>
         <div class="frame-tabs" id="frameTabsStep" role="tablist" aria-label="Frame types"></div>
         <div class="frame-grid" id="frameGrid" role="group" aria-label="Choose a frame"></div>
         <div class="step-footer">
           <button class="btn btn-primary btn-block" id="toCameraBtn">START PHOTO BOOTH ♡</button>
+          <button type="button" class="btn-text skip-link" id="skipFrameBtn">Skip — I'll choose after</button>
         </div>
       </section>
 
@@ -582,6 +608,8 @@
         <div class="camera-stage">
           <video id="video" playsinline autoplay muted aria-label="Camera preview"></video>
           <canvas class="fx-canvas" id="fxCanvas" aria-hidden="true"></canvas>
+          <canvas class="fx-canvas" id="frameOverlay" aria-hidden="true"></canvas>
+          <canvas class="mini-strip" id="miniStrip" aria-hidden="true"></canvas>
           <div class="flash" id="flash" aria-hidden="true"></div>
           <div class="countdown" id="countdown" aria-live="polite"></div>
           <div class="shot-indicator" id="shotIndicator"></div>
@@ -677,7 +705,7 @@
         <!-- c) together -->
         <div id="liveStage" hidden>
           <div class="live-tiles">
-            <div class="live-tile"><video id="liveLocal" playsinline autoplay muted aria-label="Your camera"></video><span class="live-tag">me ♡</span></div>
+            <div class="live-tile"><video id="liveLocal" playsinline autoplay muted aria-label="Your camera"></video><canvas class="fx-canvas" id="liveOverlay" aria-hidden="true"></canvas><span class="live-tag">me ♡</span></div>
             <div class="live-tile"><video id="liveRemote" playsinline autoplay aria-label="Your love's camera"></video><span class="live-tag">you ♡</span>
               <button class="live-unmute" id="liveUnmute" hidden>🔈 Tap to hear</button></div>
             <div class="countdown" id="liveCountdown" aria-live="polite"></div>
@@ -698,44 +726,41 @@
       <!-- STEP 4: customize -->
       <section class="step" id="step-customize" data-step="customize">
         <h2>MAKE IT YOURS ♡</h2>
-        <div class="customize-layout">
+        <p class="step-sub">Not sure? Try other frames — your photos stay.</p>
+        <!-- editor: the preview stays on screen, and only one tool panel is open at a time -->
+        <div class="editor">
           <div class="preview-pane">
             <canvas id="previewCanvas" width="720" height="900"></canvas>
-            <p class="ready-note">your memories are ready ♡</p>
           </div>
-          <div>
-            <div class="control-group">
-              <h3>Frame</h3>
+          <div class="tools">
+            <div class="tool-tabs" role="tablist" aria-label="Edit your strip">
+              <button type="button" class="tool-tab active" data-panel="frame" role="tab">Frame</button>
+              <button type="button" class="tool-tab" data-panel="color" role="tab">Color</button>
+              <button type="button" class="tool-tab" data-panel="filter" role="tab">Filter</button>
+              <button type="button" class="tool-tab" data-panel="stickers" role="tab">Stickers</button>
+              <button type="button" class="tool-tab" data-panel="text" role="tab">Text</button>
+            </div>
+            <div class="tool-panel" data-panel="frame" role="tabpanel">
               <div class="frame-tabs" id="frameTabsCustomize" role="tablist" aria-label="Frame types"></div>
               <div class="frame-pick-row" id="framePickRow" role="group" aria-label="Choose a frame"></div>
-              <label class="switch-row" id="titleToggleRow" hidden><input type="checkbox" id="titleToggle" checked><span>Show frame title</span></label>
               <label class="switch-row" id="popoutToggleRow" hidden><input type="checkbox" id="popoutToggle" checked><span>Let decorations peek over photos</span></label>
             </div>
-            <div class="control-group">
-              <h3>Frame Color</h3>
+            <div class="tool-panel" data-panel="color" role="tabpanel" hidden>
               <div class="swatch-row" id="colorSwatches"></div>
               <p class="swatch-hint" id="swatchHint" hidden>★ suits this frame
                 <button type="button" class="btn-text" id="themeColorBtn" hidden>↺ Theme color</button></p>
             </div>
-            <div class="control-group">
-              <h3>Filter</h3>
+            <div class="tool-panel" data-panel="filter" role="tabpanel" hidden>
               <div class="chip-row" id="filterChips"></div>
             </div>
-            <div class="control-group">
-              <h3>Stickers</h3>
+            <div class="tool-panel" data-panel="stickers" role="tabpanel" hidden>
               <div class="chip-row" id="stickerChips"></div>
-            </div>
-            <div class="control-group">
-              <h3>Motion</h3>
               <label class="switch-row"><input type="checkbox" id="animToggle" checked><span>Moving stickers and decorations ✨</span></label>
               <p class="motion-note" id="motionNote" hidden>Your phone or browser has <b>Reduce motion</b> turned on, so movement starts switched off. Turn it on with the switch above — or turn off Reduce motion in your device's accessibility settings (iPhone: Settings → Accessibility → Motion · Android: Settings → Accessibility → Remove animations). Battery saver can also slow animations down.</p>
             </div>
-            <div class="control-group">
-              <h3>Add Text</h3>
-              <input type="text" id="customText" maxlength="40" placeholder="Forever &amp; Always">
-            </div>
-            <div class="control-group">
-              <h3>Date</h3>
+            <div class="tool-panel" data-panel="text" role="tabpanel" hidden>
+              <label class="switch-row" id="titleToggleRow" hidden><input type="checkbox" id="titleToggle" checked><span>Show frame title</span></label>
+              <input type="text" id="customText" maxlength="40" placeholder="Forever &amp; Always" aria-label="Your text">
               <label class="switch-row"><input type="checkbox" id="showDateToggle" checked><span>Show date on photo</span></label>
               <select id="dateLabelSelect" aria-label="Date label">
                 <option value="date">Just the date</option>
@@ -744,14 +769,14 @@
                 <option value="Best Day">Best Day</option>
               </select>
             </div>
-          </div>
-        </div>
-        <div class="ldr-row">
-          <p class="ldr-title">Long distance ♡</p>
-          <p class="ldr-hint">Send your photos to your love, or add theirs to this strip.</p>
-          <div class="fallback-buttons">
-            <button class="btn btn-secondary js-copy-code">COPY MY PHOTO CODE</button>
-            <button class="btn btn-ghost js-paste-code">PASTE THEIR CODE</button>
+            <button type="button" class="ldr-toggle" id="ldrToggle" aria-expanded="false">♡ Long distance — swap photo codes</button>
+            <div class="ldr-row" id="ldrCustomize" hidden>
+              <p class="ldr-hint">Send your photos to your love, or add theirs to this strip.</p>
+              <div class="fallback-buttons">
+                <button class="btn btn-secondary js-copy-code">COPY MY PHOTO CODE</button>
+                <button class="btn btn-ghost js-paste-code">PASTE THEIR CODE</button>
+              </div>
+            </div>
           </div>
         </div>
         <div class="step-footer">
@@ -852,6 +877,22 @@
     {id:'polaroid', tab:'plain', name:'Polaroid', layout:'polaroid', color:'butter'},
     {id:'film', tab:'plain', name:'Film', layout:'film', color:'midnight'}
   ];
+  // Illustrated themes: the drawings live in the decorXxx / patternXxx functions further down
+  [
+    {id:'garden', name:'Flower Garden', color:'mint', colors:['mint','cream','baby','white'], title:'in full bloom', decor:decorGarden},
+    {id:'picnic', name:'Picnic', color:'white', colors:['white','cream','butter','baby'], title:'picnic date', pattern:patternGingham, decor:decorPicnic},
+    {id:'starry', name:'Starry Night', color:'navy', colors:['navy','midnight','lavender'], title:'sweet dreams', decor:decorStarry},
+    {id:'clouds', name:'Cloud Nine', color:'sky', colors:['sky','lavender','baby'], title:'on cloud nine', decor:decorClouds},
+    {id:'scrapbook', name:'Scrapbook', color:'cream', colors:['cream','peach','butter','white'], title:'our little story', pattern:patternDots, decor:decorScrapbook},
+    {id:'valentine', name:'Valentine', color:'cherry', colors:['cherry','rose','pink'], title:'be mine', decor:decorValentine},
+    {id:'beach', name:'Beach', color:'butter', colors:['butter','cream','sky','peach'], title:'sea you soon', decor:decorBeach},
+    {id:'coffee', name:'Coffee Date', color:'mocha', colors:['mocha','cream','peach'], title:'coffee date', decor:decorCoffee},
+    {id:'lebaran', name:'Lebaran', color:'mint', colors:['mint','cream','navy'], title:'Eid Mubarak ♡', decor:decorLebaran},
+    {id:'retro', name:'Retro 70s', color:'peach', colors:['peach','butter','cream','mocha'], title:'groovy love', decor:decorRetro}
+  ].forEach(function(t){
+    t.tab = 'illustrated'; t.layout = 'strip'; t.animated = true;
+    TEMPLATES.push(t);
+  });
   var FX_OPTIONS = [
     {id:'none', label:'None'},
     {id:'hearts', label:'♡ Hearts'},
@@ -1002,17 +1043,26 @@
      Every thumbnail is the real strip, drawn by the same code as the final photo
      (just smaller), so what you pick is exactly what you get. Before any photos
      exist, pink placeholders stand in for them. */
-  function fillThumbs(container, scale){
+  function fillThumbs(container, scale, n){
     Array.prototype.forEach.call(container.children, function(card){
-      if(card.hidden) return;   // cards in another tab get drawn when that tab opens
+      if(card.hidden || !card.dataset.template) return;   // skip headings, and cards in a closed tab
       var box = card.querySelector('.frame-thumb, .gallery-thumb');
       box.innerHTML = '';
-      box.appendChild(makeBase(templateById(card.dataset.template), null, scale).canvas);
+      box.appendChild(makeBase(templateById(card.dataset.template), null, scale, n).canvas);
     });
   }
   (function buildGallery(){
     var grid = $('galleryGrid');
+    var tabs = usedTabs();
+    var lastTab = null;
     TEMPLATES.forEach(function(t){
+      if(tabs.length > 1 && t.tab !== lastTab){   // a small heading before each group
+        lastTab = t.tab;
+        var h = document.createElement('p');
+        h.className = 'gallery-group';
+        h.textContent = FRAME_TABS.filter(function(x){ return x.id === t.tab; })[0].label;
+        grid.appendChild(h);
+      }
       var card = document.createElement('div');
       card.className = 'gallery-card';
       card.dataset.template = t.id;
@@ -1026,7 +1076,7 @@
     });
     // wait for the web fonts, otherwise the canvas draws headers in a fallback font
     var fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
-    fontsReady.then(function(){ fillThumbs(grid, 0.2); });
+    fontsReady.then(function(){ fillThumbs(grid, 0.2, 2); });   // 2 photos: big enough to show off each frame's drawings
   })();
 
   /* ---------------- build step-count ---------------- */
@@ -1150,6 +1200,15 @@
     // the phone asked for less motion: say why things are still, and how to change it
     $('motionNote').hidden = !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 
+    Array.prototype.forEach.call(document.querySelectorAll('.tool-tab'), function(b){
+      b.addEventListener('click', function(){ showToolPanel(b.dataset.panel); });
+    });
+    $('ldrToggle').addEventListener('click', function(){
+      var open = $('ldrCustomize').hidden;
+      $('ldrCustomize').hidden = !open;
+      this.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+
     var filterRow = $('filterChips');
     FILTERS.forEach(function(f){
       var b = document.createElement('button');
@@ -1238,12 +1297,15 @@
       s.classList.toggle('active', s.dataset.step === step);
     });
     renderDots();
+    document.querySelector('.app-stage').classList.toggle('wide', step === 'customize');   // side-by-side editor on laptops
     if(step === 'count'){ syncCountGrid(); }
     if(step === 'frame'){
       showFrameTab(templateById(state.templateId).tab);   // opens the right tab and draws its thumbnails
-      $('toCameraBtn').textContent = state.shots.length >= state.shotCount ? 'CONTINUE ♡' : 'START PHOTO BOOTH ♡';
+      var done = state.shots.length >= state.shotCount;
+      $('toCameraBtn').textContent = done ? 'CONTINUE ♡' : 'START PHOTO BOOTH ♡';
+      $('skipFrameBtn').hidden = done;
     }
-    if(step === 'camera'){ initCamera(); updateTray(); startFx(); }
+    if(step === 'camera'){ initCamera(); updateTray(); startFx(); startCamOverlay(); }
     if(step === 'live'){ enterLiveStep(); }
     if(step === 'customize'){ prepCustomizeDefaults(); showFrameTab(templateById(state.templateId).tab); renderPreview(); }
     if(step === 'result'){ renderResult(); }
@@ -1364,8 +1426,10 @@
   $('toResultBtn').addEventListener('click', function(){ goToStep('result'); });
   $('changeFrameBtn').addEventListener('click', function(){
     goToStep('customize');
-    setTimeout(function(){ $('framePickRow').scrollIntoView({behavior:'smooth', block:'center'}); }, 80);
+    showToolPanel('frame');
   });
+  // skipping keeps the current frame (Classic Strip by default) — it can still be changed at the end
+  $('skipFrameBtn').addEventListener('click', function(){ $('toCameraBtn').click(); });
   $('retakeBtn').addEventListener('click', function(){
     state.shots = [];
     goToStep(live.connected ? 'live' : 'camera');   // still in a live room? shoot again together
@@ -1382,6 +1446,17 @@
     $('titleToggle').checked = state.showTitle;
     $('popoutToggle').checked = state.popout;
     $('showDateToggle').checked = state.showDate;
+  }
+  // the editor shows one tool panel at a time (Frame / Color / Filter / Stickers / Text)
+  function showToolPanel(id){
+    Array.prototype.forEach.call(document.querySelectorAll('.tool-tab'), function(b){
+      var on = b.dataset.panel === id;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.tool-panel'), function(p){
+      p.hidden = p.dataset.panel !== id;
+    });
   }
   // selected swatch, ★ on the colors that suit this frame, and the "back to theme color" button
   function syncColorUI(){
@@ -1587,6 +1662,7 @@
     });
     $('trayCount').textContent = state.shots.length + ' / ' + state.shotCount + ' photos';
     $('tray').hidden = state.shots.length === 0;
+    if(state.currentStep === 'camera') drawMiniStrip();   // the little strip in the corner fills up as you go
   }
   $('useCameraAppBtn').addEventListener('click', function(){ $('cameraAppInput').click(); });
   $('useGalleryBtn').addEventListener('click', function(){ $('galleryInput').click(); });
@@ -1863,6 +1939,7 @@
     boothRun++;
     booting = false;
     stopFx();
+    stopCamOverlay();
     hideTransition();
     setShotIndicator('');
     $('countdown').classList.remove('show');
@@ -2213,6 +2290,7 @@
     if(peer && !peer.destroyed){ try{ peer.destroy(); }catch(e){} }
     if(live.localStream){ live.localStream.getTracks().forEach(function(t){ t.stop(); }); live.localStream = null; }
     $('liveLocal').srcObject = null;
+    liveOverlay.stop();
     if(/room=/.test(location.hash)) history.replaceState(history.state, '', siteUrl());
     updateLivePanels();
   }
@@ -2268,12 +2346,15 @@
     var id = ++live.runId;
     live.running = true; live.pending = {}; live.early = {};
     state.shots = [];
+    live.roundIdx = 0;
+    if(live.rounds !== rounds){ live.rounds = rounds; startLiveOverlay(); }   // your love picked a different count
     updateShutter();
     var r = 0;
     function still(){ return id === live.runId && state.currentStep === 'live' && live.connected; }
     function round(){
       if(!still()) return;
       if(r >= rounds) return finish();
+      live.roundIdx = r;   // the decorations on your tile move to this photo's spot
       setLiveStatus('Photo ' + (r+1) + ' of ' + rounds + ' — smile ♡');
       return countdownFrom(3, 'liveCountdown').then(function(){
         if(!still()) return;
@@ -2348,12 +2429,15 @@
     // always turn the picture back on — even if your love isn't connected (yet), they'll need it when they join
     setLocalVideoEnabled(true);
     if(live.connected) sendLive({type:'ready', ready:true});
+    live.roundIdx = 0;
+    startLiveOverlay();
   }
   function leaveLiveStep(){
     live.runId++;                    // stop a countdown that's still going
     live.running = false;
     setLocalVideoEnabled(false);     // stop sending your picture while you customize (voice stays on)
     sendLive({type:'ready', ready:false});
+    liveOverlay.stop();
     updateShutter();
   }
 
@@ -2435,6 +2519,7 @@
         live.rounds = o.r;
         Array.prototype.forEach.call(row.children, function(c){ c.classList.remove('active'); });
         b.classList.add('active');
+        if(state.currentStep === 'live' && !live.running) startLiveOverlay();
       });
       row.appendChild(b);
     });
@@ -2672,6 +2757,417 @@
     });
   }
 
+  /* ================= ILLUSTRATED THEMES =================
+     Each decorXxx(ctx, e) draws in full-size strip units (every photo is 640px wide).
+       e.rects   the photos — corners(r) gives [top-left, top-right, bottom-right, bottom-left]
+       e.t       seconds into the animation loop, e.moving = whether things should move
+     Anything drawn here goes through the stencil in drawDecorLayer, so it can sit right on a
+     photo's edge but never covers the middle (faces). All motion repeats once per LOOP. */
+  function corners(r){ return rectCorners(r, 0); }
+  function sway(e, cycles, phase, amount){ return e.moving ? wave(e.t, cycles, phase) * amount : 0; }
+  // a spin that loops seamlessly for a shape with `k`-fold symmetry (a 5-petal flower needs only 1/5 turn)
+  function spin(e, k, dir){ return e.moving ? (dir || 1) * (e.t / LOOP) * (Math.PI * 2 / k) : 0; }
+  function rgba(hex, a){
+    var n = parseInt(hex.replace('#',''), 16);
+    return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+  }
+
+  /* ---- small drawing pieces ---- */
+  function drawLeaf(ctx, x, y, len, angle, color){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(angle);
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.ellipse(len/2, 0, len/2, len/5, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.12)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(3, 0); ctx.lineTo(len - 5, 0); ctx.stroke();
+    ctx.restore();
+  }
+  function drawBloom(ctx, x, y, r, petal, center, rot){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0);
+    ctx.fillStyle = petal;
+    ctx.strokeStyle = 'rgba(0,0,0,.08)'; ctx.lineWidth = 2;
+    for(var i=0;i<5;i++){
+      var a = i * Math.PI * 2 / 5;
+      ctx.beginPath(); ctx.arc(Math.cos(a)*r*0.55, Math.sin(a)*r*0.55, r*0.5, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    }
+    ctx.fillStyle = center;
+    ctx.beginPath(); ctx.arc(0, 0, r*0.36, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  function drawDaisy(ctx, x, y, r, rot){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0);
+    ctx.fillStyle = '#FFFFFF'; ctx.strokeStyle = 'rgba(0,0,0,.1)'; ctx.lineWidth = 2;
+    for(var i=0;i<8;i++){
+      ctx.save(); ctx.rotate(i * Math.PI/4);
+      ctx.beginPath(); ctx.ellipse(0, -r*0.58, r*0.22, r*0.48, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+      ctx.restore();
+    }
+    ctx.fillStyle = '#F4B63F';
+    ctx.beginPath(); ctx.arc(0, 0, r*0.3, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  function drawStar5(ctx, x, y, r, color, alpha, rot){
+    ctx.save(); ctx.globalAlpha = alpha == null ? 1 : alpha;
+    ctx.translate(x, y); ctx.rotate(rot || 0);
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    for(var i=0;i<10;i++){
+      var rr = i % 2 ? r*0.45 : r, a = -Math.PI/2 + i*Math.PI/5;
+      ctx.lineTo(Math.cos(a)*rr, Math.sin(a)*rr);
+    }
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+  // crescent: a disc with a second disc cut out of it (drawn inside a clip, so the background stays)
+  function drawMoon(ctx, x, y, r, color){
+    ctx.save();
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.clip();
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.rect(x - r, y - r, r*2, r*2);
+    ctx.arc(x + r*0.42, y - r*0.2, r*0.82, 0, Math.PI*2);
+    ctx.fill('evenodd');
+    ctx.restore();
+  }
+  function drawSun(ctx, x, y, r, rot){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0);
+    ctx.strokeStyle = '#F5B83D'; ctx.lineWidth = r*0.16; ctx.lineCap = 'round';
+    for(var i=0;i<8;i++){
+      ctx.rotate(Math.PI/4);
+      ctx.beginPath(); ctx.moveTo(r*1.3, 0); ctx.lineTo(r*1.65, 0); ctx.stroke();
+    }
+    ctx.fillStyle = '#FFD45C';
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  // cherries swinging from the top of their stems
+  function drawHangingCherries(ctx, x, y, size, angle){
+    ctx.save(); ctx.translate(x, y - size*0.6); ctx.rotate(angle);
+    drawCherry(ctx, 0, size*0.6, size, '#C8102E', 1);
+    ctx.restore();
+  }
+  function drawTape(ctx, x, y, w, h, angle, color){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(angle);
+    ctx.globalAlpha = 0.82;
+    ctx.fillStyle = color; ctx.fillRect(-w/2, -h/2, w, h);
+    ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 4;
+    for(var i=-w/2 + 12; i < w/2; i += 20){ ctx.beginPath(); ctx.moveTo(i, -h/2); ctx.lineTo(i - 10, h/2); ctx.stroke(); }
+    ctx.restore();
+  }
+  // a sticker: the shape with a white border around it
+  function drawStickerHeart(ctx, x, y, size){
+    drawHeart(ctx, x, y - size*0.12, size*1.28, '#FFFFFF', 1);
+    drawHeart(ctx, x, y, size, '#E14F7A', 1);
+  }
+  function drawKetupat(ctx, px, py, len, s, angle){
+    ctx.save(); ctx.translate(px, py); ctx.rotate(angle);
+    ctx.strokeStyle = '#C9A64A'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, len - s*0.7); ctx.stroke();
+    ctx.translate(0, len);
+    ctx.fillStyle = '#9CCB6B';
+    ctx.beginPath(); ctx.moveTo(-4, s*0.6); ctx.lineTo(-12, s*1.15); ctx.lineTo(0, s*0.8); ctx.lineTo(12, s*1.2); ctx.lineTo(4, s*0.6); ctx.fill();
+    ctx.rotate(Math.PI/4);
+    ctx.fillRect(-s/2, -s/2, s, s);
+    ctx.strokeStyle = '#4E7D2B'; ctx.lineWidth = 3;
+    for(var i=1;i<4;i++){
+      var o = -s/2 + i*s/4;
+      ctx.beginPath(); ctx.moveTo(-s/2, o); ctx.lineTo(s/2, o); ctx.moveTo(o, -s/2); ctx.lineTo(o, s/2); ctx.stroke();
+    }
+    ctx.strokeRect(-s/2, -s/2, s, s);
+    ctx.restore();
+  }
+  function drawStarfish(ctx, x, y, r, rot){
+    drawStar5(ctx, x, y, r, '#F59A6B', 1, rot);
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0); ctx.fillStyle = '#FFD8C2';
+    for(var i=0;i<5;i++){ var a = -Math.PI/2 + i*Math.PI*2/5; ctx.beginPath(); ctx.arc(Math.cos(a)*r*0.5, Math.sin(a)*r*0.5, r*0.08, 0, Math.PI*2); ctx.fill(); }
+    ctx.restore();
+  }
+  function drawShell(ctx, x, y, r, rot){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0);
+    ctx.fillStyle = '#FFD8C2'; ctx.strokeStyle = '#E8A07E'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(0, r*0.6); ctx.arc(0, 0, r, Math.PI*1.1, Math.PI*1.9); ctx.closePath(); ctx.fill(); ctx.stroke();
+    for(var i=0;i<5;i++){
+      var a = Math.PI*1.1 + (i + 0.5) * (Math.PI*0.8/5);
+      ctx.beginPath(); ctx.moveTo(0, r*0.6); ctx.lineTo(Math.cos(a)*r*0.95, Math.sin(a)*r*0.95); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  // waves that slide exactly one wavelength per loop, so the video loops smoothly
+  function drawWaves(ctx, w, h, y, amp, shift, color){
+    var L = 120, x = -L - (((shift % L) + L) % L);
+    ctx.save(); ctx.fillStyle = color;
+    ctx.beginPath(); ctx.moveTo(x, y);
+    for(; x <= w + L; x += L){
+      ctx.quadraticCurveTo(x + L/4, y - amp, x + L/2, y);
+      ctx.quadraticCurveTo(x + 3*L/4, y + amp, x + L, y);
+    }
+    ctx.lineTo(w + L, h); ctx.lineTo(-L*2, h); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+  function drawCup(ctx, x, y, s, e){
+    ctx.save(); ctx.translate(x, y);
+    // steam curls rise and fade, three at a time, looping
+    ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+    for(var i=0;i<3;i++){
+      var p = e.moving ? ((e.t / LOOP) + i/3) % 1 : 0.5;
+      ctx.globalAlpha = 0.85 * Math.sin(p * Math.PI);
+      var sx = -s*0.22 + i*s*0.22, sy = -s*0.5 - p*s*0.3;
+      ctx.beginPath(); ctx.moveTo(sx, sy + s*0.2);
+      ctx.bezierCurveTo(sx - 12, sy + s*0.12, sx + 12, sy + s*0.06, sx, sy - s*0.04); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#FFFFFF'; ctx.strokeStyle = '#5C3D2E'; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.ellipse(0, s*0.46, s*0.62, s*0.1, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke();   // saucer
+    ctx.beginPath();
+    ctx.moveTo(-s*0.5, -s*0.35); ctx.lineTo(s*0.5, -s*0.35); ctx.lineTo(s*0.4, s*0.3);
+    ctx.quadraticCurveTo(s*0.38, s*0.42, s*0.26, s*0.42); ctx.lineTo(-s*0.26, s*0.42);
+    ctx.quadraticCurveTo(-s*0.38, s*0.42, -s*0.4, s*0.3); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(s*0.5, -s*0.04, s*0.15, -Math.PI/2, Math.PI/2); ctx.stroke();       // handle
+    ctx.fillStyle = '#8B5E3C';
+    ctx.beginPath(); ctx.ellipse(0, -s*0.35, s*0.46, s*0.09, 0, 0, Math.PI*2); ctx.fill();         // coffee
+    drawHeart(ctx, 0, -s*0.41, s*0.13, '#F3E3CF', 1);                                              // latte art
+    ctx.restore();
+  }
+  function drawBean(ctx, x, y, s, rot){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0);
+    ctx.fillStyle = '#5C3D2E';
+    ctx.beginPath(); ctx.ellipse(0, 0, s*0.36, s*0.5, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#C8A07A'; ctx.lineWidth = Math.max(2, s*0.07);
+    ctx.beginPath(); ctx.moveTo(0, -s*0.4); ctx.quadraticCurveTo(-s*0.14, 0, 0, s*0.4); ctx.stroke();
+    ctx.restore();
+  }
+
+  /* ---- background patterns (drawn under the photos) ---- */
+  function patternGingham(ctx, W, H, L){
+    var s = 40;
+    ctx.save(); ctx.fillStyle = rgba(L.accent, 0.13);
+    for(var x=0; x<W; x+=s*2) ctx.fillRect(x, 0, s, H);
+    for(var y=0; y<H; y+=s*2) ctx.fillRect(0, y, W, s);
+    ctx.restore();
+  }
+  function patternDots(ctx, W, H, L){
+    ctx.save(); ctx.fillStyle = rgba(L.accent, 0.2);
+    for(var y=18; y<H; y+=30) for(var x=18; x<W; x+=30){ ctx.beginPath(); ctx.arc(x, y, 2.4, 0, Math.PI*2); ctx.fill(); }
+    ctx.restore();
+  }
+
+  /* ---- the ten themes ---- */
+  function decorGarden(ctx, e){
+    var A = corners(e.rects[0]), B = corners(e.rects[e.rects.length-1]);
+    ctx.save();   // a vine climbing up the left margin
+    ctx.strokeStyle = '#5E8C3A'; ctx.lineWidth = 8; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(26, e.h - 10);
+    for(var y = e.h - 10, side = 1; y > 30; y -= 90, side = -side) ctx.quadraticCurveTo(26 + side*36, y - 45, 26, y - 90);
+    ctx.stroke(); ctx.restore();
+    for(var i=0, yy=e.h - 60; yy > 40; yy -= 90, i++){
+      drawLeaf(ctx, 28, yy, 88, (i % 2 ? -0.45 : 0.35) + sway(e, 1, i, 0.14), i % 2 ? '#7DB08A' : '#95C47E');
+    }
+    var pulse = function(k){ return 1 + sway(e, 1, k, 0.06); };
+    drawBloom(ctx, A[0][0] + 26, A[0][1] + 18, 64*pulse(0), '#FFB3D1', '#FFE9A8', spin(e, 5));
+    drawBloom(ctx, A[1][0] - 20, A[1][1] + 14, 50*pulse(1), '#FFFFFF', '#FFE9A8', spin(e, 5, -1));
+    drawBloom(ctx, B[3][0] + 28, B[3][1] - 18, 58*pulse(2), '#D9C8FF', '#FFE9A8', spin(e, 5));
+    drawBloom(ctx, B[2][0] - 24, B[2][1] - 22, 62*pulse(3), '#FFB3D1', '#FFE9A8', spin(e, 5, -1));
+    e.rects.forEach(function(r, i){
+      if(!i) return;
+      var c = corners(r);
+      drawBloom(ctx, c[1][0] - 10, c[1][1] + 20, 38*pulse(i+4), i % 2 ? '#FFFFFF' : '#FFD1E3', '#FFE9A8', spin(e, 5));
+    });
+  }
+  function decorPicnic(ctx, e){
+    var A = corners(e.rects[0]), B = corners(e.rects[e.rects.length-1]);
+    drawHangingCherries(ctx, A[1][0] - 60, A[1][1] - 20, 90, sway(e, 1, 0, 0.2));
+    drawHangingCherries(ctx, B[3][0] + 70, B[3][1] - 50, 76, sway(e, 1, 1.6, 0.2));
+    drawDaisy(ctx, A[0][0] + 20, A[0][1] + 18, 44, spin(e, 8));
+    drawDaisy(ctx, B[2][0] - 22, B[2][1] - 14, 48, spin(e, 8, -1));
+    e.rects.forEach(function(r, i){
+      if(!i) return;
+      var c = corners(r);
+      drawDaisy(ctx, c[0][0] + 10, c[0][1] + r.h*0.5, 32, spin(e, 8));
+    });
+  }
+  function decorStarry(ctx, e){
+    var A = corners(e.rects[0]);
+    drawMoon(ctx, A[1][0] - 44, A[1][1] + 20 + sway(e, 1, 0, 6), 84, '#FFE9A8');
+    e.rects.forEach(function(r, i){
+      var c = corners(r);
+      [[c[0][0] + 2, c[0][1] + r.h*0.35], [c[1][0] - 2, c[1][1] + r.h*0.62],
+       [c[3][0] + r.w*0.2, c[3][1] - 2], [c[2][0] - r.w*0.12, c[2][1] - 8]].forEach(function(p, j){
+        var k = i*4 + j;
+        var glow = e.moving ? 0.5 + 0.5*(wave(e.t, 2, k*1.7)*0.5 + 0.5) : 0.95;
+        drawStar5(ctx, p[0], p[1], 20 + (k % 3)*9, '#FFE9A8', glow, 0);
+      });
+    });
+    for(var d=0; d<14; d++){   // tiny dots down both margins
+      var dy = 30 + ((d * 211) % Math.max(60, e.h - 60));
+      ctx.fillStyle = 'rgba(255,233,168,' + (e.moving ? 0.35 + 0.4*(wave(e.t, 3, d)*0.5 + 0.5) : 0.6) + ')';
+      ctx.beginPath(); ctx.arc(d % 2 ? e.w - 16 : 16, dy, 4, 0, Math.PI*2); ctx.fill();
+    }
+    if(e.moving){   // a shooting star during the first part of each loop
+      var p = (e.t / LOOP) / 0.45;
+      if(p < 1){
+        var sx = e.w + 40 - p * e.w * 0.85, sy = 18 + p * 120;
+        var g = ctx.createLinearGradient(sx, sy, sx + 130, sy - 18);
+        g.addColorStop(0, 'rgba(255,255,255,.95)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.strokeStyle = g; ctx.lineWidth = 6; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + 130, sy - 18); ctx.stroke();
+        drawStar5(ctx, sx, sy, 16, '#FFFFFF', 1, 0);
+      }
+    }
+  }
+  function decorClouds(ctx, e){
+    var A = corners(e.rects[0]), B = corners(e.rects[e.rects.length-1]);
+    drawSun(ctx, A[1][0] - 36, A[1][1] + 14, 52, spin(e, 8));
+    drawCloud(ctx, A[0][0] + 50 + sway(e, 1, 0, 14), A[0][1] + 16, 92, '#8FC3EE', 1);
+    drawCloud(ctx, B[2][0] - 60 + sway(e, 1, 2, 14), B[2][1] - 12, 100, '#8FC3EE', 1);
+    e.rects.forEach(function(r, i){
+      if(!i) return;
+      var c = corners(r);
+      drawCloud(ctx, c[0][0] + 34 + sway(e, 1, i, 10), c[0][1] + r.h*0.45, 66, '#8FC3EE', 1);
+    });
+    ctx.save();   // two little birds flapping near the sun
+    ctx.strokeStyle = '#4A6A8A'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    [[A[1][0] - 160, A[1][1] - 18], [A[1][0] - 124, A[1][1] - 42]].forEach(function(b, i){
+      var f = 10 + sway(e, 3, i*2, 6);
+      ctx.beginPath(); ctx.moveTo(b[0] - 18, b[1] - f); ctx.quadraticCurveTo(b[0] - 8, b[1] - f*0.2, b[0], b[1]);
+      ctx.quadraticCurveTo(b[0] + 8, b[1] - f*0.2, b[0] + 18, b[1] - f); ctx.stroke();
+    });
+    ctx.restore();
+  }
+  function decorScrapbook(ctx, e){
+    var tapes = ['#FFB3D1','#BFE3FF','#FFE9A8','#C9E4B4'];
+    e.rects.forEach(function(r, i){
+      var c = corners(r);
+      drawTape(ctx, c[0][0] + 22, c[0][1] + 16, 160, 46, -0.72, tapes[i % 4]);
+      drawTape(ctx, c[1][0] - 22, c[1][1] + 16, 160, 46, 0.72, tapes[(i + 1) % 4]);
+    });
+    var B = corners(e.rects[e.rects.length-1]), A = corners(e.rects[0]);
+    drawStickerHeart(ctx, B[2][0] - 56, B[2][1] - 96, 92 * (1 + Math.max(0, sway(e, 3, 0, 0.12))));
+    drawStar5(ctx, A[3][0] + 42, A[3][1] - 30, 46, '#FFFFFF', 1, spin(e, 5));
+    drawStar5(ctx, A[3][0] + 42, A[3][1] - 30, 35, '#F4B63F', 1, spin(e, 5));
+  }
+  function decorValentine(ctx, e){
+    var beat = e.moving ? Math.max(0, wave(e.t, 3, 0)) * 0.14 : 0;
+    e.rects.forEach(function(r){
+      var c = corners(r);
+      drawHeart(ctx, c[0][0] + 30, c[0][1] - 30, 90*(1 + beat), '#FFD1E3', 1);
+      drawHeart(ctx, c[2][0] - 28, c[2][1] - 66, 72*(1 + beat), '#FFB3D1', 1);
+    });
+    for(var k=0; k<8; k++){   // hearts drifting up the side margins, fading in and out
+      var p = e.moving ? ((e.t / LOOP) + k/8) % 1 : k/8;
+      var x = (k % 2 ? e.w - 22 : 22) + (e.moving ? Math.sin((p*2 + k) * Math.PI) * 8 : 0);
+      drawHeart(ctx, x, e.h - p*e.h, 28 + (k % 3)*8, '#FFD1E3', 0.25 + 0.6*Math.sin(p*Math.PI));
+    }
+  }
+  function decorBeach(ctx, e){
+    var A = corners(e.rects[0]), B = corners(e.rects[e.rects.length-1]);
+    drawSun(ctx, A[1][0] - 38, A[1][1] + 14, 56, spin(e, 8));
+    var shift = e.moving ? (e.t / LOOP) * 120 : 0;   // one wavelength per loop
+    drawWaves(ctx, e.w, e.h, e.h - 56, 16, shift, '#9FD4EA');
+    drawWaves(ctx, e.w, e.h, e.h - 30, 13, -shift, '#6BBCDD');
+    drawStarfish(ctx, A[0][0] + 24, A[0][1] + 28, 50, spin(e, 5));
+    drawShell(ctx, B[2][0] - 34, B[2][1] - 8, 50, sway(e, 1, 1, 0.15));
+    e.rects.forEach(function(r, i){
+      if(!i) return;
+      var c = corners(r);
+      drawStarfish(ctx, c[1][0] - 12, c[1][1] + r.h*0.5, 34, spin(e, 5, -1));
+    });
+  }
+  function decorCoffee(ctx, e){
+    var A = corners(e.rects[0]), B = corners(e.rects[e.rects.length-1]);
+    drawCup(ctx, B[2][0] - 96, B[2][1] - 40, 168, e);
+    drawBean(ctx, A[0][0] + 18, A[0][1] + 20, 54, 0.5 + sway(e, 1, 0, 0.2));
+    drawBean(ctx, A[0][0] + 62, A[0][1] - 4, 44, -0.4 + sway(e, 1, 1, 0.2));
+    drawBean(ctx, A[1][0] - 20, A[1][1] + 22, 48, -0.6 + sway(e, 1, 2, 0.2));
+    e.rects.forEach(function(r, i){
+      if(!i) return;
+      var c = corners(r);
+      drawBean(ctx, c[0][0] + 12, c[0][1] + r.h*0.5, 40, 0.3 + sway(e, 1, i + 3, 0.2));
+    });
+  }
+  function decorLebaran(ctx, e){
+    var A = corners(e.rects[0]);
+    var swing = sway(e, 1, 0, 0.12);
+    drawKetupat(ctx, 96, 0, A[0][1] + 56, 72, swing);
+    drawKetupat(ctx, 186, 0, A[0][1] + 12, 56, -swing*0.8);
+    drawMoon(ctx, A[1][0] - 48, A[1][1] + 24 + sway(e, 1, 1, 5), 74, '#F5C542');
+    e.rects.forEach(function(r, i){
+      var c = corners(r);
+      [[c[1][0] - 4, c[1][1] + r.h*0.55], [c[3][0] + r.w*0.16, c[3][1] - 4], [c[0][0] + 2, c[0][1] + r.h*0.7]].forEach(function(p, j){
+        var k = i*3 + j;
+        drawStar5(ctx, p[0], p[1], 20 + (k % 3)*8, '#F5C542', e.moving ? 0.5 + 0.5*(wave(e.t, 2, k)*0.5 + 0.5) : 0.95, 0);
+      });
+    });
+  }
+  function decorRetro(ctx, e){
+    var shift = e.moving ? e.t / LOOP : 0;
+    ['#D85A30','#EF9F27','#FAC775'].forEach(function(color, i){   // groovy stripes down the left side
+      ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = 16; ctx.lineCap = 'round';
+      ctx.beginPath();
+      for(var y=0; y<=e.h; y+=8){
+        var x = 14 + i*18 + Math.sin((y/160 + shift) * Math.PI * 2) * 12;
+        if(y) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+      }
+      ctx.stroke(); ctx.restore();
+    });
+    var A = corners(e.rects[0]), B = corners(e.rects[e.rects.length-1]);
+    drawDaisy(ctx, A[1][0] - 20, A[1][1] + 20, 60, spin(e, 8));
+    drawDaisy(ctx, B[2][0] - 24, B[2][1] - 20, 68, spin(e, 8, -1));
+    e.rects.forEach(function(r, i){
+      if(!i) return;
+      var c = corners(r);
+      drawDaisy(ctx, c[1][0] - 10, c[1][1] + 26, 40, spin(e, 8));
+    });
+  }
+
+  /* ---------------- frame decorations while posing ----------------
+     The frame's illustrations are drawn on top of the camera, lined up exactly where they'll
+     land on the photo being taken — so you can pose with them and see what they cover. */
+  function makeOverlay(canvasEl){
+    var o = {raf:0, base:null};
+    o.stop = function(){ cancelAnimationFrame(o.raf); o.raf = 0; };
+    o.start = function(getIndex, n){
+      o.stop();
+      canvasEl.getContext('2d').clearRect(0, 0, canvasEl.width, canvasEl.height);
+      var t = templateById(state.templateId);
+      if(!t.decor || !state.popout) return;   // nothing would show inside the photo anyway
+      o.base = makeBase(t, state.colorId, 1, n);
+      var start = performance.now();
+      (function tick(now){
+        var dpr = window.devicePixelRatio || 1;
+        var size = Math.round(canvasEl.clientWidth * dpr);
+        if(canvasEl.width !== size || canvasEl.height !== size){ canvasEl.width = size; canvasEl.height = size; }
+        var ctx = canvasEl.getContext('2d');
+        ctx.setTransform(1,0,0,1,0,0);
+        ctx.clearRect(0, 0, size, size);
+        var r = o.base.rects[Math.min(getIndex(), o.base.rects.length - 1)];
+        if(r && size){
+          // map that photo's square onto the (square) camera view
+          var s = size / r.w;
+          ctx.translate(size/2, size/2); ctx.rotate(-(r.rot || 0)); ctx.scale(s, s); ctx.translate(-r.cx, -r.cy);
+          drawDecorLayer(ctx, o.base, ((now - start)/1000) % LOOP, state.animated);
+        }
+        o.raf = requestAnimationFrame(tick);
+      })(start);
+    };
+    return o;
+  }
+  var camOverlay = makeOverlay($('frameOverlay'));
+  var liveOverlay = makeOverlay($('liveOverlay'));
+  function startCamOverlay(){
+    camOverlay.start(function(){ return state.shots.length; }, state.shotCount);
+    drawMiniStrip();
+  }
+  function stopCamOverlay(){ camOverlay.stop(); }
+  function startLiveOverlay(){
+    liveOverlay.start(function(){ return 2 * (live.roundIdx || 0); }, live.rounds * 2);   // your photos are 1st, 3rd…
+  }
+  // the little strip in the camera's corner: your frame, filling up as photos are taken
+  function drawMiniStrip(){
+    var el = $('miniStrip');
+    var b = makeBase(templateById(state.templateId), state.colorId, 0.14, state.shotCount);
+    el.width = b.canvas.width; el.height = b.canvas.height;
+    el.getContext('2d').drawImage(b.canvas, 0, 0);
+  }
+
   /* ---------------- compose ----------------
      The strip is drawn in layers, bottom to top:
      1. base   — background, photos, title, text, date. Painted once into an offscreen
@@ -2690,7 +3186,8 @@
   };
 
   // draws template `t` into a new canvas; `scale` < 1 gives a small thumbnail of the exact same design
-  function makeBase(t, colorId, scale){
+  // `n` (optional) forces the number of photo slots, e.g. the full count while you're still shooting
+  function makeBase(t, colorId, scale, n){
     colorId = colorId || t.color;
     var hex = colorHex(colorId);
     var dark = isDarkHex(hex);
@@ -2703,7 +3200,7 @@
       accent: dark ? '#FF8FB3' : (colorId === 'white' ? '#E14F7A' : shade(hex,-0.28)),
       textColor: dark ? '#FFF6F8' : '#3B1626',
       title: state.showTitle && t.title ? t.title : '',
-      n: state.shots.length || state.shotCount,   // no photos yet → placeholders for the chosen count
+      n: n || state.shots.length || state.shotCount,   // no photos yet → placeholders for the chosen count
       scale: scale || 1,
       rects: []                                    // where each photo landed: {cx, cy, w, h, rot}
     };
@@ -2836,6 +3333,7 @@
     var H = headerH + L.n*CELL + (L.n-1)*GAP + footerH + PAD;
     var ctx = prepCanvas(canvas, W, H, L.scale);
     paintBackground(ctx, W, H, L.hex, L.isWhite);
+    if(L.t.pattern) L.t.pattern(ctx, W, H, L);   // e.g. picnic gingham, journal dots
     if(film) drawSprockets(ctx, W, H, isDarkHex(L.hex));
     else drawBorder(ctx, W, H, L.accent, L.t.thin);
     drawHeader(ctx, L.title, W, L.textColor);
@@ -2861,6 +3359,7 @@
     var H = headerH + rows*CELL + (rows-1)*GAP + footerH + PAD;
     var ctx = prepCanvas(canvas, W, H, L.scale);
     paintBackground(ctx, W, H, L.hex, L.isWhite);
+    if(L.t.pattern) L.t.pattern(ctx, W, H, L);
     drawBorder(ctx, W, H, L.accent, L.t.thin);
     drawHeader(ctx, L.title, W, L.textColor);
 
@@ -2886,6 +3385,7 @@
     var h = headerH + rows*cardH + (rows+1)*gap + pad;
     var ctx = prepCanvas(canvas, w, h, L.scale);
     paintBackground(ctx, w, h, L.hex, L.isWhite);
+    if(L.t.pattern) L.t.pattern(ctx, w, h, L);
     if(L.title){
       ctx.fillStyle = L.textColor;
       ctx.font = "600 30px 'Dancing Script', cursive";
@@ -3057,11 +3557,17 @@
     if(lastVideo && lastVideo.base === base) return Promise.resolve(lastVideo);
     var type = pickVideoType();
     if(recording || !type) return Promise.reject(new Error('busy'));
-    recording = true;
     var btn = $('downloadBtn');
+    // phones pause drawing while you're in another app — a video made then would just be a still frame
+    var leftMsg = "The video stopped because you left the app. Tap again and keep this screen open ♡";
+    if(document.hidden){ showToast(leftMsg); return Promise.reject(new Error('hidden')); }
+    recording = true;
     btn.disabled = true; btn.textContent = 'MAKING YOUR VIDEO… ✨';
-    return new Promise(function(resolve){
+    return new Promise(function(resolve, reject){
       var forBase = base;
+      var aborted = false;
+      function onHide(){ if(document.hidden && !aborted){ aborted = true; rec.stop(); } }
+      document.addEventListener('visibilitychange', onHide);
       var scale = Math.min(1, 1440 / Math.max(base.w, base.h));
       var rc = document.createElement('canvas');
       drawFrame(rc, 0, scale);
@@ -3070,16 +3576,19 @@
       var chunks = [];
       rec.ondataavailable = function(e){ if(e.data && e.data.size) chunks.push(e.data); };
       rec.onstop = function(){
+        document.removeEventListener('visibilitychange', onHide);
         stream.getTracks().forEach(function(tr){ tr.stop(); });
         recording = false;
         btn.disabled = false;
         syncSaveAs();
+        if(aborted){ showToast(leftMsg); reject(new Error('left')); return; }
         lastVideo = {base:forBase, blob:new Blob(chunks, {type:type.split(';')[0]}), ext:type.indexOf('mp4') !== -1 ? 'mp4' : 'webm'};
         resolve(lastVideo);
       };
       var start = performance.now();
       rec.start();
       (function tick(now){
+        if(aborted) return;
         var t = (now - start)/1000;
         if(t >= LOOP*2){ rec.stop(); return; }   // two full loops
         drawFrame(rc, t % LOOP, scale);
