@@ -602,7 +602,7 @@
       <div class="privacy-note">🔒 Your photos stay on your device. We don't upload or store your photos.</div>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v3</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v3.1</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -3096,7 +3096,7 @@
     e.rects.forEach(function(r, i){
       if(!i) return;
       var c = corners(r);
-      drawCloud(ctx, c[0][0] + 34 + sway(e, 1, i, 10), c[0][1] + r.h*0.45, 66, '#8FC3EE', 1);
+      drawCloud(ctx, c[0][0] + 6 + sway(e, 1, i, 8), c[0][1] + r.h*0.45, 60, '#8FC3EE', 1);
     });
     ctx.save();   // two little birds flapping near the sun
     ctx.strokeStyle = '#4A6A8A'; ctx.lineWidth = 5; ctx.lineCap = 'round';
@@ -3115,7 +3115,7 @@
       drawTape(ctx, c[1][0] - 22, c[1][1] + 16, 160, 46, 0.72, tapes[(i + 1) % 4]);
     });
     var B = corners(e.rects[e.rects.length-1]), A = corners(e.rects[0]);
-    drawStickerHeart(ctx, B[2][0] - 56, B[2][1] - 96, 92 * (1 + Math.max(0, sway(e, 3, 0, 0.12))));
+    drawStickerHeart(ctx, B[2][0] - 56, B[2][1] - 80, 88 * (1 + Math.max(0, sway(e, 3, 0, 0.12))));
     drawStar5(ctx, A[3][0] + 42, A[3][1] - 30, 46, '#FFFFFF', 1, spin(e, 5));
     drawStar5(ctx, A[3][0] + 42, A[3][1] - 30, 35, '#F4B63F', 1, spin(e, 5));
   }
@@ -3148,7 +3148,7 @@
   }
   function decorCoffee(ctx, e){
     var A = corners(e.rects[0]), B = corners(e.rects[e.rects.length-1]);
-    drawCup(ctx, B[2][0] - 96, B[2][1] - 40, 168, e);
+    drawCup(ctx, B[2][0] - 58, B[2][1] + 10, 150, e);   // tucked into the corner so the steam rises along the edge
     drawBean(ctx, A[0][0] + 18, A[0][1] + 20, 54, 0.5 + sway(e, 1, 0, 0.2));
     drawBean(ctx, A[0][0] + 62, A[0][1] - 4, 44, -0.4 + sway(e, 1, 1, 0.2));
     drawBean(ctx, A[1][0] - 20, A[1][1] + 22, 48, -0.6 + sway(e, 1, 2, 0.2));
@@ -3243,8 +3243,8 @@
       blob(ctx, s*0.55, -s*0.85, s*0.09, s*0.09, '#C23A64');
     }
     if(opts.paws){
-      blob(ctx, -s*0.5, s*0.95, s*0.27, s*0.2, fur, OUTLINE, lw);
-      blob(ctx, s*0.5, s*0.95, s*0.27, s*0.2, fur, OUTLINE, lw);
+      blob(ctx, -s*0.5, s*0.84, s*0.27, s*0.2, fur, OUTLINE, lw);
+      blob(ctx, s*0.5, s*0.84, s*0.27, s*0.2, fur, OUTLINE, lw);
     }
     ctx.restore();
   }
@@ -3267,8 +3267,8 @@
     ctx.beginPath(); ctx.moveTo(-s*0.08, s*0.14); ctx.lineTo(s*0.08, s*0.14); ctx.lineTo(0, s*0.24); ctx.closePath(); ctx.fill();
     cuteFace(ctx, -s*0.06, s, blinkOpen(e, phase));
     if(opts.paws){
-      blob(ctx, -s*0.45, s*0.86, s*0.25, s*0.19, fur, OUTLINE, lw);
-      blob(ctx, s*0.45, s*0.86, s*0.25, s*0.19, fur, OUTLINE, lw);
+      blob(ctx, -s*0.45, s*0.66, s*0.25, s*0.19, fur, OUTLINE, lw);
+      blob(ctx, s*0.45, s*0.66, s*0.25, s*0.19, fur, OUTLINE, lw);
     }
     ctx.restore();
   }
@@ -3341,8 +3341,9 @@
 
   function decorTeddy(ctx, e){
     var A = corners(e.rects[0]), B = corners(e.rects[e.rects.length-1]);
-    drawTeddyChar(ctx, A[0][0] + 124, A[0][1] + 12, 90, '#A47E6B', '#E8D5B7', e, 0, {paws:true});
-    drawTeddyChar(ctx, B[2][0] - 140, B[2][1] - 36, 82, '#C8A98B', '#FFF6E5', e, 0.5, {body:true, bow:true});
+    // positions keep every part inside the photo's outer band — nothing reaches the protected middle
+    drawTeddyChar(ctx, A[0][0] + 118, A[0][1] - 2, 84, '#A47E6B', '#E8D5B7', e, 0, {paws:true});
+    drawTeddyChar(ctx, B[2][0] - 112, B[2][1] + 6, 74, '#C8A98B', '#FFF6E5', e, 0.5, {body:true, bow:true});
     var beat = 1 + (e.moving ? Math.max(0, wave(e.t, 3, 0))*0.18 : 0);
     drawHeart(ctx, B[2][0] - 290, B[2][1] - 84, 70*beat, '#E14F7A', 1);
     e.rects.forEach(function(r, i){
@@ -3353,8 +3354,10 @@
   }
   function decorBunny(ctx, e){
     var A = corners(e.rects[0]), B = corners(e.rects[e.rects.length-1]);
-    drawBunnyChar(ctx, A[0][0] + 124, A[0][1] + 12, 80, '#FFFFFF', e, 0, {paws:true});
-    drawBunnyChar(ctx, B[2][0] - 136, B[2][1] - 32, 76, '#E8D5B7', e, 0.5, {body:true});
+    // tall ears need headroom: a smaller bunny, a bit lower, so ears fit above and paws stay on the edge
+    drawBunnyChar(ctx, A[0][0] + 110, A[0][1] + 40, 60, '#FFFFFF', e, 0, {paws:true});
+    // this one sits right in the corner so both ears stay over the photo's edge
+    drawBunnyChar(ctx, B[2][0] - 30, B[2][1] + 12, 64, '#E8D5B7', e, 0.5, {body:true});
     // a carrot in the bottom-left corner
     ctx.save(); ctx.translate(B[3][0] + 40, B[3][1] - 20); ctx.rotate(-0.6 + sway(e, 1, 2, 0.12));
     ctx.fillStyle = '#F4A340'; ctx.strokeStyle = OUTLINE; ctx.lineWidth = 4;
@@ -3370,8 +3373,8 @@
   }
   function decorKitten(ctx, e){
     var A = corners(e.rects[0]), B = corners(e.rects[e.rects.length-1]);
-    drawKittenChar(ctx, B[3][0] + 140, B[3][1] - 30, 72, '#F0997B', '#D8663E', e, 0, false, -1);
-    drawKittenChar(ctx, B[2][0] - 140, B[2][1] - 30, 72, '#B4B2A9', null, e, 0.5);
+    drawKittenChar(ctx, B[3][0] + 140, B[3][1] - 8, 72, '#F0997B', '#D8663E', e, 0, false, -1);
+    drawKittenChar(ctx, B[2][0] - 140, B[2][1] - 8, 72, '#B4B2A9', null, e, 0.5);
     var beat = 1 + (e.moving ? Math.max(0, wave(e.t, 3, 0))*0.18 : 0);
     drawHeart(ctx, (B[3][0] + B[2][0])/2, B[2][1] - 84, 56*beat, '#E14F7A', 1);
     // a third kitten peeking in at the top, with paw prints trailing off to the side
@@ -3382,13 +3385,13 @@
   }
   function decorPenguin(ctx, e){
     var B = corners(e.rects[e.rects.length-1]);
-    for(var k=0; k<22; k++){   // falling snow — only visible around the photos' edges
+    for(var k=0; k<22; k++){   // snow falling down the two side margins (never across faces)
       var p = e.moving ? ((e.t / LOOP) + k/22) % 1 : k/22;
-      var sx = ((k * 137) % (e.w - 20)) + 10 + (e.moving ? Math.sin((p*2 + k) * Math.PI) * 10 : 0);
+      var sx = (k % 2 ? e.w - 16 - (k * 23) % 86 : 16 + (k * 23) % 86) + (e.moving ? Math.sin((p*2 + k) * Math.PI) * 8 : 0);
       blob(ctx, sx, p * e.h, 5 + (k % 3)*2, 5 + (k % 3)*2, 'rgba(255,255,255,.9)');
     }
-    drawPenguinChar(ctx, B[3][0] + 150, B[2][1] - 14, 86, '#E14F7A', e, 0);
-    drawPenguinChar(ctx, B[2][0] - 150, B[2][1] - 14, 86, '#378ADD', e, 0.5);
+    drawPenguinChar(ctx, B[3][0] + 150, B[2][1] - 4, 84, '#E14F7A', e, 0);
+    drawPenguinChar(ctx, B[2][0] - 150, B[2][1] - 4, 84, '#378ADD', e, 0.5);
   }
 
   /* ---- Hoodie Friends: a little hand-drawn style (brown outlines), drawn in small units and scaled up ---- */
@@ -3426,9 +3429,9 @@
     unitBlob(ctx, -9, 18, 4.5, 3.5, '#FBE3C4'); unitBlob(ctx, 9, 18, 4.5, 3.5, '#FBE3C4');
   }
   function drawBerryBunny(ctx, open, wig){
-    [-1, 1].forEach(function(d){
-      ctx.save(); ctx.translate(d*8, -24); ctx.rotate(d*(0.2 + wig));
-      unitBlob(ctx, 0, -8, 4.5, 11, '#FFFFFF'); unitBlob(ctx, 0, -8, 2, 7.5, '#FFB3D1', true);
+    [-1, 1].forEach(function(d){   // floppy ears hanging to the sides (upright ones would poke into the photo)
+      ctx.save(); ctx.translate(d*12, -20); ctx.rotate(d*(1.3 + wig*0.5));
+      unitBlob(ctx, 0, -7, 4.2, 8.5, '#FFFFFF'); unitBlob(ctx, 0, -7, 1.9, 5.8, '#FFB3D1', true);
       ctx.restore();
     });
     ctx.beginPath(); ctx.moveTo(-26, 0); ctx.quadraticCurveTo(-26, -26, 0, -26); ctx.quadraticCurveTo(26, -26, 26, 0);
@@ -3555,7 +3558,7 @@
     drawFood(ctx, blinkOpen(e, 0.45));
     ctx.restore();
     // the big hoodie friend sits in the bottom-left corner, peeking into the photo
-    hoodStart(ctx, B[3][0] + 86, B[3][1] + 44, 4.7, sway(e, 1, 0, 0.05));   // stays clear of the date
+    hoodStart(ctx, B[3][0] + 92, B[3][1] + 58, 4.5, sway(e, 1, 0, 0.05));   // inside the strip, clear of the date and the photo's middle
     drawChar(ctx, blinkOpen(e, 0.1), sway(e, 2, 0, 0.18));
     ctx.restore();
   }
@@ -3781,8 +3784,8 @@
   function drawStripLayout(canvas, L){
     var film = L.t.layout === 'film';
     var PAD = film ? 76 : 40, CELL = 640, GAP = film ? 20 : 26;
-    var headerH = L.title ? 96 : 40;
-    var footerH = (state.showDate || state.customText) ? 130 : 60;
+    var headerH = (L.title || L.t.decor) ? 96 : 40;   // decorated frames keep room above the photos for their drawings
+    var footerH = (state.showDate || state.customText || L.t.decor) ? 130 : 60;   // …and below
     var W = CELL + PAD*2;
     var H = headerH + L.n*CELL + (L.n-1)*GAP + footerH + PAD;
     var ctx = prepCanvas(canvas, W, H, L.scale);
@@ -3807,8 +3810,8 @@
     var cols = L.n === 1 ? 1 : 2;
     var CELL = cols === 1 ? 700 : 340;
     var rows = Math.ceil(L.n / cols);
-    var headerH = L.title ? 96 : 40;
-    var footerH = (state.showDate || state.customText) ? 130 : 60;
+    var headerH = (L.title || L.t.decor) ? 96 : 40;   // decorated frames keep room above the photos for their drawings
+    var footerH = (state.showDate || state.customText || L.t.decor) ? 130 : 60;   // …and below
     var W = PAD*2 + 700;
     var H = headerH + rows*CELL + (rows-1)*GAP + footerH + PAD;
     var ctx = prepCanvas(canvas, W, H, L.scale);
