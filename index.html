@@ -521,6 +521,16 @@
   .update-go{flex:none; border:none; border-radius:999px; background:var(--rose-600); color:#fff; font-weight:600;
     font-size:.74rem; letter-spacing:.04em; padding:0 14px; min-height:42px;}
   .update-bar .x-btn{position:static; flex:none; width:42px; height:42px;}
+  /* photo codes: side by side or stacked */
+  .code-style{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px;}
+  .style-opt{display:flex; flex-direction:column; align-items:center; gap:2px; padding:10px 6px; min-height:44px;
+    border-radius:var(--radius-md); background:var(--white); border:2px solid var(--blush-100); color:var(--plum-900);}
+  .style-opt b{font-size:.8rem;}
+  .style-opt small{font-size:.68rem; color:var(--rose-800); opacity:.8; line-height:1.3;}
+  .style-opt[aria-checked="true"]{border-color:var(--rose-600); background:linear-gradient(135deg,var(--pink-200),var(--white));}
+  .style-ico{display:flex; gap:2px; width:30px; height:30px; margin-bottom:2px;}
+  .style-ico.stack{flex-direction:column; width:22px;}
+  .style-ico i{flex:1; border-radius:4px; background:var(--pink-300);}
   .code-actions{display:flex; gap:10px; margin-top:14px;}
   .code-actions .btn{flex:1; font-size:.8rem; padding:13px 12px;}
   .camera-permission .permission-actions{display:flex; flex-direction:column; gap:8px; width:100%; max-width:260px;}
@@ -576,6 +586,8 @@
   .live-mode button{flex:1; min-height:40px; border:none; background:none; border-radius:999px; font-weight:600; font-size:.82rem; color:var(--rose-800);}
   .live-mode button.active{background:var(--rose-600); color:#fff;}
   .live-mode button[disabled]:not(.active){opacity:.45;}
+  .live-more{flex:none; min-height:44px; padding:0 8px; border:none; background:none; color:var(--rose-800);
+    font-size:.76rem; font-weight:600; text-decoration:underline; text-underline-offset:3px;}
   .live-help-btn{flex:0 0 44px; width:44px; height:44px; border-radius:50%; border:1.5px solid var(--pink-300); background:var(--white); color:var(--rose-600); font-weight:700; font-size:1.1rem; box-shadow:var(--shadow-soft);}
   .live-mode-note{font-size:.78rem; color:var(--rose-800); text-align:center; margin:0 0 8px;}
   /* one square split in two; sized so the heart button stays on screen on small phones */
@@ -711,6 +723,15 @@
       <h3 id="codeModalTitle">Paste their photo code ♡</h3>
       <p id="codeModalText">Paste the code your love sent you — their photos join your strip.</p>
       <textarea id="codeInput" rows="4" spellcheck="false" aria-label="Photo code"></textarea>
+      <!-- paste only: how their photos join yours -->
+      <div class="code-style" id="codeStyle" role="radiogroup" aria-label="How their photos join yours" hidden>
+        <button type="button" class="style-opt" role="radio" data-style="side">
+          <span class="style-ico side" aria-hidden="true"><i></i><i></i></span><b>Side by side ♡</b><small>one photo, you on the left</small>
+        </button>
+        <button type="button" class="style-opt" role="radio" data-style="stack">
+          <span class="style-ico stack" aria-hidden="true"><i></i><i></i></span><b>Stacked</b><small>one below the other</small>
+        </button>
+      </div>
       <div class="code-actions">
         <button class="btn btn-ghost" id="codeCancel">Cancel</button>
         <button class="btn btn-primary" id="codeApply">ADD PHOTOS ♡</button>
@@ -741,7 +762,7 @@
         <li>Hold your phone upright and keep your face inside the dotted oval.</li>
         <li>"Lean in" always means toward the <b>middle line</b>.</li>
         <li>Cute trick: each make half a heart with your hands next to the middle line ♡</li>
-        <li><b>Separate</b> takes two photos each shot, like before.</li>
+        <li>Rather have your photos one below the other? Tap <b>more styles</b> → <b>Stacked</b>.</li>
       </ul>
       <button type="button" class="btn btn-secondary btn-block" id="duoHelpPoses">SEE POSE IDEAS ♡</button>
       <button type="button" class="btn btn-primary btn-block" id="duoHelpOk">GOT IT ♡</button>
@@ -961,7 +982,7 @@
       <div class="privacy-note">🔒 Your photos stay on your device. We don't upload or store your photos.</div>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.9.3</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.9.4</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -1098,12 +1119,14 @@
 
         <!-- c) together -->
         <div id="liveStage" hidden>
-          <!-- Together = both of you in one photo, side by side · Separate = two photos each shot -->
+          <!-- Together = both of you in one photo, side by side (always the start of a new room)
+               Stacked ("separate") = two photos each shot, one below the other — tucked behind "more styles" -->
           <div class="live-mode-row">
             <div class="live-mode" id="liveMode" role="radiogroup" aria-label="Photo style">
               <button type="button" role="radio" data-mode="duo">Together ♡</button>
-              <button type="button" role="radio" data-mode="separate">Separate</button>
+              <button type="button" role="radio" data-mode="separate" hidden>Stacked</button>
             </div>
+            <button type="button" class="live-more" id="liveModeMore" aria-label="Show more photo styles">more styles</button>
             <button type="button" class="live-help-btn" id="duoHelpBtn" aria-label="How Together works">?</button>
           </div>
           <p class="live-mode-note" id="liveModeNote" hidden></p>
@@ -2428,12 +2451,38 @@
       });
     }));
   }
+  // your own photos, wherever they are now: a side-by-side pair keeps your original inside it
+  // (live Together photos already hold both of you and are on both phones — those aren't "yours" to send)
+  function myOwnShots(){
+    var out = [];
+    state.shots.forEach(function(c){
+      if(c.pairMine) out.push(c.pairMine);
+      else if(c.dataset.from !== 'you' && c.dataset.from !== 'duo') out.push(c);
+    });
+    return out;
+  }
+  // "side by side" for photo codes: the middle of your photo on the left, the middle of theirs on the
+  // right — one square photo, just like a Together photo (faces are usually in the middle). The two
+  // originals stay attached, so your code still sends your own photo and a new code from your love
+  // can replace theirs.
+  function joinPair(mine, theirs){
+    var c = document.createElement('canvas');
+    c.width = DUO_HALF_W * 2; c.height = DUO_HALF_H;
+    var cx = c.getContext('2d');
+    [mine, theirs].forEach(function(src, i){
+      var sh = src.height, sw = Math.min(src.width, sh * DUO_HALF_W / DUO_HALF_H);   // a tall strip from the middle
+      cx.drawImage(src, (src.width - sw)/2, 0, sw, sh, i * DUO_HALF_W, 0, DUO_HALF_W, DUO_HALF_H);
+    });
+    c.dataset.from = 'duo'; c.dataset.side = 'left'; c.dataset.pair = 'code';   // you on the left, on your phone
+    c.pairMine = mine; c.pairTheirs = theirs;
+    return c;
+  }
   function copyMyCode(){
     // only send your own photos — not the ones your partner already sent you
-    // (Together photos already hold both of you and are on both phones — no need to send those)
-    var mine = state.shots.filter(function(c){ return c.dataset.from !== 'you' && c.dataset.from !== 'duo'; });
+    var mine = myOwnShots();
     if(!mine.length){
-      showToast(state.shots.some(isDuoShot) ? 'Your Together photos are already on both phones ♡' : 'Take a photo first, then copy your code ♡');
+      var together = state.shots.some(function(c){ return isDuoShot(c) && !c.pairMine; });
+      showToast(together ? 'Your Together photos are already on both phones ♡' : 'Take a photo first, then copy your code ♡');
       return;
     }
     var code;
@@ -2456,19 +2505,36 @@
   });
 
   /* Their photos replace any earlier ones from them (so pasting twice doesn't duplicate).
-     If both of you took too many for one strip, keep an even share and alternate
-     me / you / me / you so the strip reads like a little conversation. */
-  function mergePartnerShots(theirs){
-    var mine = state.shots.filter(function(c){ return c.dataset.from !== 'you'; });
-    var keepMine = mine.length, keepTheirs = theirs.length;
-    if(keepMine + keepTheirs > MAX_SHOTS){
-      keepMine = Math.min(mine.length, Math.max(MAX_SHOTS/2, MAX_SHOTS - theirs.length));
-      keepTheirs = MAX_SHOTS - keepMine;
-    }
-    var a = mine.slice(0, keepMine), b = theirs.slice(0, keepTheirs), out = [];
-    for(var i=0; i<Math.max(a.length, b.length); i++){
-      if(a[i]) out.push(a[i]);
-      if(b[i]) out.push(b[i]);
+     style 'side': your photo 1 + theirs 1 become ONE photo side by side, and so on — 4 + 4 photos
+     still fit one strip. Live Together photos and photos without a partner stay single.
+     style 'stack': me / you / me / you, one below the other; if that's more than one strip holds,
+     keep an even share so the strip reads like a little conversation. */
+  function mergePartnerShots(theirs, style){
+    var mine = [];
+    state.shots.forEach(function(c){
+      if(c.pairMine) mine.push(c.pairMine);   // un-join an earlier side-by-side pair
+      else if(c.dataset.from !== 'you') mine.push(c);
+    });
+    var out = [], keepMine = 0, keepTheirs = 0;
+    if(style === 'side'){
+      var solo = mine.filter(function(c){ return !isDuoShot(c); });
+      var items = mine.filter(isDuoShot).map(function(c){ return {shot:c, m:1, t:0}; });
+      var n = Math.min(solo.length, theirs.length);
+      for(var p=0; p<n; p++) items.push({shot:joinPair(solo[p], theirs[p]), m:1, t:1});
+      solo.slice(n).forEach(function(c){ items.push({shot:c, m:1, t:0}); });
+      theirs.slice(n).forEach(function(c){ items.push({shot:c, m:0, t:1}); });
+      items.slice(0, MAX_SHOTS).forEach(function(it){ out.push(it.shot); keepMine += it.m; keepTheirs += it.t; });
+    } else {
+      keepMine = mine.length; keepTheirs = theirs.length;
+      if(keepMine + keepTheirs > MAX_SHOTS){
+        keepMine = Math.min(mine.length, Math.max(MAX_SHOTS/2, MAX_SHOTS - theirs.length));
+        keepTheirs = MAX_SHOTS - keepMine;
+      }
+      var a = mine.slice(0, keepMine), b = theirs.slice(0, keepTheirs);
+      for(var i=0; i<Math.max(a.length, b.length); i++){
+        if(a[i]) out.push(a[i]);
+        if(b[i]) out.push(b[i]);
+      }
     }
     return {shots:out, keepMine:keepMine, keepTheirs:keepTheirs, trimmed:(mine.length - keepMine) + (theirs.length - keepTheirs)};
   }
@@ -2484,11 +2550,29 @@
     }, 800);
   }
 
+  // how pasted photos join yours; side by side unless you picked Stacked last time
+  var codeStyle = 'side';
+  try{ if(localStorage.getItem('oob-code-style') === 'stack') codeStyle = 'stack'; }catch(e){}
+  function syncCodeStyle(){
+    Array.prototype.forEach.call($('codeStyle').children, function(b){
+      b.setAttribute('aria-checked', b.dataset.style === codeStyle ? 'true' : 'false');
+    });
+  }
+  Array.prototype.forEach.call($('codeStyle').children, function(b){
+    b.addEventListener('click', function(){
+      codeStyle = b.dataset.style;
+      try{ localStorage.setItem('oob-code-style', codeStyle); }catch(e){}
+      syncCodeStyle();
+    });
+  });
+
   var codeModalMode = 'paste';
   function openCodeModal(mode, text){
     codeModalMode = mode;
     var modal = $('codeModal');
     var input = $('codeInput');
+    $('codeStyle').hidden = mode !== 'paste';
+    syncCodeStyle();
     if(mode === 'paste'){
       $('codeModalTitle').textContent = 'Paste their photo code ♡';
       $('codeModalText').textContent = "Paste the code your love sent you — their photos join your strip.";
@@ -2530,12 +2614,12 @@
     if(!raw.trim()){ showToast('Paste the code first ♡'); return; }
     unpackCode(raw).then(function(canvases){
       closeCodeModal();
-      var merged = mergePartnerShots(canvases);
+      var merged = mergePartnerShots(canvases, codeStyle);
       if(!merged.trimmed){ applyPartnerShots(merged); return; }
       confirmBox({
         title: 'One strip holds ' + MAX_SHOTS + ' photos ♡',
         text: "Together you have more than that. We'll keep " + merged.keepMine + ' of yours and ' +
-              merged.keepTheirs + ' of theirs, side by side.',
+              merged.keepTheirs + ' of theirs, ' + (codeStyle === 'side' ? 'side by side.' : 'one after the other.'),
         yes: 'OKAY ♡', no: 'CANCEL'
       }).then(function(ok){ if(ok) applyPartnerShots(merged); });
     }).catch(function(){
@@ -2750,7 +2834,7 @@
     role:null, code:'', connected:false, partnerReady:false, remoteFacing:'user',
     rtt:200, rounds:4, running:false, runId:0, pending:{}, early:{}, connectTimer:0,
     // Together ("duo") = both of you in one photo; Separate = two photos per shot (see TOGETHER below)
-    mode:'duo', roundsBy:{duo:4, separate:2}, partnerDuo:false, partnerVer:'', duoHalves:{},
+    mode:'duo', showStyles:false, roundsBy:{duo:4, separate:2}, partnerDuo:false, partnerVer:'', duoHalves:{},
     poseMode:'surprise', posePick:[], autoTemplate:false
   };
   var pendingRoom = null;   // room code from an invite link (#room=K7X2MQ)
@@ -2899,6 +2983,10 @@
   /* ---- create / join ---- */
   function startLive(role, code){
     setLiveError('');
+    // every new room starts side by side ("Together"): a Stacked choice from an earlier room must not
+    // carry over (the room maker's style is copied to the other phone when you connect)
+    live.mode = 'duo';
+    live.showStyles = false;
     if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.RTCPeerConnection){
       setLiveError("This browser can't do live video. Try Chrome or Safari ♡");
       return;
@@ -3384,8 +3472,9 @@
      join the halves the same way — the one who made the room always on the LEFT, the one who
      joined on the RIGHT — so the photo is identical on both phones (and leaning in / half a heart
      each works). A joined photo is a normal square, so every frame, sticker and text works as
-     usual. "Separate" is the earlier way: your photo + theirs for every shot.
-     An older page on the other phone can't do Together: then both simply use Separate. */
+     usual. "Stacked" (mode 'separate') is the earlier way: your photo + theirs for every shot, one
+     below the other — tucked behind "more styles" since v4.9.4. An older page on the other phone
+     can't do Together: then both simply use Stacked. */
   var DUO_HALF_W = 320, DUO_HALF_H = 640;   // each half; joined = 640 x 640, one photo slot
   function liveMode(){ return live.partnerDuo && live.mode === 'duo' ? 'duo' : 'separate'; }
   function duoMySide(){ return live.role === 'host' ? 'left' : 'right'; }
@@ -3422,21 +3511,28 @@
   }
   function isDuoShot(c){ return !!(c && c.dataset && c.dataset.from === 'duo'); }
 
-  /* ---- Together / Separate switch, number of shots ---- */
+  /* ---- Together / Stacked switch, number of shots ---- */
   function syncLiveModeUI(){
     var mode = liveMode(), duo = mode === 'duo', left = duoMySide() === 'left';
+    // Stacked stays tucked away until "more styles" — but always shows while it's the style in use
+    var showStacked = live.showStyles || live.mode === 'separate' || !live.partnerDuo;
     Array.prototype.forEach.call($('liveMode').children, function(b){
       var on = b.dataset.mode === mode;
       b.classList.toggle('active', on);
       b.setAttribute('aria-checked', on ? 'true' : 'false');
       b.disabled = live.running || (b.dataset.mode === 'duo' && !live.partnerDuo);
+      if(b.dataset.mode === 'separate') b.hidden = !showStacked;
     });
+    $('liveModeMore').hidden = showStacked;
+    $('liveModeMore').disabled = live.running;
     $('duoHelpBtn').hidden = !live.partnerDuo;
-    // different versions on the two phones: say who should refresh (after the photos — refreshing leaves the room)
+    // a note above the camera: Stacked chosen (so the result is no surprise), or different versions on
+    // the two phones — who should refresh (after the photos: refreshing leaves the room)
     var note = '';
     if(live.connected){
       var cmp = verCmp(live.partnerVer, APP_VERSION);
       if(!live.partnerDuo) note = "Your love's page is older — they can reload it to use Together ♡";
+      else if(live.mode === 'separate') note = 'Stacked: your photos go one below the other — Together ♡ puts you side by side';
       else if(!live.partnerVer || cmp < 0) note = "Your love's page is older — they can refresh it after your photos ♡";
       else if(cmp > 0) note = "Your love has a newer version — refresh yours after your photos ♡";
     }
@@ -3500,6 +3596,12 @@
       if(state.currentStep === 'live') startLiveOverlay();
       sendLive({type:'mode', mode:m});   // both phones always show the same style
     });
+  });
+  // "more styles": shows the Stacked choice (until the next room)
+  $('liveModeMore').addEventListener('click', function(){
+    if(live.running) return;
+    live.showStyles = true;
+    syncLiveModeUI();
   });
   // entering live without photos picks the frame for you: one per row for Together, 2x2 for Separate.
   // Once you choose a frame yourself, it stays.
@@ -5614,11 +5716,17 @@
       return Promise.resolve();
     }
     var gen = session.gen, shots = state.shots.slice(), design = currentDesign(), count = state.shotCount;
-    return Promise.all(shots.map(shotBlob)).then(function(blobs){
-      if(gen !== session.gen || blobs.some(function(b){ return !b; })) return;
+    // a side-by-side pair from photo codes also keeps its two originals (see joinPair)
+    function blobsOf(c){
+      return Promise.all([shotBlob(c), c.pairMine ? shotBlob(c.pairMine) : null, c.pairTheirs ? shotBlob(c.pairTheirs) : null]);
+    }
+    return Promise.all(shots.map(blobsOf)).then(function(sets){
+      if(gen !== session.gen || sets.some(function(b){ return !b[0]; })) return;
       var rec = {v:1, saved:Date.now(), shotCount:count, design:design, shots:shots.map(function(c, i){
         var from = c.dataset.from === 'you' || c.dataset.from === 'duo' ? c.dataset.from : 'me';
-        return {blob:blobs[i], from:from, round:c.dataset.round || '', side:c.dataset.side || ''};
+        var s = {blob:sets[i][0], from:from, round:c.dataset.round || '', side:c.dataset.side || ''};
+        if(sets[i][1] && sets[i][2]){ s.pairMine = sets[i][1]; s.pairTheirs = sets[i][2]; }
+        return s;
       })};
       session.savedThisPage = true;
       return sessionRun('readwrite', function(store){ return store.put(rec, 'session'); });
@@ -5642,14 +5750,25 @@
     });
   }
   function sessionCanvases(rec){
-    return Promise.all(rec.shots.slice(0, MAX_SHOTS).map(function(s){
-      return loadImage(s.blob).then(function(img){
+    function toCanvas(blob, from){
+      return loadImage(blob).then(function(img){
         var c = document.createElement('canvas');
         c.width = img.width; c.height = img.height;
         c.getContext('2d').drawImage(img, 0, 0);
-        c.dataset.from = s.from === 'you' || s.from === 'duo' ? s.from : 'me';
+        c.dataset.from = from;
+        return c;
+      });
+    }
+    return Promise.all(rec.shots.slice(0, MAX_SHOTS).map(function(s){
+      var from = s.from === 'you' || s.from === 'duo' ? s.from : 'me';
+      // a side-by-side pair's originals: nice to have — if they can't be read, the joined photo still works
+      var pair = from === 'duo' && s.pairMine instanceof Blob && s.pairTheirs instanceof Blob;
+      function orig(blob, f){ return pair ? toCanvas(blob, f).catch(function(){ return null; }) : null; }
+      return Promise.all([toCanvas(s.blob, from), orig(s.pairMine, 'me'), orig(s.pairTheirs, 'you')]).then(function(r){
+        var c = r[0];
         if(s.round) c.dataset.round = String(s.round);
         if(s.side === 'left' || s.side === 'right') c.dataset.side = s.side;   // Together: which half is you
+        if(r[1] && r[2]){ c.pairMine = r[1]; c.pairTheirs = r[2]; c.dataset.pair = 'code'; }
         return c;
       });
     }));
