@@ -452,6 +452,10 @@
   }
   .result-actions-row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center;}
   .result-actions-row .btn{flex:1; min-width:104px; font-size:.78rem; padding:13px 10px;}
+  .result-actions .btn[disabled]{opacity:.7;}   /* while the video is being made */
+  /* its own little pill: the see-through button bar may sit over the Photo / Animated cards */
+  .save-hint{align-self:center; text-align:center; font-size:.76rem; color:var(--rose-800); line-height:1.4; margin:-4px 0 0;
+    padding:4px 12px; border-radius:999px; background:rgba(255,255,255,.92); box-shadow:var(--shadow-soft);}
   .privacy-inline{text-align:center; font-size:.78rem; color:var(--rose-800); opacity:.7; margin-top:18px; line-height:1.5;}
 
   /* fallback capture (phone camera app / gallery) */
@@ -620,6 +624,14 @@
   .together-status{font-size:.86rem; font-weight:600; color:var(--rose-600); text-align:center; line-height:1.4;}
   #togetherOn .btn-text{display:block; margin:2px auto 0;}
   .live-design-hint{font-size:.76rem; color:var(--rose-800); opacity:.8; text-align:center; margin-top:6px; line-height:1.4;}
+  /* iPhone "press and hold to save" fallback */
+  .hold-modal{overflow-y:auto;}
+  .hold-modal .code-card{margin:auto;}
+  .hold-card p{margin-bottom:10px;}
+  .hold-preview{display:flex; justify-content:center; margin:0 0 12px;}
+  .hold-preview img{max-height:52vh; width:auto; max-width:100%; border-radius:12px; box-shadow:var(--shadow-soft);
+    -webkit-touch-callout:default; -webkit-user-select:auto; user-select:auto;}
+  #holdDone{min-height:48px;}
   .design-modal{overflow-y:auto; z-index:90;}   /* above the custom frame editor, below "are you sure?" */
   .design-modal .code-card{margin:auto;}
   .design-preview{display:flex; justify-content:center; margin:4px 0 12px;}
@@ -724,6 +736,16 @@
       <button class="btn btn-ghost btn-block" id="backHome">⌂ HOME PAGE</button>
       <p class="back-hint" id="backHint" hidden>Going home also closes the live room.</p>
       <button class="btn-text back-stay" id="backStay">stay here</button>
+    </div>
+  </div>
+
+  <!-- iPhone fallback when the share menu can't open: press and hold the picture to save it -->
+  <div class="code-modal hold-modal" id="holdModal" role="dialog" aria-modal="true" aria-labelledby="holdTitle" hidden>
+    <div class="code-card hold-card">
+      <h3 id="holdTitle">Save your photo ♡</h3>
+      <p>Press and hold the picture, then choose to save it to your Photos.</p>
+      <div class="hold-preview"><img id="holdImg" alt="Your photo strip"></div>
+      <button class="btn btn-primary btn-block" id="holdDone">DONE ♡</button>
     </div>
   </div>
 
@@ -888,7 +910,7 @@
       <div class="privacy-note">🔒 Your photos stay on your device. We don't upload or store your photos.</div>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.9</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.9.1</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -1166,6 +1188,7 @@
         <p class="save-note" id="saveNote" hidden>This browser can't make videos, so you can save the photo only.</p>
         <div class="result-actions">
           <button class="btn btn-primary btn-block" id="downloadBtn">DOWNLOAD PHOTO ♡</button>
+          <p class="save-hint" id="saveHint" aria-live="polite" hidden></p>
           <div class="result-actions-row">
             <button class="btn btn-ghost" id="retakeBtn">TAKE AGAIN ↻</button>
             <button class="btn btn-ghost" id="changeFrameBtn">CHANGE FRAME</button>
@@ -1704,6 +1727,8 @@
     if(state.currentStep === 'camera') leaveCamera();
     destroyLive();
     stopAnim();
+    cancelVideo();
+    closeHoldSheet();
     if(state.shots.length){
       saveSession();           // store the very latest first…
       session.pending = true;  // …and don't let the empty strip overwrite it before you've answered
@@ -1719,6 +1744,8 @@
     }
     if(state.currentStep === 'live' && step !== 'live') leaveLiveStep();
     stopAnim();
+    cancelVideo();       // a video still being made on the result page isn't needed anymore
+    closeHoldSheet();
     state.currentStep = step;
     if(step === 'camera' || step === 'live') state.captureStep = step;   // where ← from the editor goes back to
     ensureAppEntry();
@@ -1800,6 +1827,7 @@
     // back inside the app: an open question just closes first
     if(!$('confirmModal').hidden){ closeConfirm(null); history.pushState(appEntry(), ''); return; }
     if(!$('backModal').hidden){ closeBackChooser(); history.pushState(appEntry(), ''); return; }
+    if(!$('holdModal').hidden){ closeHoldSheet(); history.pushState(appEntry(), ''); return; }
     if(!$('duoHelp').hidden){ closeDuoHelp(); history.pushState(appEntry(), ''); return; }
     if(!$('poseSheet').hidden){ closePoseSheet(); history.pushState(appEntry(), ''); return; }
     if(!$('designModal').hidden){ history.pushState(appEntry(), ''); return; }   // answer your love first
@@ -1888,6 +1916,7 @@
     if(e.key !== 'Escape') return;
     if(!$('confirmModal').hidden) closeConfirm(false);
     else if(!$('backModal').hidden) closeBackChooser();
+    else if(!$('holdModal').hidden) closeHoldSheet();
     else if(!$('duoHelp').hidden) closeDuoHelp();
     else if(!$('poseSheet').hidden) closePoseSheet();
     else if(!$('cfEditor').hidden) closeCfEditor();
@@ -6107,6 +6136,7 @@
      something actually moves, and only if this browser can record video. The preview
      follows the choice, so you see exactly what you'll save. */
   function renderResult(){
+    cancelVideo();   // the design or a photo changed: a video still being made would show the old one
     buildBase();
     var moving = hasMotion(), canVideo = !!pickVideoType();
     $('saveAs').hidden = !moving;
@@ -6121,16 +6151,16 @@
       b.classList.toggle('selected', on);
       b.setAttribute('aria-checked', on ? 'true' : 'false');
     });
-    var animated = state.resultMode === 'animated';
-    if(!recording) $('downloadBtn').textContent = animated ? 'DOWNLOAD VIDEO ✨' : 'DOWNLOAD PHOTO ♡';
-    $('shareBtn').textContent = animated ? 'SHARE VIDEO' : 'SHARE';
-    if(animated) playAnim($('resultCanvas'));
+    if(state.resultMode === 'animated') playAnim($('resultCanvas'));
     else { stopAnim(); drawFrame($('resultCanvas'), 0); }   // the "resting" pose is what gets saved
+    prepareSaves();
+    syncSaveButtons();
   }
   Array.prototype.forEach.call(document.querySelectorAll('.save-opt'), function(b){
     b.addEventListener('click', function(){
-      if(b.disabled || recording) return;
+      if(b.disabled || state.resultMode === b.dataset.mode) return;
       state.resultMode = b.dataset.mode;
+      if(state.resultMode !== 'animated') cancelVideo();   // switching to Photo: stop making the video
       syncSaveAs();
     });
   });
@@ -6163,13 +6193,25 @@
       });
     });
   }
+  /* Files are made BEFORE you tap. Phones only let a page open the share menu for a few seconds
+     after a tap, and making the video takes LOOP*2 = 6 seconds — so a video made after the tap
+     came too late and no menu opened (on iPhones even saving goes through that menu). Now the
+     result page makes the photo / video as soon as it shows them; a tap hands over the finished file. */
+  var PHOTO_NAME = 'our-little-photo-booth.png';
+  var photoJob = null;   // {base, promise, blob} — the still picture of the design on screen
   function photoBlob(){
-    return new Promise(function(resolve, reject){
-      var canvas = $('resultCanvas');
+    if(photoJob && photoJob.base === base) return photoJob.promise;
+    var job = {base:base, blob:null};
+    job.promise = new Promise(function(resolve, reject){
+      var canvas = document.createElement('canvas');   // not the result canvas: it may be animating
       drawFrame(canvas, 0);
       canvas.toBlob(function(blob){ blob ? resolve(blob) : reject(new Error('blob')); }, 'image/png');
     });
+    job.promise.then(function(blob){ job.blob = blob; }, function(){ if(photoJob === job) photoJob = null; });
+    photoJob = job;
+    return job.promise;
   }
+  function readyPhoto(){ return photoJob && photoJob.base === base ? photoJob.blob : null; }
 
   /* moving decorations → a short video, recorded straight from a canvas */
   function pickVideoType(){
@@ -6179,98 +6221,184 @@
     return '';
   }
   var recording = false;
-  var lastVideo = null;   // {base, blob, ext} — reused so SHARE doesn't record the same video twice
-  function recordVideo(){
-    if(lastVideo && lastVideo.base === base) return Promise.resolve(lastVideo);
+  var lastVideo = null;       // {base, blob, ext} — the finished video of the design on screen
+  var videoJob = null;        // the video being made right now: {base, byTap, promise, cancel}
+  var videoFailedFor = null;  // a design whose video couldn't be made (not retried by itself)
+  function videoReady(){ return !!(lastVideo && lastVideo.base === base); }
+  function onResultPage(){ return $('app').dataset.view === 'app' && state.currentStep === 'result'; }
+  function cancelVideo(){ if(videoJob && videoJob.cancel) videoJob.cancel(); }
+  // byTap: you tapped and are waiting for it; otherwise it's being made in the background
+  function recordVideo(byTap){
+    if(videoReady()) return Promise.resolve(lastVideo);
+    if(videoJob && videoJob.base === base){ if(byTap) videoJob.byTap = true; return videoJob.promise; }
+    cancelVideo();
     var type = pickVideoType();
-    if(recording || !type) return Promise.reject(new Error('busy'));
-    var btn = $('downloadBtn');
+    if(!type) return Promise.reject(new Error('unsupported'));
     // phones pause drawing while you're in another app — a video made then would just be a still frame
     var leftMsg = "The video stopped because you left the app. Tap again and keep this screen open ♡";
-    if(document.hidden){ showToast(leftMsg); return Promise.reject(new Error('hidden')); }
+    if(document.hidden){ if(byTap) showToast(leftMsg); return Promise.reject(new Error('left')); }
+    var forBase = base;
+    var job = {base:forBase, byTap:!!byTap};
+    videoJob = job;
     recording = true;
-    btn.disabled = true; btn.textContent = 'MAKING YOUR VIDEO… ✨';
-    return new Promise(function(resolve, reject){
-      var forBase = base;
-      var aborted = false;
-      function onHide(){ if(document.hidden && !aborted){ aborted = true; rec.stop(); } }
-      document.addEventListener('visibilitychange', onHide);
-      var scale = Math.min(1, 1440 / Math.max(base.w, base.h));
-      var rc = document.createElement('canvas');
-      drawFrame(rc, 0, scale);
-      var stream = rc.captureStream(30);
-      var rec = new MediaRecorder(stream, {mimeType:type, videoBitsPerSecond:5000000});
-      var chunks = [];
-      rec.ondataavailable = function(e){ if(e.data && e.data.size) chunks.push(e.data); };
-      rec.onstop = function(){
+    job.promise = new Promise(function(resolve, reject){
+      var done = false, rec = null, stream = null, chunks = [], watchdog = 0;
+      function stopRec(){ try{ if(rec && rec.state !== 'inactive') rec.stop(); }catch(e){} }
+      function finish(err, v){
+        if(done) return;
+        done = true;
+        clearTimeout(watchdog);
         document.removeEventListener('visibilitychange', onHide);
-        stream.getTracks().forEach(function(tr){ tr.stop(); });
-        recording = false;
-        btn.disabled = false;
-        syncSaveAs();
-        if(aborted){ showToast(leftMsg); reject(new Error('left')); return; }
-        lastVideo = {base:forBase, blob:new Blob(chunks, {type:type.split(';')[0]}), ext:type.indexOf('mp4') !== -1 ? 'mp4' : 'webm'};
-        resolve(lastVideo);
-      };
-      var start = performance.now();
-      rec.start();
-      (function tick(now){
-        if(aborted) return;
-        var t = (now - start)/1000;
-        if(t >= LOOP*2){ rec.stop(); return; }   // two full loops
-        drawFrame(rc, t % LOOP, scale);
-        requestAnimationFrame(tick);
-      })(start);
+        if(stream) stream.getTracks().forEach(function(tr){ tr.stop(); });
+        if(err && err.message === 'failed') videoFailedFor = forBase;
+        if(videoJob === job){ videoJob = null; recording = false; syncSaveButtons(); }
+        if(err) reject(err); else resolve(v);
+      }
+      function onHide(){
+        if(!document.hidden) return;
+        stopRec();
+        if(job.byTap) showToast(leftMsg);   // made in the background: it simply starts again when you're back
+        finish(new Error('left'));
+      }
+      job.cancel = function(){ stopRec(); finish(new Error('cancelled')); };
+      try{
+        var scale = Math.min(1, 1440 / Math.max(base.w, base.h));
+        var rc = document.createElement('canvas');
+        drawFrame(rc, 0, scale);
+        stream = rc.captureStream(30);
+        rec = new MediaRecorder(stream, {mimeType:type, videoBitsPerSecond:5000000});
+        rec.ondataavailable = function(e){ if(e.data && e.data.size) chunks.push(e.data); };
+        rec.onerror = function(){ stopRec(); finish(new Error('failed')); };
+        rec.onstop = function(){
+          if(done) return;   // cancelled: a half-made video is never kept
+          var blob = new Blob(chunks, {type:type.split(';')[0]});
+          if(!blob.size){ finish(new Error('failed')); return; }
+          var v = {base:forBase, blob:blob, ext:type.indexOf('mp4') !== -1 ? 'mp4' : 'webm'};
+          if(forBase === base) lastVideo = v;
+          finish(null, v);
+        };
+        document.addEventListener('visibilitychange', onHide);
+        // a recorder that never reports back must not leave the buttons stuck on "making…"
+        watchdog = setTimeout(function(){ stopRec(); finish(new Error('failed')); }, LOOP*2000 + 8000);
+        var start = performance.now();
+        rec.start();
+        (function tick(now){
+          if(done) return;
+          var t = (now - start)/1000;
+          if(t >= LOOP*2){ stopRec(); return; }   // two full loops
+          drawFrame(rc, t % LOOP, scale);
+          requestAnimationFrame(tick);
+        })(start);
+      }catch(e){ stopRec(); finish(new Error('failed')); }
+    });
+    syncSaveButtons();
+    return job.promise;
+  }
+  // whenever the result page shows a design: make the file its buttons will hand over
+  function prepareSaves(){
+    if(!onResultPage()) return;
+    if(state.resultMode !== 'animated'){ photoBlob().catch(function(){}); return; }
+    if(document.hidden || videoReady() || videoJob || videoFailedFor === base) return;
+    recordVideo(false).catch(function(err){
+      if(err && err.message === 'failed' && onResultPage()) showToast("Couldn't make the video this time — tap the button to try again ♡");
     });
   }
+  // back in the app with Animated chosen: make the video that stopped while you were away
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) prepareSaves(); });
 
-  // iPhones save "downloads" into the Files app; their share sheet has "Save Image/Video" → Photos instead
+  // iPhones save "downloads" into the Files app; their share menu has "Save Image/Video" → Photos instead
   var SAVE_VIA_SHARE = IS_IOS && !!(navigator.canShare && navigator.share);
-  $('downloadBtn').addEventListener('click', function(){
-    if(recording) return;
-    if(state.resultMode === 'animated'){
-      var ready = lastVideo && lastVideo.base === base;
-      recordVideo().then(function(v){
-        var name = 'our-little-photo-booth.' + v.ext;
-        if(!SAVE_VIA_SHARE) return saveBlob(v.blob, name);
-        return shareFile(v.blob, name, v.ext === 'mp4' ? 'video/mp4' : 'video/webm').catch(function(err){
-          // the share sheet needs a fresh tap; making the video took a few seconds
-          if(!ready && err && err.name === 'NotAllowedError') showToast('Your video is ready ♡ Tap DOWNLOAD VIDEO again, then "Save Video"');
-        });
-      }, function(){});
-      return;
-    }
-    photoBlob().then(function(blob){
-      if(SAVE_VIA_SHARE) return shareFile(blob, 'our-little-photo-booth.png', 'image/png').catch(function(){});
-      saveBlob(blob, 'our-little-photo-booth.png');
-    }, function(){ showToast("Couldn't create the image. Please try again."); });
-  });
-
-  function shareFile(blob, name, type){
-    var file = new File([blob], name, {type:type});
-    if(!(navigator.canShare && navigator.share && navigator.canShare({files:[file]}))){
-      showToast('Sharing isn\'t supported here — try downloading instead ♡');
-      return Promise.resolve();
-    }
-    return navigator.share({files:[file], title:'Our Little Photo Booth', text:'A little memory, just for us ♡'});
+  // the share menu speaks the phone's language: name the item to tap the way it's written there
+  var MENU_ID = /^(id|in)\b/i.test(navigator.language || '');
+  function syncSaveButtons(){
+    var animated = state.resultMode === 'animated', making = animated && recording;
+    var dl = $('downloadBtn'), sh = $('shareBtn'), hint = $('saveHint');
+    dl.disabled = making;
+    sh.disabled = making;
+    dl.textContent = making ? 'MAKING YOUR VIDEO… ✨'
+      : animated ? (SAVE_VIA_SHARE ? 'SAVE VIDEO TO PHOTOS ✨' : 'DOWNLOAD VIDEO ✨')
+      : (SAVE_VIA_SHARE ? 'SAVE TO PHOTOS ♡' : 'DOWNLOAD PHOTO ♡');
+    sh.textContent = animated ? 'SHARE VIDEO' : 'SHARE';
+    var item = animated ? (MENU_ID ? 'Simpan Video' : 'Save Video') : (MENU_ID ? 'Simpan Gambar' : 'Save Image');
+    var tip = making ? 'About ' + (LOOP*2) + ' seconds — stay on this page ✨'
+            : SAVE_VIA_SHARE ? 'In the menu, tap "' + item + '" ♡' : '';
+    hint.textContent = tip;
+    hint.hidden = !tip;
   }
-  $('shareBtn').addEventListener('click', function(){
-    if(recording) return;
+
+  // withText: SHARE adds a little message; saving hands over just the file (the menu is then about saving)
+  function shareFile(blob, name, withText){
+    try{
+      var file = new File([blob], name, {type:blob.type});
+      if(!(navigator.canShare && navigator.share && navigator.canShare({files:[file]}))){
+        var no = new Error('unsupported'); no.name = 'Unsupported';
+        return Promise.reject(no);
+      }
+      var data = {files:[file]};
+      if(withText){ data.title = 'Our Little Photo Booth'; data.text = 'A little memory, just for us ♡'; }
+      return navigator.share(data);
+    }catch(e){ return Promise.reject(e); }
+  }
+  // how: 'save' (iPhone: the share menu, file only) · 'download' (other devices) · 'share' (SHARE button)
+  function deliver(blob, name, how, isVideo){
+    if(how === 'download'){ saveBlob(blob, name); return; }
+    shareFile(blob, name, how === 'share').catch(function(err){
+      var why = err && err.name;
+      if(why === 'AbortError') return;   // you closed the menu
+      if(how === 'save' && !isVideo){ openHoldSheet(blob); return; }   // press and hold always works for a picture
+      if(how === 'save' && why === 'Unsupported'){ saveBlob(blob, name); return; }   // then at least into Files
+      if(why === 'Unsupported'){ showToast("Sharing isn't supported here — try downloading instead ♡"); return; }
+      if(why === 'NotAllowedError'){
+        // the phone said "too long after your tap"
+        var again = how === 'share' ? (isVideo ? 'SHARE VIDEO' : 'SHARE') : 'SAVE VIDEO TO PHOTOS';
+        showToast(isVideo ? 'Your video is ready ♡ Tap ' + again + ' again' : 'Tap ' + again + ' again ♡');
+        return;
+      }
+      showToast("Couldn't open the menu. Please try again ♡");
+    });
+  }
+  function videoName(v){ return 'our-little-photo-booth.' + v.ext; }
+  function onSaveTap(how){
     if(state.resultMode === 'animated'){
-      var ready = lastVideo && lastVideo.base === base;
-      recordVideo().then(function(v){
-        var mime = v.ext === 'mp4' ? 'video/mp4' : 'video/webm';
-        return shareFile(v.blob, 'our-little-photo-booth.' + v.ext, mime).catch(function(err){
-          // phones only allow sharing right after a tap; recording takes a few seconds
-          if(!ready && err && err.name === 'NotAllowedError') showToast('Your video is ready ♡ Tap SHARE VIDEO again to send it');
-        });
-      }, function(){});
+      if(videoReady()){ deliver(lastVideo.blob, videoName(lastVideo), how, true); return; }
+      if(recording) return;   // the buttons wait until it's ready
+      // not made yet (e.g. you had left the app): make it now — the menu may then need one more tap
+      recordVideo(true).then(function(v){
+        if(onResultPage() && state.resultMode === 'animated') deliver(v.blob, videoName(v), how, true);
+      }, function(err){
+        if(err && err.message === 'failed') showToast("Couldn't make the video — try again, or save it as a Photo ♡");
+      });
       return;
     }
-    photoBlob().then(function(blob){
-      return shareFile(blob, 'our-little-photo-booth.png', 'image/png');
-    }).catch(function(){ /* cancelled */ });
-  });
+    var blob = readyPhoto();
+    if(blob){ deliver(blob, PHOTO_NAME, how, false); return; }
+    photoBlob().then(function(b){
+      if(onResultPage()) deliver(b, PHOTO_NAME, how, false);
+    }, function(){ showToast("Couldn't create the image. Please try again."); });
+  }
+  $('downloadBtn').addEventListener('click', function(){ onSaveTap(SAVE_VIA_SHARE ? 'save' : 'download'); });
+  $('shareBtn').addEventListener('click', function(){ onSaveTap('share'); });
+
+  // iPhone fallback when the menu can't open: the picture as a real image → press and hold → save to Photos
+  function openHoldSheet(blob){
+    var reader = new FileReader();
+    reader.onload = function(){
+      if(!onResultPage()) return;
+      $('holdImg').src = reader.result;   // a data: address — the kind iPhones save most reliably
+      $('holdModal').hidden = false;
+      $('holdModal').scrollTop = 0;
+      setTimeout(function(){ $('holdDone').focus(); }, 30);
+    };
+    reader.onerror = function(){ showToast("Couldn't save the file. Please try again."); };
+    reader.readAsDataURL(blob);
+  }
+  function closeHoldSheet(){
+    if($('holdModal').hidden) return;
+    $('holdModal').hidden = true;
+    $('holdImg').removeAttribute('src');
+  }
+  $('holdDone').addEventListener('click', closeHoldSheet);
+  $('holdModal').addEventListener('click', function(e){ if(e.target === this) closeHoldSheet(); });
 
   /* init */
   goToStep('count');   // (on the home page this adds no history entry)
