@@ -532,6 +532,69 @@
   .inapp-actions .btn{flex:1; min-width:130px; min-height:44px; padding:10px 12px; font-size:.78rem; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;}
   .inapp-close{position:absolute; top:4px; right:4px; width:40px; height:40px; border:none; background:none; color:#5C3A06; font-size:1.3rem; line-height:1;}
   .welcome-card .inapp{margin:14px 0 4px; padding-right:14px;}
+  /* Together (both of you in one photo) vs Separate */
+  .live-mode-row{display:flex; gap:8px; align-items:center; margin:2px 0 8px;}
+  .live-mode{flex:1; display:flex; background:var(--white); border-radius:999px; padding:4px; box-shadow:var(--shadow-soft);}
+  .live-mode button{flex:1; min-height:40px; border:none; background:none; border-radius:999px; font-weight:600; font-size:.82rem; color:var(--rose-800);}
+  .live-mode button.active{background:var(--rose-600); color:#fff;}
+  .live-mode button[disabled]:not(.active){opacity:.45;}
+  .live-help-btn{flex:0 0 44px; width:44px; height:44px; border-radius:50%; border:1.5px solid var(--pink-300); background:var(--white); color:var(--rose-600); font-weight:700; font-size:1.1rem; box-shadow:var(--shadow-soft);}
+  .live-mode-note{font-size:.78rem; color:var(--rose-800); text-align:center; margin:0 0 8px;}
+  /* one square split in two; sized so the heart button stays on screen on small phones */
+  .live-tiles.duo{
+    grid-template-columns:1fr 1fr; grid-template-rows:100%; gap:0; margin:6px auto 0; aspect-ratio:1;
+    width:min(100%, max(230px, calc(100vh - 430px))); width:min(100%, max(230px, calc(100svh - 430px)));
+    border-radius:18px; overflow:hidden; box-shadow:var(--shadow-pink);
+  }
+  .live-tiles.duo .live-tile{aspect-ratio:auto; height:100%; border-radius:0; box-shadow:none;}
+  .live-tiles.duo .side-left{order:1;}
+  .live-tiles.duo .side-right{order:2;}
+  .live-tiles.duo::after{content:''; position:absolute; left:50%; top:0; bottom:0; width:2px; margin-left:-1px; background:rgba(255,255,255,.95); z-index:2; pointer-events:none;}
+  .live-tiles.duo .live-tile::after{content:''; position:absolute; left:50%; top:9%; width:68%; height:42%; transform:translateX(-50%); border:2px dashed rgba(255,255,255,.8); border-radius:50%; pointer-events:none;}
+  .live-tiles.duo.running .live-tile::after{display:none;}   /* the face guide steps aside while you shoot */
+  .live-tiles.duo .side-right .live-tag{left:auto; right:8px;}
+  .live-tiles.duo .live-unmute{top:auto; bottom:36px; right:auto; left:50%; transform:translateX(-50%); white-space:nowrap; z-index:4;}
+  .live-tiles.duo .countdown, .live-tiles.duo .flash{border-radius:0;}
+  .duo-overlay{position:absolute; inset:0; width:100%; height:100%; z-index:1; pointer-events:none; display:none;}
+  .live-tiles.duo .duo-overlay{display:block;}
+  .duo-side{display:none;}
+  .live-tiles.duo .duo-side{
+    display:block; position:absolute; top:8px; left:50%; transform:translateX(-50%); z-index:3; margin:0;
+    width:max-content; max-width:90%; padding:4px 10px; border-radius:10px; background:rgba(255,255,255,.93);
+    color:var(--rose-800); font-size:.7rem; font-weight:600; line-height:1.3; text-align:center; pointer-events:none;
+  }
+  .duo-pose{
+    position:absolute; left:50%; bottom:32px; transform:translateX(-50%); z-index:3; width:max-content; max-width:88%;
+    padding:6px 12px; border-radius:12px; background:rgba(255,255,255,.95); color:var(--plum-900);
+    font-size:.74rem; line-height:1.35; text-align:center; pointer-events:none;
+  }
+  .duo-pose b{display:block; color:var(--rose-600); font-size:.86rem;}
+  /* Together: "1 2 3 4 shots · Poses" fits one row on a 360px phone, so the heart stays on screen */
+  .live-rounds.duo-row{gap:4px;}
+  .live-rounds .chip-label{align-self:center; font-size:.8rem; font-weight:600; color:var(--rose-800); margin:0 4px 0 2px;}
+  .live-rounds .chip.num{min-width:42px; padding:10px 0;}
+  .live-rounds .chip.pose-chip{border-color:var(--pink-300); padding:10px 10px;}
+  /* Together in a room: the mode switch and the shared square say it all — the title makes room */
+  #step-live.duo-stage .camera-title{display:none;}
+  .duo-help-card ul{margin:6px 0 12px; padding-left:18px; font-size:.84rem; line-height:1.5; color:var(--plum-900);}
+  .duo-help-card li{margin-bottom:4px;}
+  .duo-help-card b{color:var(--rose-600);}
+  .duo-help-card .btn{margin-top:8px; min-height:48px; font-size:.84rem;}
+  .pose-card-wrap{max-width:440px;}
+  .pose-modes{display:flex; background:var(--blush-100); border-radius:999px; padding:3px; margin:6px 0 6px;}
+  .pose-modes button{flex:1; min-height:40px; border:none; background:none; border-radius:999px; font-weight:600; font-size:.74rem; color:var(--rose-800);}
+  .pose-modes button.active{background:var(--rose-600); color:#fff;}
+  .code-card .pose-hint{font-size:.76rem; margin:0 0 8px;}
+  .pose-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px; max-height:44vh; overflow-y:auto; padding:2px; -webkit-overflow-scrolling:touch;}
+  .pose-item{position:relative; text-align:left; border:2px solid var(--blush-100); background:var(--blush-50); border-radius:12px; padding:8px; color:var(--plum-900); font-family:inherit;}
+  .pose-item.selected{border-color:var(--rose-600); background:var(--white);}
+  .pose-ico{position:relative; height:34px; border-radius:8px; margin-bottom:6px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; background:linear-gradient(90deg,#B5D4F4 50%,#C0DD97 50%);}
+  .pose-ico::after{content:''; position:absolute; left:50%; top:0; bottom:0; width:2px; margin-left:-1px; background:#fff;}
+  .pose-ico span, .pose-ico svg{position:relative; z-index:1;}
+  .pose-item b{display:block; font-size:.8rem;}
+  .pose-item small{display:block; font-size:.7rem; color:var(--rose-800); line-height:1.3;}
+  .pose-num{position:absolute; top:5px; right:5px; width:20px; height:20px; border-radius:50%; background:var(--rose-600); color:#fff; font-size:.7rem; font-weight:700; display:flex; align-items:center; justify-content:center; z-index:2;}
+  #poseDone{margin-top:12px; min-height:48px;}
   /* "where to next?" (← on the result page) */
   .back-card .btn{margin-top:10px; min-height:48px; padding:12px 14px; font-size:.84rem;}
   .back-card p{margin-bottom:4px;}
@@ -612,6 +675,38 @@
         <button class="btn btn-ghost" id="confirmYes"></button>
         <button class="btn btn-primary" id="confirmNo"></button>
       </div>
+    </div>
+  </div>
+
+  <!-- "Together" explained — opens by itself the first time, and with the ? button any time -->
+  <div class="code-modal" id="duoHelp" role="dialog" aria-modal="true" aria-labelledby="duoHelpTitle" hidden>
+    <div class="code-card duo-help-card">
+      <h3 id="duoHelpTitle">Together ♡ how it works</h3>
+      <ul>
+        <li>One photo for both of you, side by side.</li>
+        <li>The one who <b>made the room</b> is always on the <b>left</b>, the one who <b>joined</b> on the <b>right</b> — so your photo is exactly the same on both phones.</li>
+        <li>Hold your phone upright and keep your face inside the dotted oval.</li>
+        <li>"Lean in" always means toward the <b>middle line</b>.</li>
+        <li>Cute trick: each make half a heart with your hands next to the middle line ♡</li>
+        <li><b>Separate</b> takes two photos each shot, like before.</li>
+      </ul>
+      <button type="button" class="btn btn-secondary btn-block" id="duoHelpPoses">SEE POSE IDEAS ♡</button>
+      <button type="button" class="btn btn-primary btn-block" id="duoHelpOk">GOT IT ♡</button>
+    </div>
+  </div>
+
+  <!-- pose ideas for Together photos: surprise me / pick my own / no poses -->
+  <div class="code-modal" id="poseSheet" role="dialog" aria-modal="true" aria-labelledby="poseTitle" hidden>
+    <div class="code-card pose-card-wrap">
+      <h3 id="poseTitle">Pose ideas ♡</h3>
+      <div class="pose-modes" id="poseModes" role="radiogroup" aria-label="How poses are chosen">
+        <button type="button" role="radio" data-pmode="surprise">Surprise me</button>
+        <button type="button" role="radio" data-pmode="pick">Pick my own</button>
+        <button type="button" role="radio" data-pmode="off">No poses</button>
+      </div>
+      <p class="pose-hint" id="poseHint"></p>
+      <div class="pose-grid" id="poseGrid"></div>
+      <button type="button" class="btn btn-primary btn-block" id="poseDone">DONE ♡</button>
     </div>
   </div>
 
@@ -788,7 +883,7 @@
       <div class="privacy-note">🔒 Your photos stay on your device. We don't upload or store your photos.</div>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.7</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.8</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -925,10 +1020,22 @@
 
         <!-- c) together -->
         <div id="liveStage" hidden>
-          <div class="live-tiles">
-            <div class="live-tile"><video id="liveLocal" playsinline autoplay muted aria-label="Your camera"></video><canvas class="fx-canvas" id="liveOverlay" aria-hidden="true"></canvas><span class="live-tag">me ♡</span></div>
-            <div class="live-tile"><video id="liveRemote" playsinline autoplay aria-label="Your love's camera"></video><span class="live-tag">you ♡</span>
+          <!-- Together = both of you in one photo, side by side · Separate = two photos each shot -->
+          <div class="live-mode-row">
+            <div class="live-mode" id="liveMode" role="radiogroup" aria-label="Photo style">
+              <button type="button" role="radio" data-mode="duo">Together ♡</button>
+              <button type="button" role="radio" data-mode="separate">Separate</button>
+            </div>
+            <button type="button" class="live-help-btn" id="duoHelpBtn" aria-label="How Together works">?</button>
+          </div>
+          <p class="live-mode-note" id="liveModeNote" hidden></p>
+          <div class="live-tiles" id="liveTiles">
+            <div class="live-tile tile-local"><video id="liveLocal" playsinline autoplay muted aria-label="Your camera"></video><canvas class="fx-canvas" id="liveOverlay" aria-hidden="true"></canvas><span class="live-tag">me ♡</span></div>
+            <div class="live-tile tile-remote"><video id="liveRemote" playsinline autoplay aria-label="Your love's camera"></video><span class="live-tag">you ♡</span>
               <button class="live-unmute" id="liveUnmute" hidden>🔈 Tap to hear</button></div>
+            <canvas class="duo-overlay" id="liveDuoOverlay" aria-hidden="true"></canvas>
+            <p class="duo-side" id="duoSide"></p>
+            <div class="duo-pose" id="duoPose" aria-live="polite" hidden></div>
             <div class="countdown" id="liveCountdown" aria-live="polite"></div>
             <div class="flash" id="liveFlash" aria-hidden="true"></div>
           </div>
@@ -1149,7 +1256,7 @@
   // Characters: original couples + "Hoodie Friends" (drawn in decorXxx further down).
   // `band` tints the lower part of the background for the two-tone hoodie look.
   [
-    {id:'teddy', name:'Teddy Bears', color:'cream', colors:['cream','peach','butter','baby'], title:'bear hugs', decor:decorTeddy},
+    {id:'teddy', name:'Teddy Bears', color:'cream', colors:['cream','peach','butter','baby'], title:'bear hugs', duoLabelRow:'t', decor:decorTeddy},
     {id:'bunny', name:'Bunnies', color:'baby', colors:['baby','white','lavender','mint'], title:'bunny love', decor:decorBunny},
     {id:'kitten', name:'Kittens', color:'peach', colors:['peach','cream','butter','sky'], title:'purrfect together', labelAt:'tl', decor:decorKitten},
     {id:'penguin', name:'Penguins', color:'sky', colors:['sky','white','lavender','navy'], title:'my penguin', labelAt:'tl', decor:decorPenguin},
@@ -1466,6 +1573,7 @@
     Array.prototype.forEach.call(document.querySelectorAll('.js-cf-edit'), function(b){ b.hidden = !isCustom; });
   }
   function selectTemplate(id){
+    live.autoTemplate = false;   // you chose a frame yourself: the live room won't swap it
     state.templateId = id;
     state.colorId = templateById(id).color;   // a new frame starts in its own color
     syncFrameSelection();
@@ -1685,6 +1793,8 @@
     // back inside the app: an open question just closes first
     if(!$('confirmModal').hidden){ closeConfirm(null); history.pushState(appEntry(), ''); return; }
     if(!$('backModal').hidden){ closeBackChooser(); history.pushState(appEntry(), ''); return; }
+    if(!$('duoHelp').hidden){ closeDuoHelp(); history.pushState(appEntry(), ''); return; }
+    if(!$('poseSheet').hidden){ closePoseSheet(); history.pushState(appEntry(), ''); return; }
     if(!$('designModal').hidden){ history.pushState(appEntry(), ''); return; }   // answer your love first
     stepBack(true);
   });
@@ -1771,6 +1881,8 @@
     if(e.key !== 'Escape') return;
     if(!$('confirmModal').hidden) closeConfirm(false);
     else if(!$('backModal').hidden) closeBackChooser();
+    else if(!$('duoHelp').hidden) closeDuoHelp();
+    else if(!$('poseSheet').hidden) closePoseSheet();
     else if(!$('cfEditor').hidden) closeCfEditor();
   });
   function renderDots(){
@@ -2159,8 +2271,12 @@
   }
   function copyMyCode(){
     // only send your own photos — not the ones your partner already sent you
-    var mine = state.shots.filter(function(c){ return c.dataset.from !== 'you'; });
-    if(!mine.length){ showToast('Take a photo first, then copy your code ♡'); return; }
+    // (Together photos already hold both of you and are on both phones — no need to send those)
+    var mine = state.shots.filter(function(c){ return c.dataset.from !== 'you' && c.dataset.from !== 'duo'; });
+    if(!mine.length){
+      showToast(state.shots.some(isDuoShot) ? 'Your Together photos are already on both phones ♡' : 'Take a photo first, then copy your code ♡');
+      return;
+    }
     var code;
     try{ code = packShots(mine); }
     catch(e){ showToast("We couldn't pack your photos. Try fewer shots ♡"); return; }
@@ -2472,7 +2588,10 @@
   var live = {
     peer:null, conn:null, call:null, localStream:null, remoteStream:null,
     role:null, code:'', connected:false, partnerReady:false, remoteFacing:'user',
-    rtt:200, rounds:2, running:false, runId:0, pending:{}, early:{}, connectTimer:0
+    rtt:200, rounds:4, running:false, runId:0, pending:{}, early:{}, connectTimer:0,
+    // Together ("duo") = both of you in one photo; Separate = two photos per shot (see TOGETHER below)
+    mode:'duo', roundsBy:{duo:4, separate:2}, partnerDuo:false, duoHalves:{},
+    poseMode:'surprise', posePick:[], autoTemplate:false
   };
   var pendingRoom = null;   // room code from an invite link (#room=K7X2MQ)
 
@@ -2514,6 +2633,7 @@
         : 'Joining room ' + live.code + '…';
     }
     syncLiveDesign();
+    syncLiveModeUI();
     updateShutter();
   }
   function updateShutter(){
@@ -2521,8 +2641,8 @@
     $('liveShutter').disabled = !canShoot;
     if(!live.connected || live.running) return;
     setLiveStatus(live.partnerReady
-      ? 'Both of you are here ♡ Either one can press the heart.'
-      : 'Waiting for your love to come back to the camera…');
+      ? 'Both here ♡ either one can press the heart'
+      : 'Waiting for your love at the camera…');   // short: one line, so the heart stays on screen
   }
 
   /* ---- camera + mic ---- */
@@ -2702,7 +2822,8 @@
   function bindConn(conn){
     live.conn = conn;
     conn.on('open', function(){
-      sendLive({type:'hello', facing:state.facingMode});
+      sendLive({type:'hello', facing:state.facingMode, duo:true});   // duo: this page can do "Together"
+      if(live.role === 'host') sendLive({type:'mode', mode:live.mode});   // the room maker's style is the starting point
       sendLive({type:'ping', t:Date.now()});
       sendLive({type:'ready', ready: state.currentStep === 'live'});
       checkConnected();
@@ -2753,7 +2874,7 @@
     clearTimeout(live.connectTimer);
     var conn = live.conn, call = live.call;
     live.conn = null; live.call = null; live.remoteStream = null;
-    live.connected = false; live.partnerReady = false;
+    live.connected = false; live.partnerReady = false; live.partnerDuo = false;
     endTogether();   // designing together needs both of you (your design stays as it is)
     $('liveRemote').srcObject = null;
     $('liveUnmute').hidden = true;
@@ -2769,12 +2890,13 @@
   }
   function destroyLive(){
     var peer = live.peer;
+    live.autoTemplate = false;   // the room is over: the frame is yours again (solo photos keep it)
     dropPartner();
     live.peer = null; live.role = null; live.code = '';
     if(peer && !peer.destroyed){ try{ peer.destroy(); }catch(e){} }
     if(live.localStream){ live.localStream.getTracks().forEach(function(t){ t.stop(); }); live.localStream = null; }
     $('liveLocal').srcObject = null;
-    liveOverlay.stop();
+    liveOverlay.stop(); duoOverlay.stop();
     if(/room=/.test(location.hash)) history.replaceState(history.state, '', siteUrl());
     updateLivePanels();
   }
@@ -2789,6 +2911,16 @@
       case 'hello':
         live.remoteFacing = msg.facing === 'environment' ? 'environment' : 'user';
         $('liveRemote').classList.toggle('mirror', live.remoteFacing === 'user');
+        live.partnerDuo = msg.duo === true;   // an older page can't do "Together": then it's Separate for both
+        syncLiveModeUI();
+        if(state.currentStep === 'live') startLiveOverlay();
+        break;
+      case 'mode':   // your love switched Together / Separate
+        if(!live.running && (msg.mode === 'duo' || msg.mode === 'separate') && msg.mode !== live.mode){
+          live.mode = msg.mode;
+          syncLiveModeUI();
+          if(state.currentStep === 'live') startLiveOverlay();
+        }
         break;
       case 'facing':
         live.remoteFacing = msg.facing === 'environment' ? 'environment' : 'user';
@@ -2806,7 +2938,14 @@
         break;
       case 'start':
         if(state.currentStep === 'live' && live.connected && !live.running){
-          runLiveSession(msg.rounds === 1 ? 1 : 2);
+          // whoever pressed the heart decides the style, the number of shots and the poses
+          var sid = typeof msg.sid === 'string' ? msg.sid.slice(0, 16) : null;   // (older pages send none)
+          if(msg.mode === 'duo' && live.partnerDuo){
+            var n = clamp(Math.round(+msg.rounds) || 1, 1, MAX_SHOTS);
+            runLiveSession(n, 'duo', cleanPoses(msg.poses, n), sid);
+          } else {
+            runLiveSession(msg.rounds === 1 ? 1 : 2, 'separate', null, sid);
+          }
         }
         break;
       case 'photo': receivePhoto(msg); break;
@@ -2859,17 +2998,31 @@
     startLiveShot();
   }
   function startLiveShot(){
-    var rounds = live.rounds;
-    sendLive({type:'start', rounds:rounds});
+    var mode = liveMode(), rounds = live.rounds;
+    var poses = mode === 'duo' ? planPoses(rounds) : null;
+    var sid = Math.random().toString(36).slice(2, 10);   // this session's name, carried by its photos
+    sendLive({type:'start', rounds:rounds, mode:mode, poses:poses, sid:sid});
     live.running = true; updateShutter();
-    setTimeout(function(){ runLiveSession(rounds); }, Math.round(live.rtt/2));
+    setTimeout(function(){ runLiveSession(rounds, mode, poses, sid); }, Math.round(live.rtt/2));
   }
-  function runLiveSession(rounds){
+  // mode 'duo' (Together: one joined photo per shot) or 'separate' (your photo + theirs per shot)
+  // sid: the session's name — a photo that arrives very late from an earlier session is ignored
+  function runLiveSession(rounds, mode, poses, sid){
+    var duo = mode === 'duo';
     var id = ++live.runId;
-    live.running = true; live.pending = {}; live.early = {};
+    live.running = true; live.pending = {}; live.early = {}; live.duoHalves = {};
+    live.sid = sid || null;
+    // your love started it: close anything covering the camera, so you see the countdown
+    if(!$('poseSheet').hidden) closePoseSheet();
+    if(!$('duoHelp').hidden) closeDuoHelp();
+    if(!$('confirmModal').hidden) closeConfirm(null);
     state.shots = [];
     live.roundIdx = 0;
-    if(live.rounds !== rounds){ live.rounds = rounds; startLiveOverlay(); }   // your love picked a different count
+    // your love may have picked another style or count: follow theirs
+    live.mode = mode; live.rounds = rounds; live.roundsBy[mode] = rounds;
+    syncLiveModeUI();      // (also picks a strip that suits this style, unless you chose a frame)
+    startLiveOverlay();
+    $('liveTiles').classList.add('running');
     updateShutter();
     var r = 0;
     function still(){ return id === live.runId && state.currentStep === 'live' && live.connected; }
@@ -2878,40 +3031,61 @@
       if(r >= rounds) return finish();
       live.roundIdx = r;   // the decorations on your tile move to this photo's spot
       setLiveStatus('Photo ' + (r+1) + ' of ' + rounds + ' — smile ♡');
-      return countdownFrom(3, 'liveCountdown').then(function(){
+      var pose = duo && poses ? poses[r] : null;
+      showPose(pose);
+      // a pose idea gets a moment to be read before the countdown starts (same on both phones)
+      return wait(pose ? 1800 : 0).then(function(){
+        if(!still()) return;
+        return countdownFrom(3, 'liveCountdown');
+      }).then(function(){
         if(!still()) return;
         playShutter();
         triggerFlash('liveFlash');
-        var mine = captureVideo($('liveLocal'), state.facingMode === 'user');
-        mine.dataset.from = 'me';
-        // their frame from the video call, right now — swapped for their sharp photo when it arrives
-        var theirs = captureVideo($('liveRemote'), live.remoteFacing === 'user');
-        theirs.dataset.from = 'you'; theirs.dataset.round = String(r);
-        state.shots.push(mine, theirs);
-        live.pending[r] = true;
-        if(live.early[r]){ replaceTheirs(r, live.early[r]); delete live.early[r]; }
-        sendPhoto(mine, r);
+        if(duo){
+          // Together: your tall half + theirs from the video call (swapped for their sharp half later)
+          var myHalf = captureHalf($('liveLocal'), state.facingMode === 'user');
+          var theirHalf = captureHalf($('liveRemote'), live.remoteFacing === 'user');
+          live.duoHalves[r] = {mine:myHalf, theirs:theirHalf};
+          state.shots.push(composeDuo(myHalf, theirHalf, r));
+          live.pending[r] = true;
+          if(live.early[r]){ replaceTheirs(r, live.early[r]); delete live.early[r]; }
+          sendPhoto(myHalf, r, true);
+        } else {
+          var mine = captureVideo($('liveLocal'), state.facingMode === 'user');
+          mine.dataset.from = 'me';
+          // their frame from the video call, right now — swapped for their sharp photo when it arrives
+          var theirs = captureVideo($('liveRemote'), live.remoteFacing === 'user');
+          theirs.dataset.from = 'you'; theirs.dataset.round = String(r);
+          state.shots.push(mine, theirs);
+          live.pending[r] = true;
+          if(live.early[r]){ replaceTheirs(r, live.early[r]); delete live.early[r]; }
+          sendPhoto(mine, r, false);
+        }
+        showPose(null);
         r++;
         return wait(1200).then(round);
       });
     }
     function finish(){
       setLiveStatus('That was cute ♡ Swapping photos…');
+      endShotUI();
       var waited = 0;
       (function check(){
         if(id !== live.runId) return;
         if(Object.keys(live.pending).length && waited < 5000){ waited += 250; setTimeout(check, 250); return; }
         live.running = false;
         state.shotCount = state.shots.length;
+        syncLiveModeUI();
         if(state.currentStep === 'live') goToStep('customize');
       })();
     }
     round();
   }
-  function sendPhoto(canvas, r){
+  function sendPhoto(canvas, r, duo){
+    var sid = live.sid;
     canvas.toBlob(function(blob){
       if(!blob) return;
-      blob.arrayBuffer().then(function(buf){ sendLive({type:'photo', round:r, buf:buf}); });
+      blob.arrayBuffer().then(function(buf){ sendLive({type:'photo', round:r, buf:buf, duo:duo, sid:sid}); });
     }, 'image/jpeg', 0.9);
   }
   // PeerJS hands binary data over as an ArrayBuffer — or as a Uint8Array when a big message
@@ -2924,15 +3098,27 @@
   function receivePhoto(msg){
     var bytes = binaryOf(msg.buf);
     if(!bytes || bytes.byteLength > 4*1024*1024 || typeof msg.round !== 'number') return;
-    fileToShot(new Blob([bytes], {type:'image/jpeg'})).then(function(c){
-      c.dataset.from = 'you';
+    if(msg.sid && live.sid && msg.sid !== live.sid) return;   // a late photo from an earlier session
+    var duo = msg.duo === true;   // Together: their tall half, not a square photo
+    (duo ? halfFromBlob : fileToShot)(new Blob([bytes], {type:'image/jpeg'})).then(function(c){
+      if(duo) c.dataset.half = '1'; else c.dataset.from = 'you';
       if(!replaceTheirs(msg.round, c)) live.early[msg.round] = c;   // arrived before our own CLICK
     }).catch(function(){ /* keep the video-call frame */ });
   }
   function replaceTheirs(r, canvas){
     for(var i=0;i<state.shots.length;i++){
       var s = state.shots[i];
-      if(s.dataset.from === 'you' && s.dataset.round === String(r)){
+      // Together: join your half with their sharp half again
+      if(s.dataset.from === 'duo' && s.dataset.round === String(r) && canvas.dataset.half === '1' && live.duoHalves[r]){
+        live.duoHalves[r].theirs = canvas;
+        state.shots[i] = composeDuo(live.duoHalves[r].mine, canvas, r);
+        delete live.pending[r];
+        saveSessionSoon();
+        if(state.currentStep === 'customize') renderPreview();
+        if(state.currentStep === 'result') renderResult();
+        return true;
+      }
+      if(s.dataset.from === 'you' && s.dataset.round === String(r) && canvas.dataset.half !== '1'){
         canvas.dataset.round = String(r);
         state.shots[i] = canvas;
         delete live.pending[r];
@@ -2952,7 +3138,8 @@
     if(code && session.pending && !session.offer) session.pending = false;
     $('app').setAttribute('data-view','app');
     // a 2x2 grid puts "me" and "you" side by side on each row
-    if(!state.shots.length){ state.templateId = 'grid'; state.frameTab = 'plain'; state.colorId = null; syncFrameSelection(); }
+    // no photos yet: we pick a frame that suits the photo style (see applyAutoTemplate)
+    if(!state.shots.length){ live.autoTemplate = true; applyAutoTemplate(); }
     goToStep('live');
     if(!code && pendingRoom && !live.peer) $('liveCodeInput').value = pendingRoom;   // they tapped "maybe later" on the invite
     if(code && !live.peer){ $('liveCodeInput').value = code; startLive('guest', code); }
@@ -2971,7 +3158,8 @@
     live.running = false;
     setLocalVideoEnabled(false);     // stop sending your picture while you customize (voice stays on)
     sendLive({type:'ready', ready:false});
-    liveOverlay.stop();
+    liveOverlay.stop(); duoOverlay.stop();
+    endShotUI();
     updateShutter();
   }
 
@@ -3027,21 +3215,257 @@
       return reopenLiveCamera(before);   // bring the old camera back
     }).catch(function(){});
   });
-  (function buildRounds(){
-    var row = $('liveRounds');
-    [{r:1, label:'2 photos'}, {r:2, label:'4 photos'}].forEach(function(o){
+  /* ================= TOGETHER (both of you in one photo) =================
+     "Together" puts the two of you side by side in ONE photo. Each phone takes a tall half from
+     the middle of its own camera and sends that sharp half to the other phone; both phones then
+     join the halves the same way — the one who made the room always on the LEFT, the one who
+     joined on the RIGHT — so the photo is identical on both phones (and leaning in / half a heart
+     each works). A joined photo is a normal square, so every frame, sticker and text works as
+     usual. "Separate" is the earlier way: your photo + theirs for every shot.
+     An older page on the other phone can't do Together: then both simply use Separate. */
+  var DUO_HALF_W = 320, DUO_HALF_H = 640;   // each half; joined = 640 x 640, one photo slot
+  function liveMode(){ return live.partnerDuo && live.mode === 'duo' ? 'duo' : 'separate'; }
+  function duoMySide(){ return live.role === 'host' ? 'left' : 'right'; }
+  // the middle of a video as a tall half (1 wide : 2 high); front cameras mirrored like a selfie
+  function captureHalf(videoEl, mirror){
+    var vw = videoEl.videoWidth || 640, vh = videoEl.videoHeight || 1280;
+    var sw = Math.min(vw, vh / 2), sh = sw * 2;
+    var c = document.createElement('canvas');
+    c.width = DUO_HALF_W; c.height = DUO_HALF_H;
+    var cx = c.getContext('2d');
+    if(mirror){ cx.translate(DUO_HALF_W, 0); cx.scale(-1, 1); }
+    cx.drawImage(videoEl, (vw - sw)/2, (vh - sh)/2, sw, sh, 0, 0, DUO_HALF_W, DUO_HALF_H);
+    return c;
+  }
+  // their half arrived as a picture file: redraw it at half size (never trust its dimensions)
+  function halfFromBlob(blob){
+    return loadImage(blob).then(function(img){
+      var c = document.createElement('canvas');
+      c.width = DUO_HALF_W; c.height = DUO_HALF_H;
+      c.getContext('2d').drawImage(img, 0, 0, DUO_HALF_W, DUO_HALF_H);
+      return c;
+    });
+  }
+  // one photo: the room maker's half on the left, the joiner's on the right
+  function composeDuo(mine, theirs, round){
+    var mineLeft = duoMySide() === 'left';
+    var c = document.createElement('canvas');
+    c.width = DUO_HALF_W * 2; c.height = DUO_HALF_H;
+    var cx = c.getContext('2d');
+    cx.drawImage(mineLeft ? mine : theirs, 0, 0, DUO_HALF_W, DUO_HALF_H);
+    cx.drawImage(mineLeft ? theirs : mine, DUO_HALF_W, 0, DUO_HALF_W, DUO_HALF_H);
+    c.dataset.from = 'duo'; c.dataset.side = duoMySide(); c.dataset.round = String(round);
+    return c;
+  }
+  function isDuoShot(c){ return !!(c && c.dataset && c.dataset.from === 'duo'); }
+
+  /* ---- Together / Separate switch, number of shots ---- */
+  function syncLiveModeUI(){
+    var mode = liveMode(), duo = mode === 'duo', left = duoMySide() === 'left';
+    Array.prototype.forEach.call($('liveMode').children, function(b){
+      var on = b.dataset.mode === mode;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-checked', on ? 'true' : 'false');
+      b.disabled = live.running || (b.dataset.mode === 'duo' && !live.partnerDuo);
+    });
+    $('duoHelpBtn').hidden = !live.partnerDuo;
+    $('liveModeNote').hidden = live.partnerDuo || !live.connected;
+    $('liveModeNote').textContent = "Your love's page is older — they can reload it to use Together ♡";
+    var tiles = $('liveTiles');
+    tiles.classList.toggle('duo', duo);
+    $('step-live').classList.toggle('duo-stage', duo && live.connected);
+    // Together: the room maker sits on the left on both phones
+    tiles.querySelector('.tile-local').classList.toggle('side-left', duo && left);
+    tiles.querySelector('.tile-local').classList.toggle('side-right', duo && !left);
+    tiles.querySelector('.tile-remote').classList.toggle('side-left', duo && !left);
+    tiles.querySelector('.tile-remote').classList.toggle('side-right', duo && left);
+    $('duoSide').textContent = (left ? "You're on the left ♡" : "You're on the right ♡") + ' same photo on both phones';
+    live.rounds = live.roundsBy[mode];
+    buildRoundChips();
+    applyAutoTemplate();   // e.g. your love's phone turned out to support Together
+    if(duo && live.connected && state.currentStep === 'live') showDuoHelpOnce();
+  }
+  function buildRoundChips(){
+    var row = $('liveRounds'), mode = liveMode(), duo = mode === 'duo';
+    row.innerHTML = '';
+    row.classList.toggle('duo-row', duo);
+    var opts = duo ? [1, 2, 3, 4] : [1, 2];
+    opts.forEach(function(n){
       var b = document.createElement('button');
-      b.type = 'button'; b.className = 'chip' + (o.r === live.rounds ? ' active' : '');
-      b.textContent = o.label;
+      b.type = 'button';
+      b.className = 'chip' + (duo ? ' num' : '') + (n === live.rounds ? ' active' : '');
+      b.textContent = duo ? String(n) : (n * 2) + ' photos';
+      b.setAttribute('aria-label', duo ? n + (n === 1 ? ' shot' : ' shots') : (n * 2) + ' photos');
+      b.disabled = live.running;
       b.addEventListener('click', function(){
-        live.rounds = o.r;
-        Array.prototype.forEach.call(row.children, function(c){ c.classList.remove('active'); });
-        b.classList.add('active');
-        if(state.currentStep === 'live' && !live.running) startLiveOverlay();
+        if(live.running) return;
+        live.rounds = n; live.roundsBy[mode] = n;
+        buildRoundChips();
+        if(state.currentStep === 'live') startLiveOverlay();
       });
       row.appendChild(b);
     });
-  })();
+    if(duo){
+      var lab = document.createElement('span');
+      lab.className = 'chip-label'; lab.textContent = 'shots';   // reads "1 2 3 4 shots"
+      row.appendChild(lab);
+      var p = document.createElement('button');
+      p.type = 'button'; p.className = 'chip pose-chip';
+      p.textContent = ({surprise:'Poses ♡', pick:'Poses: ' + live.posePick.length, off:'Poses: off'})[live.poseMode];
+      p.setAttribute('aria-label', 'Pose ideas: ' + ({surprise:'surprise me', pick:live.posePick.length + ' picked', off:'off'})[live.poseMode]);
+      p.disabled = live.running;
+      p.addEventListener('click', openPoseSheet);
+      row.appendChild(p);
+    }
+  }
+  Array.prototype.forEach.call($('liveMode').children, function(b){
+    b.addEventListener('click', function(){
+      if(live.running || b.disabled) return;
+      var m = b.dataset.mode;
+      if(m === live.mode) return;
+      live.mode = m;
+      syncLiveModeUI();
+      if(state.currentStep === 'live') startLiveOverlay();
+      sendLive({type:'mode', mode:m});   // both phones always show the same style
+    });
+  });
+  // entering live without photos picks the frame for you: one per row for Together, 2x2 for Separate.
+  // Once you choose a frame yourself, it stays.
+  function applyAutoTemplate(){
+    if(!live.autoTemplate || state.shots.length) return;
+    state.templateId = liveMode() === 'duo' ? 'classic' : 'grid';
+    state.frameTab = 'plain'; state.colorId = null;
+    syncFrameSelection();
+  }
+  syncLiveModeUI();
+
+  /* ---- pose ideas ----
+     Every pose names the middle line, never "left/right": the front camera shows you like a mirror,
+     so "toward the middle" is the one direction nobody mixes up. Poses with two roles tell each
+     phone its own part (left = the room maker). */
+  var POSES = [
+    {id:'heart', icon:'half-heart', name:'Half heart', tip:'Each make half a heart with your hands, right next to the middle line'},
+    {id:'lean', icon:'😊', name:'Lean in', tip:'Both lean toward the middle line, cheek to cheek'},
+    {id:'pinky', icon:'🤝', name:'Pinky promise', tip:'Hold out your pinky to the middle line'},
+    {id:'five', icon:'✋', name:'High five', tip:'Press your palm flat on the middle line'},
+    {id:'kiss', icon:'😘', name:'Blow a kiss', tip:'One blows a kiss across the middle line, the other catches it',
+      left:'You blow a kiss across the middle line ♡', right:'Catch the kiss by the middle line ♡'},
+    {id:'peace', icon:'✌️', name:'Peace', tip:'Both do a peace sign'},
+    {id:'point', icon:'👉', name:'Point & giggle', tip:'Point at each other across the middle line'},
+    {id:'snack', icon:'🍩', name:'Share a snack', tip:'Hold a cup or snack at the middle line, as if sharing'},
+    {id:'sleepy', icon:'😴', name:'Sleepy heads', tip:'Tilt your heads toward the middle line, eyes closed'},
+    {id:'wow', icon:'😲', name:'Surprised!', tip:'Your best surprised face'},
+    {id:'mirror', icon:'⇄', name:'Mirror me', tip:'Copy each other: same pose, same face'},
+    {id:'dreamy', icon:'💭', name:'Dreamy', tip:'Rest your chin on your hands and look dreamy'}
+  ];
+  function poseById(id){ return POSES.filter(function(p){ return p.id === id; })[0] || null; }
+  // poses that came from the other phone: known ids only
+  function cleanPoses(list, n){
+    if(!Array.isArray(list)) return null;
+    return list.slice(0, n).map(function(id){ return typeof id === 'string' && poseById(id) ? id : null; });
+  }
+  function shuffledPoseIds(){
+    var ids = POSES.map(function(p){ return p.id; });
+    for(var i = ids.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)), t = ids[i]; ids[i] = ids[j]; ids[j] = t; }
+    return ids;
+  }
+  // the poses for this session, one per shot (the phone that presses the heart decides for both)
+  function planPoses(n){
+    if(live.poseMode === 'off') return null;
+    var plan = live.poseMode === 'pick' ? live.posePick.slice(0, n) : [];
+    shuffledPoseIds().forEach(function(id){ if(plan.length < n && plan.indexOf(id) === -1) plan.push(id); });
+    return plan;
+  }
+  function showPose(id){
+    var p = id ? poseById(id) : null, el = $('duoPose');
+    if(!p){ el.hidden = true; return; }
+    el.innerHTML = '';
+    var b = document.createElement('b'); b.textContent = p.name + ' ♡';
+    var s = document.createElement('span'); s.textContent = p[duoMySide()] || p.tip;
+    el.appendChild(b); el.appendChild(s);
+    el.hidden = false;
+  }
+  function endShotUI(){
+    $('liveTiles').classList.remove('running');
+    showPose(null);
+  }
+  function poseIcon(p){
+    var box = document.createElement('div');
+    box.className = 'pose-ico';
+    if(p.icon === 'half-heart'){
+      box.innerHTML = '<svg viewBox="0 0 24 22" width="26" height="24" aria-hidden="true"><path d="M12 21C12 21 2 14 2 7.5C2 4.4 4.4 2 7.3 2C9.3 2 11 3.1 12 4.6Z" fill="#E14F7A"/><path d="M12 4.6C13 3.1 14.7 2 16.7 2C19.6 2 22 4.4 22 7.5C22 14 12 21 12 21Z" fill="#FF8FB3"/></svg>';
+    } else {
+      var s = document.createElement('span'); s.textContent = p.icon; s.setAttribute('aria-hidden', 'true');
+      box.appendChild(s);
+    }
+    return box;
+  }
+  function renderPoseSheet(){
+    Array.prototype.forEach.call($('poseModes').children, function(b){
+      var on = b.dataset.pmode === live.poseMode;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+    $('poseHint').textContent = {
+      surprise: 'A different pose for every photo, picked for you. The same pose shows on both phones.',
+      pick: 'Tap poses in the order you want them — the number is the photo. Up to 4.',
+      off: 'No pose ideas — just be yourselves ♡ Tap a pose to pick your own.'
+    }[live.poseMode];
+    var grid = $('poseGrid');
+    grid.innerHTML = '';
+    POSES.forEach(function(p){
+      var b = document.createElement('button');
+      b.type = 'button';
+      var at = live.poseMode === 'pick' ? live.posePick.indexOf(p.id) : -1;
+      b.className = 'pose-item' + (at !== -1 ? ' selected' : '');
+      b.setAttribute('aria-pressed', at !== -1 ? 'true' : 'false');
+      b.appendChild(poseIcon(p));
+      var name = document.createElement('b'); name.textContent = p.name; b.appendChild(name);
+      var tip = document.createElement('small'); tip.textContent = p.tip; b.appendChild(tip);
+      if(at !== -1){ var num = document.createElement('span'); num.className = 'pose-num'; num.textContent = String(at + 1); b.appendChild(num); }
+      b.addEventListener('click', function(){
+        if(live.poseMode !== 'pick'){ live.poseMode = 'pick'; live.posePick = []; }   // tapping a pose = choosing your own
+        var i = live.posePick.indexOf(p.id);
+        if(i !== -1) live.posePick.splice(i, 1);
+        else if(live.posePick.length < MAX_SHOTS) live.posePick.push(p.id);
+        else showToast('Up to 4 poses — tap one to remove it ♡');
+        renderPoseSheet();
+      });
+      grid.appendChild(b);
+    });
+  }
+  function openPoseSheet(){
+    if(live.running) return;
+    renderPoseSheet();
+    $('poseSheet').hidden = false;
+    $('poseGrid').scrollTop = 0;
+  }
+  function closePoseSheet(){
+    $('poseSheet').hidden = true;
+    if(live.poseMode === 'pick' && !live.posePick.length) live.poseMode = 'surprise';   // picked nothing
+    buildRoundChips();
+  }
+  Array.prototype.forEach.call($('poseModes').children, function(b){
+    b.addEventListener('click', function(){ live.poseMode = b.dataset.pmode; renderPoseSheet(); });
+  });
+  $('poseDone').addEventListener('click', closePoseSheet);
+  $('poseSheet').addEventListener('click', function(e){ if(e.target === this) closePoseSheet(); });
+
+  /* ---- "how Together works": once by itself, then with the ? button ---- */
+  function openDuoHelp(){ $('duoHelp').hidden = false; }
+  function closeDuoHelp(){
+    $('duoHelp').hidden = true;
+    try{ localStorage.setItem('oob-duo-help', '1'); }catch(e){}
+  }
+  function showDuoHelpOnce(){
+    var seen = false;
+    try{ seen = localStorage.getItem('oob-duo-help') === '1'; }catch(e){}
+    if(!seen && $('duoHelp').hidden && !live.running) openDuoHelp();
+  }
+  $('duoHelpBtn').addEventListener('click', openDuoHelp);
+  $('duoHelpOk').addEventListener('click', closeDuoHelp);
+  $('duoHelpPoses').addEventListener('click', function(){ closeDuoHelp(); openPoseSheet(); });
+  $('duoHelp').addEventListener('click', function(e){ if(e.target === this) closeDuoHelp(); });
   // opened from an invite link? greet them with a "join" button instead of the usual welcome
   function readRoomLink(){
     var m = /room=([A-Za-z0-9]{6})/.exec(location.hash);
@@ -4918,7 +5342,8 @@
     return Promise.all(shots.map(shotBlob)).then(function(blobs){
       if(gen !== session.gen || blobs.some(function(b){ return !b; })) return;
       var rec = {v:1, saved:Date.now(), shotCount:count, design:design, shots:shots.map(function(c, i){
-        return {blob:blobs[i], from:c.dataset.from === 'you' ? 'you' : 'me', round:c.dataset.round || ''};
+        var from = c.dataset.from === 'you' || c.dataset.from === 'duo' ? c.dataset.from : 'me';
+        return {blob:blobs[i], from:from, round:c.dataset.round || '', side:c.dataset.side || ''};
       })};
       session.savedThisPage = true;
       return sessionRun('readwrite', function(store){ return store.put(rec, 'session'); });
@@ -4947,8 +5372,9 @@
         var c = document.createElement('canvas');
         c.width = img.width; c.height = img.height;
         c.getContext('2d').drawImage(img, 0, 0);
-        c.dataset.from = s.from === 'you' ? 'you' : 'me';
+        c.dataset.from = s.from === 'you' || s.from === 'duo' ? s.from : 'me';
         if(s.round) c.dataset.round = String(s.round);
+        if(s.side === 'left' || s.side === 'right') c.dataset.side = s.side;   // Together: which half is you
         return c;
       });
     }));
@@ -5036,7 +5462,10 @@
      land on the photo being taken — so you can pose with them and see what they cover. */
   function makeOverlay(canvasEl){
     var o = {raf:0, base:null};
-    o.stop = function(){ cancelAnimationFrame(o.raf); o.raf = 0; };
+    o.stop = function(){
+      cancelAnimationFrame(o.raf); o.raf = 0;
+      canvasEl.getContext('2d').clearRect(0, 0, canvasEl.width, canvasEl.height);   // don't leave a frozen frame behind
+    };
     o.start = function(getIndex, n){
       o.stop();
       canvasEl.getContext('2d').clearRect(0, 0, canvasEl.width, canvasEl.height);
@@ -5066,13 +5495,21 @@
   }
   var camOverlay = makeOverlay($('frameOverlay'));
   var liveOverlay = makeOverlay($('liveOverlay'));
+  var duoOverlay = makeOverlay($('liveDuoOverlay'));   // Together: over the whole shared square
   function startCamOverlay(){
     camOverlay.start(function(){ return state.shots.length; }, state.shotCount);
     drawMiniStrip();
   }
   function stopCamOverlay(){ camOverlay.stop(); }
   function startLiveOverlay(){
-    liveOverlay.start(function(){ return 2 * (live.roundIdx || 0); }, live.rounds * 2);   // your photos are 1st, 3rd…
+    if(liveMode() === 'duo'){
+      // Together: every shot is one photo, and the shared square IS that photo
+      liveOverlay.stop();
+      duoOverlay.start(function(){ return live.roundIdx || 0; }, live.rounds);
+    } else {
+      duoOverlay.stop();
+      liveOverlay.start(function(){ return 2 * (live.roundIdx || 0); }, live.rounds * 2);   // your photos are 1st, 3rd…
+    }
   }
   // the little strip in the camera's corner: your frame, filling up as photos are taken
   function drawMiniStrip(){
@@ -5171,20 +5608,34 @@
     ctx.restore();
   }
   // "me ♡ / you ♡" pills; each frame can move them to a corner its characters leave free (labelAt)
+  // Together photos get two pills side by side at the MIDDLE LINE ("me ♡ | you ♡"): the frames' characters
+  // sit in the corners, the middle stays free (checked with a label-overlap audit on every frame;
+  // frames with something in the lower middle, like Teddy's heart, put them at the top: duoLabelRow)
   function drawLabels(ctx, b){
-    if(!shotsAreMixed()) return;
+    var mixed = shotsAreMixed(), duo = state.shots.some(isDuoShot);
+    if(!mixed && !duo) return;
     var at = b.t.labelAt || 'bl';
-    b.rects.forEach(function(r, i){
-      var text = shotLabel(i);
+    function pill(r, text, side, row, inner){
       ctx.save();
       ctx.translate(r.cx, r.cy);
       ctx.rotate(r.rot || 0);
       ctx.font = "600 20px Poppins, sans-serif";
       var pillW = ctx.measureText(text).width + 24;
-      var x = at.charAt(1) === 'r' ? r.w/2 - 16 - pillW : -r.w/2 + 16;
-      var y = at.charAt(0) === 't' ? -r.h/2 + 46 : r.h/2 - 16;
+      var x = inner ? (side === 'r' ? 10 : -10 - pillW)
+                    : (side === 'r' ? r.w/2 - 16 - pillW : -r.w/2 + 16);
+      var y = row === 't' ? -r.h/2 + 46 : r.h/2 - 16;
       drawSideLabel(ctx, x, y, text, b.accent);
       ctx.restore();
+    }
+    b.rects.forEach(function(r, i){
+      var c = state.shots[i];
+      if(isDuoShot(c)){
+        var meLeft = c.dataset.side !== 'right', row = b.t.duoLabelRow || at.charAt(0);
+        pill(r, meLeft ? 'me ♡' : 'you ♡', 'l', row, true);
+        pill(r, meLeft ? 'you ♡' : 'me ♡', 'r', row, true);
+      } else if(mixed && c){
+        pill(r, shotLabel(i), at.charAt(1), at.charAt(0), false);
+      }
     });
   }
 
@@ -5370,6 +5821,11 @@
     var shotCanvas = state.shots[index];
     if(shotCanvas){
       drawFiltered(ctx, shotCanvas, x, y, w, h, filter);
+      // a Together photo: a thin white line where your two halves meet (drawn after the filter, so it stays white)
+      if(isDuoShot(shotCanvas)){
+        ctx.fillStyle = 'rgba(255,255,255,0.95)';
+        ctx.fillRect(x + w/2 - 1.5, y, 3, h);
+      }
     } else {
       var g = ctx.createLinearGradient(x,y,x+w,y+h);
       g.addColorStop(0,'#FFC2D6'); g.addColorStop(1,'#FF8FB3');
