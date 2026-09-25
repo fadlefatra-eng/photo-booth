@@ -1013,7 +1013,7 @@
       <div class="privacy-note">🔒 Your photos stay on your device. We don't upload or store your photos.</div>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.9.5</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.9.6</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -2884,20 +2884,61 @@
                and a "media call" for the live video + voice.
 
      The free PeerJS server only introduces the two phones (signaling); the video
-     then flows directly phone-to-phone and is never stored anywhere. */
+     then flows directly phone-to-phone and is never stored anywhere.
+
+     Far apart on different networks (mobile data especially: many phones share one internet
+     address there), a direct line often can't be opened; then only a TURN "relay" server that
+     passes the (still encrypted) video along can connect them. PeerJS's own free relay
+     (eu-0 / us-0.turn.peerjs.com) no longer exists (checked 2026-09-25: its addresses don't
+     resolve), so we use Cloudflare's TURN relay: our tiny Cloudflare Worker (TURN_URL) keeps
+     the real key secret and hands out relay logins that expire after a few hours — no secret
+     ever sits in this public page. */
   var ICE_SERVERS = [
     {urls:'stun:stun.l.google.com:19302'},
     {urls:'stun:stun1.l.google.com:19302'}
-    // Stage 2: TURN relay servers go here, for phones on mobile data that can't connect directly
   ];
+  var TURN_URL = '';   // the Worker's address (not a secret). Empty = no relay: direct connections only
+  var iceCache = null;   // {servers, until}: one set of relay logins is reused for a few hours
+  // only well-formed relay entries get through (never trust what comes over the network);
+  // port 53 is left out because browsers block it (Cloudflare's advice) — it would only slow connecting
+  function cleanIce(list){
+    return (Array.isArray(list) ? list : []).map(function(s){
+      var urls = [].concat(s && s.urls || []).filter(function(u){
+        return typeof u === 'string' && u.length < 200 && /^(stun|turns?):/.test(u) && !/:53(\?|$)/.test(u);
+      });
+      if(!urls.length) return null;
+      var o = {urls:urls};
+      if(typeof s.username === 'string') o.username = s.username.slice(0, 300);
+      if(typeof s.credential === 'string') o.credential = s.credential.slice(0, 300);
+      return o;
+    }).filter(Boolean);
+  }
+  // STUN + (if the Worker answers within 5 s) the relay. Without an answer we still try directly.
+  function getIceServers(){
+    if(!TURN_URL || !window.fetch) return Promise.resolve(ICE_SERVERS);
+    if(iceCache && Date.now() < iceCache.until) return Promise.resolve(iceCache.servers);
+    var timer, gaveUp = new Promise(function(resolve){ timer = setTimeout(function(){ resolve(null); }, 5000); });
+    var ask = fetch(TURN_URL, {cache:'no-store'}).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
+    return Promise.race([ask, gaveUp]).then(function(data){
+      clearTimeout(timer);
+      var relay = cleanIce(data && data.iceServers);
+      if(!relay.length) return ICE_SERVERS;
+      var servers = ICE_SERVERS.concat(relay);
+      iceCache = {servers:servers, until:Date.now() + 5*60*60*1000};   // (the Worker's logins last 6 hours)
+      return servers;
+    });
+  }
   var PEERJS_URL = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js';
   var ROOM_PREFIX = 'our-little-booth-';
   var ROOM_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // no 0/O or 1/I look-alikes
-  var CONNECT_TIMEOUT = 25000;
+  var CONNECT_TIMEOUT = 30000;   // (a relayed connection can take a few seconds longer)
+  var SIGNAL_TIMEOUT = 20000;    // reaching the room server itself
   var live = {
     peer:null, conn:null, call:null, localStream:null, remoteStream:null,
     role:null, code:'', connected:false, partnerReady:false, remoteFacing:'user',
     rtt:200, rounds:4, running:false, runId:0, pending:{}, early:{}, connectTimer:0,
+    signalTimer:0, slowTimer:0, slow:false,   // "can't reach the room server" / "still connecting…"
+    ice:null,   // STUN (+ relay) servers for this room, from getIceServers()
     // Together ("duo") = both of you in one photo; Separate = two photos per shot (see TOGETHER below)
     mode:'duo', showStyles:false, roundsBy:{duo:4, separate:2}, partnerDuo:false, partnerVer:'', duoHalves:{},
     poseMode:'surprise', posePick:[], autoTemplate:false
@@ -2938,8 +2979,9 @@
     $('liveHostInfo').hidden = live.role !== 'host';
     if(mode === 'waiting'){
       $('liveWaitStatus').textContent = live.role === 'host'
-        ? 'Waiting for your love to join…'
-        : 'Joining room ' + live.code + '…';
+        ? (live.conn ? 'Your love is joining… ♡' : 'Waiting for your love to join…')
+        : (live.slow ? 'Still connecting… far apart or on mobile data this can take up to half a minute ♡'
+                     : 'Joining room ' + live.code + '…');
     }
     syncLiveDesign();
     syncLiveModeUI();
@@ -3057,7 +3099,9 @@
       return;
     }
     $('liveCreateBtn').disabled = true; $('liveJoinBtn').disabled = true;
-    Promise.all([loadPeerJs(), getLiveStream()]).then(function(){
+    // (the relay logins are fetched at the same time as the camera starts, so this adds no waiting)
+    Promise.all([loadPeerJs(), getLiveStream(), getIceServers()]).then(function(res){
+      live.ice = res[2];
       if(role === 'host') openHostPeer(makeRoomCode(), 0);
       else openGuestPeer(code);
     }).catch(function(err){
@@ -3069,10 +3113,20 @@
       $('liveCreateBtn').disabled = false; $('liveJoinBtn').disabled = false;
     });
   }
+  // reaching the room server can hang without any error on a weak or strict network: instead of
+  // "Joining…" forever, say so after SIGNAL_TIMEOUT so you can try again
+  function watchSignal(peer){
+    clearTimeout(live.signalTimer);
+    live.signalTimer = setTimeout(function(){
+      if(live.peer === peer && !peer.open && !peer.destroyed) failLive("Can't reach the room server. Check your internet and try again ♡");
+    }, SIGNAL_TIMEOUT);
+  }
   function openHostPeer(code, attempt){
-    var peer = new Peer(ROOM_PREFIX + code.toLowerCase(), {config:{iceServers:ICE_SERVERS}, debug:1});
+    var peer = new Peer(ROOM_PREFIX + code.toLowerCase(), {config:{iceServers:live.ice || ICE_SERVERS}, debug:1});
     live.peer = peer; live.role = 'host'; live.code = code;
+    watchSignal(peer);
     peer.on('open', function(){
+      clearTimeout(live.signalTimer);
       $('liveCode').textContent = code;
       updateLivePanels();
     });
@@ -3084,6 +3138,7 @@
       }
       bindConn(conn);
       startConnectTimer();
+      updateLivePanels();   // "Your love is joining…"
     });
     peer.on('call', function(call){
       if(live.call && live.call.open){ call.close(); return; }
@@ -3101,10 +3156,17 @@
     peer.on('disconnected', function(){ if(live.peer === peer && !peer.destroyed) peer.reconnect(); });
   }
   function openGuestPeer(code){
-    var peer = new Peer({config:{iceServers:ICE_SERVERS}, debug:1});
+    var peer = new Peer({config:{iceServers:live.ice || ICE_SERVERS}, debug:1});
     live.peer = peer; live.role = 'guest'; live.code = code;
+    watchSignal(peer);
+    // far apart / mobile data can take a while: after a few seconds, say it's still working
+    clearTimeout(live.slowTimer);
+    live.slowTimer = setTimeout(function(){
+      if(live.peer === peer && !live.connected){ live.slow = true; updateLivePanels(); }
+    }, 8000);
     updateLivePanels();
     peer.on('open', function(){
+      clearTimeout(live.signalTimer);
       var hostId = ROOM_PREFIX + code.toLowerCase();
       bindConn(peer.connect(hostId, {reliable:true}));
       bindCall(peer.call(hostId, live.localStream));
@@ -3164,6 +3226,7 @@
     if(live.connected || !live.conn || !live.conn.open || !live.remoteStream) return;
     live.connected = true;
     clearTimeout(live.connectTimer);
+    clearTimeout(live.slowTimer); live.slow = false;
     setLocalVideoEnabled(state.currentStep === 'live');
     setLiveError('');
     updateLivePanels();
@@ -3173,9 +3236,9 @@
     clearTimeout(live.connectTimer);
     live.connectTimer = setTimeout(function(){ if(!live.connected) networkFail(); }, CONNECT_TIMEOUT);
   }
-  // the phones found each other but couldn't open a direct line (typical on mobile data)
+  // the phones found each other but couldn't open a line — not even through the relay
   function networkFail(){
-    var msg = "We couldn't connect your phones. This often happens on mobile data — try again with both phones on WiFi ♡";
+    var msg = "We couldn't connect your phones. Check both internet connections and try again ♡ If it keeps failing, one of you can switch between WiFi and mobile data.";
     if(live.role === 'host' && live.peer){
       dropPartner();
       updateLivePanels();
@@ -3207,6 +3270,7 @@
     var peer = live.peer;
     live.autoTemplate = false;   // the room is over: the frame is yours again (solo photos keep it)
     dropPartner();
+    clearTimeout(live.signalTimer); clearTimeout(live.slowTimer); live.slow = false;
     live.peer = null; live.role = null; live.code = '';
     if(peer && !peer.destroyed){ try{ peer.destroy(); }catch(e){} }
     if(live.localStream){ live.localStream.getTracks().forEach(function(t){ t.stop(); }); live.localStream = null; }
