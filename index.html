@@ -491,6 +491,26 @@
     width:100%; border-radius:12px; border:1.5px solid var(--blush-100); padding:12px 14px; font-family:inherit;
     font-size:.82rem; resize:vertical; background:var(--blush-50); color:var(--plum-900); word-break:break-all;
   }
+  /* ✕ in the corner of every pop-up: closes it with the answer that changes nothing */
+  .code-card, .welcome-card{position:relative;}
+  .x-btn{
+    position:absolute; top:8px; right:8px; width:44px; height:44px; padding:0; border:none; border-radius:50%;
+    background:transparent; color:var(--rose-800); font-size:1.1rem; line-height:1;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .x-btn:hover{background:var(--blush-100);}
+  .code-card h3{padding-right:34px;}   /* long titles stay clear of the ✕ */
+  /* "a new version is here" — floats over the top bar, so it never pushes or covers the page's own buttons */
+  .update-bar{
+    position:fixed; z-index:45; top:calc(env(safe-area-inset-top, 0px) + 10px); left:10px; right:10px;
+    max-width:460px; margin:0 auto; display:flex; align-items:center; gap:8px; padding:5px 5px 5px 14px;
+    border-radius:26px; background:#FFF1F6; border:1.5px solid var(--pink-300); box-shadow:var(--shadow-soft);
+    color:var(--rose-800); font-size:.82rem; line-height:1.3;
+  }
+  .update-text{flex:1; min-width:0; font-weight:500;}
+  .update-go{flex:none; border:none; border-radius:999px; background:var(--rose-600); color:#fff; font-weight:600;
+    font-size:.74rem; letter-spacing:.04em; padding:0 14px; min-height:42px;}
+  .update-bar .x-btn{position:static; flex:none; width:42px; height:42px;}
   .code-actions{display:flex; gap:10px; margin-top:14px;}
   .code-actions .btn{flex:1; font-size:.8rem; padding:13px 12px;}
   .camera-permission .permission-actions{display:flex; flex-direction:column; gap:8px; width:100%; max-width:260px;}
@@ -584,6 +604,10 @@
   .live-rounds .chip.pose-chip{border-color:var(--pink-300); padding:10px 10px;}
   /* Together in a room: the mode switch and the shared square say it all — the title makes room */
   #step-live.duo-stage .camera-title{display:none;}
+  /* a note above the square ("your love's page is older…"): the square gives up that room, heart stays on screen */
+  #step-live.duo-stage.has-note .live-tiles.duo{
+    width:min(100%, max(230px, calc(100vh - 480px))); width:min(100%, max(230px, calc(100svh - 480px)));
+  }
   .duo-help-card ul{margin:6px 0 12px; padding-left:18px; font-size:.84rem; line-height:1.5; color:var(--plum-900);}
   .duo-help-card li{margin-bottom:4px;}
   .duo-help-card b{color:var(--rose-600);}
@@ -673,6 +697,7 @@
 
   <div class="code-modal" id="codeModal" role="dialog" aria-modal="true" aria-labelledby="codeModalTitle" hidden>
     <div class="code-card">
+      <button type="button" class="x-btn" id="codeX" aria-label="Close">✕</button>
       <h3 id="codeModalTitle">Paste their photo code ♡</h3>
       <p id="codeModalText">Paste the code your love sent you — their photos join your strip.</p>
       <textarea id="codeInput" rows="4" spellcheck="false" aria-label="Photo code"></textarea>
@@ -685,6 +710,7 @@
 
   <div class="code-modal" id="confirmModal" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmText" hidden>
     <div class="code-card">
+      <button type="button" class="x-btn" id="confirmX" aria-label="Close">✕</button>
       <h3 id="confirmTitle"></h3>
       <p id="confirmText"></p>
       <div class="code-actions">
@@ -697,6 +723,7 @@
   <!-- "Together" explained — opens by itself the first time, and with the ? button any time -->
   <div class="code-modal" id="duoHelp" role="dialog" aria-modal="true" aria-labelledby="duoHelpTitle" hidden>
     <div class="code-card duo-help-card">
+      <button type="button" class="x-btn" id="duoHelpX" aria-label="Close">✕</button>
       <h3 id="duoHelpTitle">Together ♡ how it works</h3>
       <ul>
         <li>One photo for both of you, side by side.</li>
@@ -714,6 +741,7 @@
   <!-- pose ideas for Together photos: surprise me / pick my own / no poses -->
   <div class="code-modal" id="poseSheet" role="dialog" aria-modal="true" aria-labelledby="poseTitle" hidden>
     <div class="code-card pose-card-wrap">
+      <button type="button" class="x-btn" id="poseX" aria-label="Close">✕</button>
       <h3 id="poseTitle">Pose ideas ♡</h3>
       <div class="pose-modes" id="poseModes" role="radiogroup" aria-label="How poses are chosen">
         <button type="button" role="radio" data-pmode="surprise">Surprise me</button>
@@ -729,6 +757,7 @@
   <!-- ← on the result page: where to next? -->
   <div class="code-modal" id="backModal" role="dialog" aria-modal="true" aria-labelledby="backTitle" hidden>
     <div class="code-card back-card">
+      <button type="button" class="x-btn" id="backX" aria-label="Stay here">✕</button>
       <h3 id="backTitle">Where to next? ♡</h3>
       <p>Your photos stay saved on this device for 24 hours. Taking new ones replaces them.</p>
       <button class="btn btn-primary btn-block" id="backEdit">✎ BACK TO EDITING</button>
@@ -742,6 +771,7 @@
   <!-- iPhone fallback when the share menu can't open: press and hold the picture to save it -->
   <div class="code-modal hold-modal" id="holdModal" role="dialog" aria-modal="true" aria-labelledby="holdTitle" hidden>
     <div class="code-card hold-card">
+      <button type="button" class="x-btn" id="holdX" aria-label="Close">✕</button>
       <h3 id="holdTitle">Save your photo ♡</h3>
       <p>Press and hold the picture, then choose to save it to your Photos.</p>
       <div class="hold-preview"><img id="holdImg" alt="Your photo strip"></div>
@@ -752,6 +782,7 @@
   <!-- a design your love sent from the live room: shown on your own photos, you choose -->
   <div class="code-modal design-modal" id="designModal" role="dialog" aria-modal="true" aria-labelledby="designTitle" hidden>
     <div class="code-card">
+      <button type="button" class="x-btn" id="designX" aria-label="Keep mine">✕</button>
       <h3 id="designTitle">Your love sent a design ♡</h3>
       <p id="designText">Here it is with your photos:</p>
       <div class="design-preview"><canvas id="designCanvas" width="10" height="10"></canvas></div>
@@ -808,6 +839,7 @@
 
   <div class="welcome-overlay" id="welcomeOverlay" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
     <div class="welcome-card">
+      <button type="button" class="x-btn" id="welcomeX" aria-label="Maybe later">✕</button>
       <span class="eyebrow-script">Hey love ♡</span>
       <h2 id="welcomeTitle">Ready to make a memory?</h2>
       <div class="inapp" id="welcomeInapp" hidden></div>
@@ -819,6 +851,7 @@
   <!-- opened again within 24 hours: offer the photos from last time (saved only on this device) -->
   <div class="welcome-overlay" id="resumeOverlay" role="dialog" aria-modal="true" aria-labelledby="resumeTitle">
     <div class="welcome-card resume-card">
+      <button type="button" class="x-btn" id="resumeX" aria-label="Decide later">✕</button>
       <span class="eyebrow-script">Welcome back ♡</span>
       <h2 id="resumeTitle">Continue your last photos?</h2>
       <div class="resume-preview"><canvas id="resumeCanvas" width="10" height="10"></canvas></div>
@@ -830,6 +863,14 @@
   </div>
 
   <div class="inapp inapp-banner" id="inappBanner" role="note" hidden></div>
+
+  <!-- a newer version was uploaded: offer a refresh (never automatic) -->
+  <div class="update-bar" id="updateBar" role="status" hidden>
+    <span class="update-ico" aria-hidden="true">✨</span>
+    <span class="update-text" id="updateText">A new version is here ♡</span>
+    <button type="button" class="update-go" id="updateGo">REFRESH</button>
+    <button type="button" class="x-btn" id="updateX" aria-label="Hide this message">✕</button>
+  </div>
 
   <header class="nav">
     <a class="brand" href="#top">♡ Our Booth</a>
@@ -910,7 +951,7 @@
       <div class="privacy-note">🔒 Your photos stay on your device. We don't upload or store your photos.</div>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.9.1</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.9.2</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -1342,6 +1383,67 @@
     /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
     (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent)));   // iPads pretend to be Macs
   document.documentElement.classList.add(IS_PHONE ? 'is-phone' : 'is-desktop');
+  // this page's version = the label in the footer (the one place it's written), e.g. "v4.9.2"
+  var APP_VERSION = ((document.querySelector('.app-version') || {}).textContent || '').trim();
+  // compares "v4.10" and "v4.9.2" number by number: 1 = a is newer, -1 = a is older, 0 = the same
+  function verCmp(a, b){
+    function nums(v){ var m = /\d+(\.\d+)*/.exec(v || ''); return m ? m[0].split('.').map(Number) : []; }
+    var x = nums(a), y = nums(b);
+    for(var i = 0; i < Math.max(x.length, y.length); i++){
+      var d = (x[i] || 0) - (y[i] || 0);
+      if(d) return d > 0 ? 1 : -1;
+    }
+    return 0;
+  }
+
+  /* ---------------- "a new version is here" ----------------
+     Phones keep a tab open for days, so your love may still be using an old page. Now and then
+     (20 s after opening, then at most every 30 minutes while the page is on screen) we read the
+     version label of the page on the site. If it's NEWER than this one, a small bar offers a
+     refresh — never automatically. In a live room it only says "after your photos", because
+     refreshing leaves the room. Only index.html is uploaded, so the label is all we need. */
+  var update = {found:'', dismissed:'', last:0, busy:false};
+  var UPDATE_EVERY = 30*60*1000;
+  try{ update.dismissed = sessionStorage.getItem('oob-update-dismissed') || ''; }catch(e){}
+  function checkForUpdate(){
+    if(update.busy || document.hidden || !window.fetch || !/^https?:$/.test(location.protocol)) return;
+    if(navigator.connection && navigator.connection.saveData) return;   // the phone asked to save data
+    if(Date.now() - update.last < UPDATE_EVERY) return;
+    update.busy = true;
+    update.last = Date.now();
+    // a new address each time skips every cache on the way (like opening the site with ?v=…)
+    fetch(location.pathname + '?vcheck=' + Date.now(), {cache:'no-store'}).then(function(r){
+      return r.ok ? r.text() : '';
+    }).then(function(html){
+      var m = /class="app-version"[^>]*>\s*(v[0-9][0-9.]*)\s*</.exec(html);
+      if(m && verCmp(m[1], APP_VERSION) > 0){ update.found = m[1]; syncUpdateBar(); }
+    }).catch(function(){ /* offline: try again later */ }).then(function(){ update.busy = false; });
+  }
+  function syncUpdateBar(){
+    var show = !!update.found && update.dismissed !== update.found;
+    $('updateBar').hidden = !show;
+    if(!show) return;
+    var inRoom = !!(live && live.peer);
+    $('updateText').textContent = inRoom ? 'New version ♡ refresh after your live photos — it leaves the room'
+                                         : 'A new version is here ♡';
+    $('updateGo').hidden = inRoom;
+  }
+  $('updateGo').addEventListener('click', function(){
+    // ?v=… fetches the new page past every cache; "leaving" skips the "Leave site?" box
+    function go(){ leaving = true; location.replace(location.pathname + '?v=' + update.found.replace(/[^0-9]/g, '')); }
+    showToast('Refreshing… ♡');
+    // your photos come back with "Continue your last photos?"
+    if(state.shots.length && !session.pending) saveSession().then(go, go); else go();
+  });
+  $('updateX').addEventListener('click', function(){
+    update.dismissed = update.found;   // hidden until an even newer version comes
+    try{ sessionStorage.setItem('oob-update-dismissed', update.found); }catch(e){}
+    syncUpdateBar();
+  });
+  setTimeout(checkForUpdate, 20000);
+  setInterval(checkForUpdate, 5*60*1000);   // cheap: it only looks when 30 minutes have passed
+  document.addEventListener('visibilitychange', checkForUpdate);
+
   var IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
   if(IS_IOS) document.documentElement.classList.add('is-ios');
   var IS_ANDROID = /Android/i.test(navigator.userAgent);
@@ -1437,6 +1539,7 @@
       else enterApp();
     });
     $('welcomeDismiss').addEventListener('click', dismiss);
+    $('welcomeX').addEventListener('click', dismiss);   // ✕ = "maybe later"
   })();
 
   /* ---------------- nav ---------------- */
@@ -1809,6 +1912,11 @@
   function currentEntry(){
     return $('app').dataset.view === 'app' ? appEntry() : {pid:PAGE_ID, view:'landing'};
   }
+  function closeLandingCard(){
+    if($('resumeOverlay').classList.contains('show')){ resumeLater(); return true; }
+    if($('welcomeOverlay').classList.contains('show')){ $('welcomeDismiss').click(); return true; }   // = "maybe later"
+    return false;
+  }
   window.addEventListener('popstate', function(e){
     var s = e.state || {};
     if(afterBack){ var fn = afterBack; afterBack = null; fn(); return; }   // our own step towards home
@@ -1818,6 +1926,8 @@
       return;
     }
     closeCodeModal();   // back button should close an open code box, not leave it floating over another step
+    // back on the home page while a welcome card is up: the card just closes (like its ✕)
+    if(s.guard && closeLandingCard()){ history.pushState(currentEntry(), ''); return; }
     if(s.guard){ askToLeave(); return; }
     if($('app').dataset.view !== 'app'){
       if(s.app) history.replaceState({pid:PAGE_ID, view:'landing'}, '');   // "forward" onto an old app entry
@@ -1912,6 +2022,7 @@
   }
   $('confirmYes').addEventListener('click', function(){ closeConfirm(true); });
   $('confirmNo').addEventListener('click', function(){ closeConfirm(false); });
+  $('confirmX').addEventListener('click', function(){ closeConfirm(false); });   // ✕ = the safe answer (STAY / KEEP / CANCEL)
   document.addEventListener('keydown', function(e){
     if(e.key !== 'Escape') return;
     if(!$('confirmModal').hidden) closeConfirm(false);
@@ -1920,6 +2031,7 @@
     else if(!$('duoHelp').hidden) closeDuoHelp();
     else if(!$('poseSheet').hidden) closePoseSheet();
     else if(!$('cfEditor').hidden) closeCfEditor();
+    else closeLandingCard();
   });
   function renderDots(){
     var wrap = $('progressDots');
@@ -1974,6 +2086,7 @@
   $('backRetake').addEventListener('click', function(){ closeBackChooser(); takeNewPhotos(); });   // the chooser was the question
   $('backHome').addEventListener('click', function(){ closeBackChooser(); goHome(); });
   $('backStay').addEventListener('click', closeBackChooser);
+  $('backX').addEventListener('click', closeBackChooser);   // ✕ = stay here
   $('backModal').addEventListener('click', function(e){ if(e.target === this) closeBackChooser(); });
 
   function prepCustomizeDefaults(){
@@ -2396,6 +2509,7 @@
   }
   function closeCodeModal(){ $('codeModal').hidden = true; }
   $('codeCancel').addEventListener('click', closeCodeModal);
+  $('codeX').addEventListener('click', closeCodeModal);
   $('codeModal').addEventListener('click', function(e){ if(e.target === this) closeCodeModal(); });
   document.addEventListener('keydown', function(e){
     if(e.key === 'Escape' && !$('codeModal').hidden) closeCodeModal();
@@ -2626,7 +2740,7 @@
     role:null, code:'', connected:false, partnerReady:false, remoteFacing:'user',
     rtt:200, rounds:4, running:false, runId:0, pending:{}, early:{}, connectTimer:0,
     // Together ("duo") = both of you in one photo; Separate = two photos per shot (see TOGETHER below)
-    mode:'duo', roundsBy:{duo:4, separate:2}, partnerDuo:false, duoHalves:{},
+    mode:'duo', roundsBy:{duo:4, separate:2}, partnerDuo:false, partnerVer:'', duoHalves:{},
     poseMode:'surprise', posePick:[], autoTemplate:false
   };
   var pendingRoom = null;   // room code from an invite link (#room=K7X2MQ)
@@ -2671,6 +2785,7 @@
     syncLiveDesign();
     syncLiveModeUI();
     updateShutter();
+    syncUpdateBar();   // in a room the "new version" bar says "after your photos" instead
   }
   function updateShutter(){
     var canShoot = live.connected && live.partnerReady && !live.running;
@@ -2858,7 +2973,8 @@
   function bindConn(conn){
     live.conn = conn;
     conn.on('open', function(){
-      sendLive({type:'hello', facing:state.facingMode, duo:true});   // duo: this page can do "Together"
+      // duo: this page can do "Together" · ver: its version, so both phones can tell if one is out of date
+      sendLive({type:'hello', facing:state.facingMode, duo:true, ver:APP_VERSION});
       if(live.role === 'host') sendLive({type:'mode', mode:live.mode});   // the room maker's style is the starting point
       sendLive({type:'ping', t:Date.now()});
       sendLive({type:'ready', ready: state.currentStep === 'live'});
@@ -2910,7 +3026,7 @@
     clearTimeout(live.connectTimer);
     var conn = live.conn, call = live.call;
     live.conn = null; live.call = null; live.remoteStream = null;
-    live.connected = false; live.partnerReady = false; live.partnerDuo = false;
+    live.connected = false; live.partnerReady = false; live.partnerDuo = false; live.partnerVer = '';
     endTogether();   // designing together needs both of you (your design stays as it is)
     $('liveRemote').srcObject = null;
     $('liveUnmute').hidden = true;
@@ -2948,6 +3064,7 @@
         live.remoteFacing = msg.facing === 'environment' ? 'environment' : 'user';
         $('liveRemote').classList.toggle('mirror', live.remoteFacing === 'user');
         live.partnerDuo = msg.duo === true;   // an older page can't do "Together": then it's Separate for both
+        live.partnerVer = typeof msg.ver === 'string' ? msg.ver.slice(0, 16) : '';   // pages before v4.9.2 send none
         syncLiveModeUI();
         if(state.currentStep === 'live') startLiveOverlay();
         break;
@@ -3305,8 +3422,17 @@
       b.disabled = live.running || (b.dataset.mode === 'duo' && !live.partnerDuo);
     });
     $('duoHelpBtn').hidden = !live.partnerDuo;
-    $('liveModeNote').hidden = live.partnerDuo || !live.connected;
-    $('liveModeNote').textContent = "Your love's page is older — they can reload it to use Together ♡";
+    // different versions on the two phones: say who should refresh (after the photos — refreshing leaves the room)
+    var note = '';
+    if(live.connected){
+      var cmp = verCmp(live.partnerVer, APP_VERSION);
+      if(!live.partnerDuo) note = "Your love's page is older — they can reload it to use Together ♡";
+      else if(!live.partnerVer || cmp < 0) note = "Your love's page is older — they can refresh it after your photos ♡";
+      else if(cmp > 0) note = "Your love has a newer version — refresh yours after your photos ♡";
+    }
+    $('liveModeNote').textContent = note;
+    $('liveModeNote').hidden = !note;
+    $('step-live').classList.toggle('has-note', !!note);
     var tiles = $('liveTiles');
     tiles.classList.toggle('duo', duo);
     $('step-live').classList.toggle('duo-stage', duo && live.connected);
@@ -3485,6 +3611,7 @@
     b.addEventListener('click', function(){ live.poseMode = b.dataset.pmode; renderPoseSheet(); });
   });
   $('poseDone').addEventListener('click', closePoseSheet);
+  $('poseX').addEventListener('click', closePoseSheet);   // your taps are kept, same as DONE
   $('poseSheet').addEventListener('click', function(e){ if(e.target === this) closePoseSheet(); });
 
   /* ---- "how Together works": once by itself, then with the ? button ---- */
@@ -3500,6 +3627,7 @@
   }
   $('duoHelpBtn').addEventListener('click', openDuoHelp);
   $('duoHelpOk').addEventListener('click', closeDuoHelp);
+  $('duoHelpX').addEventListener('click', closeDuoHelp);
   $('duoHelpPoses').addEventListener('click', function(){ closeDuoHelp(); openPoseSheet(); });
   $('duoHelp').addEventListener('click', function(e){ if(e.target === this) closeDuoHelp(); });
   // opened from an invite link? greet them with a "join" button instead of the usual welcome
@@ -5188,6 +5316,7 @@
       : 'Here it is with your photos:';
     $('designUse').textContent = invite ? 'JOIN ♡' : 'USE THEIRS ♡';
     $('designKeep').textContent = invite ? 'NOT NOW' : 'KEEP MINE';
+    $('designX').setAttribute('aria-label', invite ? 'Not now' : 'Keep mine');
     var canSave = !!(rec && rec.srcId);
     $('designSaveRow').hidden = !canSave;
     $('designSave').checked = true;
@@ -5575,6 +5704,15 @@
   }
   $('resumeContinue').addEventListener('click', function(){ answerResume(true); });
   $('resumeFresh').addEventListener('click', function(){ answerResume(false); });
+  // ✕ = decide later: the card closes, the photos stay kept (session.pending stays on, so nothing
+  // overwrites them) and START / LIVE simply ask again
+  function resumeLater(){
+    if(!session.offer) return;
+    session.offer = null;
+    $('resumeOverlay').classList.remove('show');
+    try{ sessionStorage.setItem('oob-welcomed', '1'); }catch(e){}
+  }
+  $('resumeX').addEventListener('click', resumeLater);
   // runs once on start; the welcome card waits for it (see initWelcome)
   var fontsReadyForResume = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
   var resumeCheck = Promise.all([loadSession(), customFramesReady, fontsReadyForResume]).then(function(res){
@@ -5592,6 +5730,7 @@
   }).catch(function(){ session.pending = false; return false; });
   $('designUse').addEventListener('click', function(){ answerDesign(true); });
   $('designKeep').addEventListener('click', function(){ answerDesign(false); });
+  $('designX').addEventListener('click', function(){ answerDesign(false); });   // ✕ = KEEP MINE / NOT NOW (your love is told)
 
   /* ---------------- frame decorations while posing ----------------
      The frame's illustrations are drawn on top of the camera, lined up exactly where they'll
@@ -6398,6 +6537,7 @@
     $('holdImg').removeAttribute('src');
   }
   $('holdDone').addEventListener('click', closeHoldSheet);
+  $('holdX').addEventListener('click', closeHoldSheet);
   $('holdModal').addEventListener('click', function(e){ if(e.target === this) closeHoldSheet(); });
 
   /* init */
