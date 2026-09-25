@@ -532,6 +532,13 @@
   .inapp-actions .btn{flex:1; min-width:130px; min-height:44px; padding:10px 12px; font-size:.78rem; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;}
   .inapp-close{position:absolute; top:4px; right:4px; width:40px; height:40px; border:none; background:none; color:#5C3A06; font-size:1.3rem; line-height:1;}
   .welcome-card .inapp{margin:14px 0 4px; padding-right:14px;}
+  /* "continue your last photos?" */
+  .resume-card{padding:26px 22px;}
+  .resume-card h2{margin-bottom:10px;}
+  .resume-preview{display:flex; justify-content:center;}
+  .resume-preview canvas{max-height:32vh; width:auto; max-width:100%; border-radius:10px; box-shadow:var(--shadow-soft);}
+  .resume-info{font-size:.82rem; color:var(--rose-800); margin:10px 0 14px;}
+  .resume-note{font-size:.72rem; color:var(--rose-800); opacity:.75; margin-top:10px;}
   /* sending / receiving a design in the live room */
   .live-design{margin-top:14px; background:var(--white); border-radius:var(--radius-md); padding:12px 14px; box-shadow:var(--shadow-soft);}
   .live-design-title{font-family:var(--font-script); font-size:1.3rem; color:var(--rose-800); text-align:center;}
@@ -669,6 +676,19 @@
     </div>
   </div>
 
+  <!-- opened again within 24 hours: offer the photos from last time (saved only on this device) -->
+  <div class="welcome-overlay" id="resumeOverlay" role="dialog" aria-modal="true" aria-labelledby="resumeTitle">
+    <div class="welcome-card resume-card">
+      <span class="eyebrow-script">Welcome back ♡</span>
+      <h2 id="resumeTitle">Continue your last photos?</h2>
+      <div class="resume-preview"><canvas id="resumeCanvas" width="10" height="10"></canvas></div>
+      <p class="resume-info" id="resumeInfo"></p>
+      <button class="btn btn-primary" id="resumeContinue">CONTINUE ♡</button>
+      <button class="btn btn-ghost btn-block" id="resumeFresh">START FRESH</button>
+      <p class="resume-note">Saved only on this device · kept for 24 hours</p>
+    </div>
+  </div>
+
   <div class="inapp inapp-banner" id="inappBanner" role="note" hidden></div>
 
   <header class="nav">
@@ -750,7 +770,7 @@
       <div class="privacy-note">🔒 Your photos stay on your device. We don't upload or store your photos.</div>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.5</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.6</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -1248,7 +1268,10 @@
     var seen = false;
     try{ seen = sessionStorage.getItem('oob-welcomed') === '1'; }catch(e){}
     if(!seen){
-      setTimeout(function(){ $('welcomeOverlay').classList.add('show'); }, 550);
+      // "continue your last photos?" takes the welcome card's place when there are photos from last time
+      setTimeout(function(){
+        resumeCheck.then(function(offered){ if(!offered) $('welcomeOverlay').classList.add('show'); });
+      }, 550);
     }
     function dismiss(){
       $('welcomeOverlay').classList.remove('show');
@@ -1552,6 +1575,7 @@
     if(state.currentStep === 'camera') leaveCamera();
     destroyLive();
     stopAnim();
+    if(state.shots.length) clearSession();   // you chose to leave your photos
     state.shots = [];
     $('app').setAttribute('data-view','landing');
   }
@@ -1583,6 +1607,7 @@
     if(step === 'customize'){ prepCustomizeDefaults(); showFrameTab(templateById(state.templateId).tab); renderPreview(); }
     if(step === 'result'){ renderResult(); }
     window.scrollTo(0,0);
+    saveSessionSoon();
   }
 
   /* ---------------- phone back button + "are you sure?" ----------------
@@ -1712,6 +1737,7 @@
   $('skipFrameBtn').addEventListener('click', function(){ $('toCameraBtn').click(); });
   $('retakeBtn').addEventListener('click', function(){
     state.shots = [];
+    clearSession();   // taking new photos: last time's are no longer offered
     goToStep(live.connected ? 'live' : 'camera');   // still in a live room? shoot again together
   });
 
@@ -1967,6 +1993,7 @@
     $('trayCount').textContent = state.shots.length + ' / ' + state.shotCount + ' photos';
     $('tray').hidden = state.shots.length === 0;
     if(state.currentStep === 'camera') drawMiniStrip();   // the little strip in the corner fills up as you go
+    saveSessionSoon();   // a photo was added or removed
   }
   $('useCameraAppBtn').addEventListener('click', function(){ $('cameraAppInput').click(); });
   $('useGalleryBtn').addEventListener('click', function(){ $('galleryInput').click(); });
@@ -2759,6 +2786,7 @@
         canvas.dataset.round = String(r);
         state.shots[i] = canvas;
         delete live.pending[r];
+        saveSessionSoon();   // keep the sharp photo, not the video-call frame
         if(state.currentStep === 'customize') renderPreview();
         if(state.currentStep === 'result') renderResult();
         return true;
@@ -4283,7 +4311,7 @@
       if(t.custom) openCfEditor(t.rec);
     });
   });
-  loadCustomFrames();
+  var customFramesReady = loadCustomFrames();   // the "continue your last photos" check waits for these
 
   /* ================= SEND MY DESIGN (live room) =================
      In a live room, "Send my design" sends your choices — frame, color, filter, stickers, text,
@@ -4427,11 +4455,14 @@
     finally{ DESIGN_KEYS.forEach(function(k){ state[k] = saved[k]; }); }
   }
   function renderDesignPreview(d, rec){
-    var t = rec ? customTemplate(rec) : templateById(d.templateId);
+    drawDesignInto($('designCanvas'), d, rec ? customTemplate(rec) : templateById(d.templateId));
+  }
+  // a still picture of design `d` on the current photos, drawn into canvas `c`
+  function drawDesignInto(c, d, t){
     withDesign(d, function(){
       var b = makeBase(t, d.colorId || t.color, 1);
       var k = Math.min(0.6, 1100 / b.h);   // sharp on phones, without a huge canvas
-      var c = $('designCanvas'), ctx = c.getContext('2d');
+      var ctx = c.getContext('2d');
       c.width = Math.round(b.w*k); c.height = Math.round(b.h*k);
       ctx.setTransform(k, 0, 0, k, 0, 0);
       ctx.drawImage(b.canvas, 0, 0);
@@ -4605,7 +4636,7 @@
 
   // called whenever the editor redraws the preview: send what changed since the last time
   function noteDesignChange(){
-    if(!together.on) return;
+    if(!together || !together.on) return;
     syncLiveDesign();   // e.g. show "save their frame" when you pick one of theirs
     clearTimeout(together.timer);
     together.timer = setTimeout(sendTogetherChanges, 120);   // typing sends one message, not one per letter
@@ -4674,6 +4705,161 @@
   function queueTogether(work){
     together.queue = together.queue.then(work).catch(function(){});
   }
+
+  /* ================= LAST SESSION (auto-save) =================
+     Your photos and design choices are quietly saved on this device while you use the booth, so
+     a closed tab, a refresh or a phone call doesn't lose them (iPhones can't ask "leave site?").
+     When the booth opens again within 24 hours it asks "Continue your last photos?".
+     It's a separate little database from the custom frames, so a problem here can never touch
+     those. Nothing is uploaded. Cleared by START FRESH, TAKE AGAIN, or going back home. */
+  var SESSION_MAX_AGE = 24*60*60*1000;
+  var session = {
+    pending: true,          // true until we know there's no old session to offer (or it was answered)
+    savedThisPage: false,   // the stored session is this page's, so an empty strip may clear it
+    gen: 0,                 // bumped by every clear, so a slow save can't bring cleared photos back
+    timer: 0, offer: null,
+    blobs: typeof WeakMap === 'function' ? new WeakMap() : null   // photo → its JPEG, made only once
+  };
+  var sessionDbPromise = null;
+  function sessionDb(){
+    if(sessionDbPromise) return sessionDbPromise;
+    sessionDbPromise = new Promise(function(resolve){
+      try{
+        var req = indexedDB.open('our-little-booth-session', 1);
+        req.onupgradeneeded = function(){ req.result.createObjectStore('last'); };
+        req.onsuccess = function(){ resolve(req.result); };
+        req.onerror = req.onblocked = function(){ resolve(null); };
+      }catch(e){ resolve(null); }   // private windows may block it: then there's simply no auto-save
+    });
+    return sessionDbPromise;
+  }
+  function sessionRun(mode, work){
+    return sessionDb().then(function(db){
+      if(!db) return null;
+      return new Promise(function(resolve){
+        try{
+          var tx = db.transaction('last', mode), req = work(tx.objectStore('last'));
+          tx.oncomplete = function(){ resolve(req ? req.result : null); };
+          tx.onerror = tx.onabort = function(){ resolve(null); };
+        }catch(e){ resolve(null); }
+      });
+    });
+  }
+  function shotBlob(c){
+    var done = session.blobs && session.blobs.get(c);
+    if(done) return Promise.resolve(done);
+    return new Promise(function(resolve){
+      c.toBlob(function(b){ if(b && session.blobs) session.blobs.set(c, b); resolve(b); }, 'image/jpeg', 0.92);
+    });
+  }
+
+  /* ---- saving ---- */
+  // called after anything that may change your photos or design: waits a second, then saves
+  function saveSessionSoon(){
+    // (not set up yet while the page is still starting) · never overwrite last time's photos before
+    // you've answered about them
+    if(!session || session.pending) return;
+    clearTimeout(session.timer);
+    session.timer = setTimeout(saveSession, 1000);
+  }
+  function saveSession(){
+    clearTimeout(session.timer);
+    if(session.pending) return Promise.resolve();
+    if(!state.shots.length){
+      if(session.savedThisPage) clearSession();   // you removed every photo
+      return Promise.resolve();
+    }
+    var gen = session.gen, shots = state.shots.slice(), design = currentDesign(), count = state.shotCount;
+    return Promise.all(shots.map(shotBlob)).then(function(blobs){
+      if(gen !== session.gen || blobs.some(function(b){ return !b; })) return;
+      var rec = {v:1, saved:Date.now(), shotCount:count, design:design, shots:shots.map(function(c, i){
+        return {blob:blobs[i], from:c.dataset.from === 'you' ? 'you' : 'me', round:c.dataset.round || ''};
+      })};
+      session.savedThisPage = true;
+      return sessionRun('readwrite', function(store){ return store.put(rec, 'session'); });
+    });
+  }
+  function clearSession(){
+    clearTimeout(session.timer);
+    session.gen++;
+    session.savedThisPage = false;
+    return sessionRun('readwrite', function(store){ return store.delete('session'); });
+  }
+  // switching apps or locking the phone: save right away (the page may never come back)
+  document.addEventListener('visibilitychange', function(){ if(document.hidden) saveSession(); });
+
+  /* ---- offering it again ---- */
+  function loadSession(){
+    return sessionRun('readonly', function(store){ return store.get('session'); }).then(function(rec){
+      if(!rec || rec.v !== 1 || !Array.isArray(rec.shots) || !rec.shots.length) return null;
+      if(!(Date.now() - rec.saved < SESSION_MAX_AGE)){ clearSession(); return null; }   // older than 24 hours
+      return rec;
+    });
+  }
+  function sessionCanvases(rec){
+    return Promise.all(rec.shots.slice(0, MAX_SHOTS).map(function(s){
+      return loadImage(s.blob).then(function(img){
+        var c = document.createElement('canvas');
+        c.width = img.width; c.height = img.height;
+        c.getContext('2d').drawImage(img, 0, 0);
+        c.dataset.from = s.from === 'you' ? 'you' : 'me';
+        if(s.round) c.dataset.round = String(s.round);
+        return c;
+      });
+    }));
+  }
+  // the saved choices, checked like anything else we read back; a frame that's gone → Classic
+  function sessionDesign(rec){
+    var d = cleanDesign(rec.design) || cleanDesign({});
+    if(!TEMPLATES.some(function(t){ return t.id === d.templateId; })){ d.templateId = 'classic'; d.colorId = null; }
+    return d;
+  }
+  function whenText(t){
+    var d = new Date(t), hm = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+    return (d.toDateString() === new Date().toDateString() ? 'today ' : 'yesterday ') + hm;
+  }
+  function showResume(){
+    var o = session.offer, t = templateById(o.design.templateId);
+    $('resumeInfo').textContent = o.shots.length + (o.shots.length === 1 ? ' photo' : ' photos') + ' · ' + t.name + ' · ' + whenText(o.rec.saved);
+    var keep = state.shots;
+    state.shots = o.shots;   // the preview shows YOUR saved photos
+    try{ drawDesignInto($('resumeCanvas'), o.design, t); }
+    finally{ state.shots = keep; }
+    $('resumeOverlay').classList.add('show');
+  }
+  function answerResume(cont){
+    var o = session.offer;
+    if(!o) return;
+    session.offer = null;
+    session.pending = false;
+    $('resumeOverlay').classList.remove('show');
+    try{ sessionStorage.setItem('oob-welcomed', '1'); }catch(e){}
+    if(!cont){ clearSession(); showToast('Starting fresh ♡'); return; }
+    session.savedThisPage = true;   // what's stored is now this page's session
+    state.shots = o.shots;
+    state.shotCount = clamp(o.rec.shotCount || o.shots.length, o.shots.length, MAX_SHOTS);
+    applyDesign(o.design);
+    $('app').setAttribute('data-view', 'app');
+    // not all photos taken yet → back to the camera; otherwise straight to the editor
+    goToStep(state.shots.length >= state.shotCount ? 'customize' : 'camera');
+    updateTray();
+    showToast('Welcome back ♡');
+  }
+  $('resumeContinue').addEventListener('click', function(){ answerResume(true); });
+  $('resumeFresh').addEventListener('click', function(){ answerResume(false); });
+  // runs once on start; the welcome card waits for it (see initWelcome)
+  var fontsReadyForResume = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+  var resumeCheck = Promise.all([loadSession(), customFramesReady, fontsReadyForResume]).then(function(res){
+    var rec = res[0];
+    // opened from a live-room invite, or already busy in the app: don't interrupt
+    if(!rec || pendingRoom || state.shots.length || $('app').dataset.view === 'app'){ session.pending = false; return false; }
+    return sessionCanvases(rec).then(function(canvases){
+      if(state.shots.length || $('app').dataset.view === 'app'){ session.pending = false; return false; }
+      session.offer = {rec:rec, shots:canvases, design:sessionDesign(rec)};
+      showResume();
+      return true;
+    });
+  }).catch(function(){ session.pending = false; return false; });
   $('designUse').addEventListener('click', function(){ answerDesign(true); });
   $('designKeep').addEventListener('click', function(){ answerDesign(false); });
 
@@ -5151,6 +5337,7 @@
   var previewTimer = null;
   function renderPreview(){
     noteDesignChange();   // designing together: tell your love what changed
+    saveSessionSoon();    // remember the new design for "continue your last photos"
     clearTimeout(previewTimer);
     previewTimer = setTimeout(function(){ buildBase(); playAnim($('previewCanvas')); }, 60);
   }
