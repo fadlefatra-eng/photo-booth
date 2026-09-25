@@ -126,7 +126,7 @@
   .btn-ghost{background:var(--blush-100); color:var(--rose-800); border:1px solid transparent;}
   .btn-ghost:hover{background:var(--pink-200);}
   .btn-block{width:100%;}
-  .btn-text{background:none; border:none; color:var(--rose-800); opacity:.7; font-size:.85rem; text-decoration:underline; padding:8px;}
+  .btn-text{background:none; border:none; color:var(--rose-800); opacity:.85; font-size:.85rem; text-decoration:underline; padding:8px;}
   .icon-btn{
     width:52px; height:52px; border-radius:50%; border:1.5px solid var(--pink-300);
     background:var(--white); color:var(--rose-800); font-size:1.2rem; display:flex; align-items:center; justify-content:center;
@@ -223,7 +223,7 @@
     display:flex; align-items:center; gap:10px; justify-content:center; max-width:520px; margin:0 auto;
     padding:16px 20px; background:var(--blush-100); border-radius:999px; font-size:.85rem; color:var(--rose-800); text-align:center;
   }
-  footer.site-footer{text-align:center; padding:36px 20px 56px; font-size:.82rem; color:var(--rose-800); opacity:.6;}
+  footer.site-footer{text-align:center; padding:36px 20px 56px; font-size:.82rem; color:var(--rose-800); opacity:.85;}
 
   /* ================= APP FLOW ================= */
   .view-app{display:block; min-height:100%; background:transparent;}
@@ -243,7 +243,7 @@
     background:linear-gradient(to top, rgba(255,241,246,.6) 45%, rgba(255,241,246,0));   /* light veil: the aurora shows through */
   }
   .step h2{font-size:clamp(1.4rem,4vw,1.8rem); text-align:center; color:var(--plum-900);}
-  .step-sub{text-align:center; color:var(--rose-800); opacity:.75; font-size:.92rem; margin-top:8px;}
+  .step-sub{text-align:center; color:var(--rose-800); opacity:.85; font-size:.92rem; margin-top:8px;}
 
   /* shot count */
   .count-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:28px 0 0;}
@@ -253,7 +253,7 @@
     font-family:var(--font-display); font-size:1.7rem; font-weight:700; color:var(--rose-800);
     box-shadow:var(--shadow-soft); min-height:88px;
   }
-  .count-card span{font-family:var(--font-body); font-size:.68rem; font-weight:600; letter-spacing:.05em; color:var(--plum-900); opacity:.6; text-transform:uppercase;}
+  .count-card span{font-family:var(--font-body); font-size:.68rem; font-weight:600; letter-spacing:.05em; color:var(--plum-900); opacity:.7; text-transform:uppercase;}
   .count-card.selected{border-color:var(--rose-600); background:linear-gradient(135deg,var(--pink-200),var(--white)); transform:translateY(-2px);}
 
   /* frame select */
@@ -359,6 +359,14 @@
     .editor .preview-pane{top:12px; background:none;}
     .editor .preview-pane canvas{max-height:calc(100vh - 330px);}   /* leave room for the title and the DONE button */
   }
+  /* phones held sideways: a preview on top plus the DONE bar left only a thin strip for the tools —
+     so, like on a laptop, the preview sits on the left and the tools on the right */
+  @media (orientation:landscape) and (max-height:520px) and (min-width:600px){
+    .app-stage.wide{max-width:1000px;}
+    .editor{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:start; gap:20px;}
+    .editor .preview-pane{top:8px; background:none;}
+    .editor .preview-pane canvas{max-height:calc(100vh - 130px);}   /* the DONE bar stays below it */
+  }
   /* filter buttons with a preview of your own photo */
   .filter-row{display:flex; gap:10px; overflow-x:auto; padding:2px 2px 8px; -webkit-overflow-scrolling:touch;}
   .filter-card{flex:0 0 76px; display:flex; flex-direction:column; align-items:center; gap:6px; background:none; border:none; padding:0; color:var(--rose-800); font-size:.76rem; font-weight:600;}
@@ -379,7 +387,6 @@
   .brand{display:inline-flex; align-items:center; min-height:44px; padding:0 6px 0 0;}
   .ldr-toggle{min-height:44px; padding:12px;}
   .swatch-hint .btn-text{min-height:36px;}
-  .tray-del{width:30px; height:30px; font-size:1.05rem;}
   .live-unmute{min-height:36px; padding:8px 12px;}
   .frame-card span, .frame-pick-row .frame-card span{font-size:.78rem;}
   .motion-note, .swatch-hint{font-size:.8rem;}
@@ -423,6 +430,9 @@
     .editor{margin-top:6px; gap:8px;}
     .editor .preview-pane{padding:4px 0 8px;}
     .editor .preview-pane canvas{max-height:31vh;}
+    /* result page: a little less tall photo, so the Photo / Animated choice isn't under the SAVE bar */
+    #step-result .result-frame{margin:14px 0 12px;}
+    #step-result .result-frame canvas{max-height:40vh;}
   }
 
   /* landing gallery groups */
@@ -460,13 +470,14 @@
     position:sticky; bottom:0; z-index:20; padding:12px 0 14px;
     background:linear-gradient(to top, rgba(255,241,246,.6) 55%, rgba(255,241,246,0));
   }
-  .result-actions-row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center;}
-  .result-actions-row .btn{flex:1; min-width:104px; font-size:.78rem; padding:13px 10px;}
-  .result-actions .btn[disabled]{opacity:.7;}   /* while the video is being made */
+  /* AGAIN · FRAME · SHARE: one row that never wraps, even at 320px */
+  .result-more{display:flex; gap:8px; margin:12px 0 0;}
+  .result-more .btn{flex:1; min-width:0; min-height:44px; padding:12px 6px; font-size:.76rem; white-space:nowrap;}
+  .result-actions .btn[disabled], .result-more .btn[disabled]{opacity:.7;}   /* while the video is being made */
   /* its own little pill: the see-through button bar may sit over the Photo / Animated cards */
   .save-hint{align-self:center; text-align:center; font-size:.76rem; color:var(--rose-800); line-height:1.4; margin:-4px 0 0;
     padding:4px 12px; border-radius:999px; background:rgba(255,255,255,.92); box-shadow:var(--shadow-soft);}
-  .privacy-inline{text-align:center; font-size:.78rem; color:var(--rose-800); opacity:.7; margin-top:18px; line-height:1.5;}
+  .privacy-inline{text-align:center; font-size:.78rem; color:var(--rose-800); opacity:.9; margin-top:18px; line-height:1.5;}   /* small text: kept dark enough to read */
 
   /* fallback capture (phone camera app / gallery) */
   .fallback-row{margin-top:22px; background:var(--white); border:1px dashed var(--pink-300); border-radius:var(--radius-md); padding:18px 16px;}
@@ -478,9 +489,10 @@
   .tray-thumb{position:relative; width:60px; height:60px; border-radius:10px; overflow:hidden; box-shadow:var(--shadow-soft);}
   .tray-thumb img{width:100%; height:100%; object-fit:cover;}
   .tray-del{
-    position:absolute; top:2px; right:2px; width:22px; height:22px; border-radius:50%; border:none;
-    background:rgba(59,22,38,.72); color:#fff; font-size:.9rem; line-height:1; display:flex; align-items:center; justify-content:center;
+    position:absolute; top:2px; right:2px; width:30px; height:30px; border-radius:50%; border:none;
+    background:rgba(59,22,38,.72); color:#fff; font-size:1.05rem; line-height:1; display:flex; align-items:center; justify-content:center;
   }
+  .tray-del::after{content:''; position:absolute; inset:-7px;}   /* a bigger invisible target: easier to hit with a finger */
   .tray-actions{display:flex; align-items:center; justify-content:space-between; gap:12px;}
   .tray-count{font-size:.8rem; font-weight:600; color:var(--rose-800);}
   .tray-actions .btn{padding:12px 22px; min-height:46px; font-size:.82rem;}
@@ -510,6 +522,14 @@
   }
   .x-btn:hover{background:var(--blush-100);}
   .code-card h3{padding-right:34px;}   /* long titles stay clear of the ✕ */
+  /* editor "zoom": a button beside a narrow preview, and the big view */
+  .preview-wrap{position:relative; display:flex;}
+  .zoom-btn{position:absolute; left:calc(100% + 8px); bottom:6px; white-space:nowrap; min-height:44px; padding:0 14px;
+    border-radius:999px; border:1.5px solid var(--pink-300); background:var(--white); color:var(--rose-800);
+    font-size:.78rem; font-weight:600; box-shadow:var(--shadow-soft);}
+  .zoom-modal{overflow-y:auto; align-items:flex-start; padding:62px 16px 28px;}
+  .zoom-modal canvas{width:min(100%, 440px); height:auto; margin:0 auto; border-radius:14px; box-shadow:0 30px 70px -20px rgba(59,22,38,.5);}
+  .zoom-x{position:fixed; top:calc(env(safe-area-inset-top, 0px) + 10px); right:10px; z-index:1; background:var(--white); box-shadow:var(--shadow-soft);}
   /* "a new version is here" — floats over the top bar, so it never pushes or covers the page's own buttons */
   .update-bar{
     position:fixed; z-index:45; top:calc(env(safe-area-inset-top, 0px) + 10px); left:10px; right:10px;
@@ -539,7 +559,7 @@
   /* live room */
   .live-panel{margin-top:18px; text-align:center;}
   .live-panel .step-sub{margin-bottom:16px;}
-  .live-or{margin:24px 0 10px; font-size:.82rem; color:var(--rose-800); opacity:.7;}
+  .live-or{margin:24px 0 10px; font-size:.82rem; color:var(--rose-800); opacity:.85;}
   .live-join-row{display:flex; gap:10px;}
   .live-join-row input{flex:1; min-width:0; text-transform:uppercase; letter-spacing:.3em; text-align:center; font-weight:600;}
   .live-join-row .btn{padding:12px 24px; min-height:48px;}
@@ -690,6 +710,11 @@
   .welcome-card{margin:auto;}
   /* the app has its own ← button; the landing-page menu would only jump to hidden sections */
   .app[data-view="app"] .nav-links, .app[data-view="app"] .hamburger{display:none !important;}
+  /* inside the app the top bar (just the name there) scrolls away with the page instead of staying on
+     top: the editor's sticky preview no longer slides under it, and small / sideways screens get
+     77px back. The "new version" bar rides along on top of it. */
+  .app[data-view="app"] .nav{position:relative;}
+  .app[data-view="app"] .update-bar{position:absolute;}
   /* computers rarely have a second camera to switch to */
   .is-desktop #switchCameraBtn, .is-desktop #liveSwitchBtn{visibility:hidden;}
 
@@ -808,6 +833,12 @@
       <div class="hold-preview"><img id="holdImg" alt="Your photo strip"></div>
       <button class="btn btn-primary btn-block" id="holdDone">DONE ♡</button>
     </div>
+  </div>
+
+  <!-- "zoom" in the editor: the whole strip as big as the screen allows (scroll to see it all) -->
+  <div class="code-modal zoom-modal" id="zoomModal" role="dialog" aria-modal="true" aria-label="Your strip, bigger" hidden>
+    <button type="button" class="x-btn zoom-x" id="zoomX" aria-label="Close">✕</button>
+    <canvas id="zoomCanvas" width="10" height="10"></canvas>
   </div>
 
   <!-- a design your love sent from the live room: shown on your own photos, you choose -->
@@ -982,7 +1013,7 @@
       <div class="privacy-note">🔒 Your photos stay on your device. We don't upload or store your photos.</div>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.9.4</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.9.5</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -1170,7 +1201,11 @@
         <!-- editor: the preview stays on screen, and only one tool panel is open at a time -->
         <div class="editor">
           <div class="preview-pane">
-            <canvas id="previewCanvas" width="720" height="900"></canvas>
+            <div class="preview-wrap">
+              <canvas id="previewCanvas" width="720" height="900"></canvas>
+              <!-- shown only when the preview is narrow (3–4 photos on a phone): see the strip bigger -->
+              <button type="button" class="zoom-btn" id="zoomBtn" aria-label="See your strip bigger" hidden>🔍 zoom</button>
+            </div>
           </div>
           <div class="tools">
             <div class="tool-tabs" role="tablist" aria-label="Edit your strip">
@@ -1260,14 +1295,15 @@
           </button>
         </div>
         <p class="save-note" id="saveNote" hidden>This browser can't make videos, so you can save the photo only.</p>
+        <!-- the smaller choices live under the photo in one row; only the main button stays at the bottom -->
+        <div class="result-more">
+          <button class="btn btn-ghost" id="retakeBtn" aria-label="Take again">↻ AGAIN</button>
+          <button class="btn btn-ghost" id="changeFrameBtn" aria-label="Change frame">🖼 FRAME</button>
+          <button class="btn btn-ghost" id="shareBtn" aria-label="Share">↗ SHARE</button>
+        </div>
         <div class="result-actions">
           <button class="btn btn-primary btn-block" id="downloadBtn">DOWNLOAD PHOTO ♡</button>
           <p class="save-hint" id="saveHint" aria-live="polite" hidden></p>
-          <div class="result-actions-row">
-            <button class="btn btn-ghost" id="retakeBtn">TAKE AGAIN ↻</button>
-            <button class="btn btn-ghost" id="changeFrameBtn">CHANGE FRAME</button>
-            <button class="btn btn-ghost" id="shareBtn">SHARE</button>
-          </div>
         </div>
         <p class="privacy-inline">🔒 Your memories stay yours. Photos are processed locally on your device and are never uploaded.</p>
       </section>
@@ -1883,6 +1919,7 @@
     cancelVideo();       // a video still being made on the result page isn't needed anymore
     closeHoldSheet();
     state.currentStep = step;
+    closeZoom();         // (after the step changes, so it doesn't restart the editor's animation elsewhere)
     if(step === 'camera' || step === 'live') state.captureStep = step;   // where ← from the editor goes back to
     ensureAppEntry();
     Array.prototype.forEach.call(document.querySelectorAll('.step'), function(s){
@@ -1902,8 +1939,24 @@
     if(step === 'customize'){ prepCustomizeDefaults(); showFrameTab(templateById(state.templateId).tab); renderPreview(); }
     if(step === 'result'){ renderResult(); }
     window.scrollTo(0,0);
+    if(step === 'camera') showCameraOnShortScreen();
     saveSessionSoon();
   }
+  // a phone held sideways is too short for the title, the camera AND the shutter, so the page starts
+  // at the camera there (the camera and the shutter then fit together); taller screens start at the top
+  function isShortLandscape(){ return window.innerHeight < 520 && window.innerWidth > window.innerHeight; }
+  function showCameraOnShortScreen(){
+    if(!isShortLandscape()) return;
+    var stage = document.querySelector('#step-camera .camera-stage');
+    window.scrollTo(0, Math.max(0, stage.getBoundingClientRect().top + window.scrollY - 8));
+  }
+  // turning the phone while on the camera page: line the camera up again
+  (function(){
+    var mq = window.matchMedia && matchMedia('(orientation: landscape)');
+    if(!mq) return;
+    function onTurn(){ if(state.currentStep === 'camera' && $('app').dataset.view === 'app') setTimeout(showCameraOnShortScreen, 300); }
+    if(mq.addEventListener) mq.addEventListener('change', onTurn); else if(mq.addListener) mq.addListener(onTurn);
+  })();
 
   /* ---------------- back button (← on screen and the phone's back) ----------------
      Both always go ONE page back along your path — they never replay pages you saw before:
@@ -1971,6 +2024,7 @@
     if(!$('confirmModal').hidden){ closeConfirm(null); history.pushState(appEntry(), ''); return; }
     if(!$('backModal').hidden){ closeBackChooser(); history.pushState(appEntry(), ''); return; }
     if(!$('holdModal').hidden){ closeHoldSheet(); history.pushState(appEntry(), ''); return; }
+    if(!$('zoomModal').hidden){ closeZoom(); history.pushState(appEntry(), ''); return; }
     if(!$('duoHelp').hidden){ closeDuoHelp(); history.pushState(appEntry(), ''); return; }
     if(!$('poseSheet').hidden){ closePoseSheet(); history.pushState(appEntry(), ''); return; }
     if(!$('designModal').hidden){ history.pushState(appEntry(), ''); return; }   // answer your love first
@@ -2061,6 +2115,7 @@
     if(!$('confirmModal').hidden) closeConfirm(false);
     else if(!$('backModal').hidden) closeBackChooser();
     else if(!$('holdModal').hidden) closeHoldSheet();
+    else if(!$('zoomModal').hidden) closeZoom();
     else if(!$('duoHelp').hidden) closeDuoHelp();
     else if(!$('poseSheet').hidden) closePoseSheet();
     else if(!$('cfEditor').hidden) closeCfEditor();
@@ -2214,6 +2269,7 @@
 
   /* ---------------- camera ---------------- */
   var video = $('video');
+  var camRequest = 0;   // numbers every camera start; leaving the camera page bumps it too (see initCamera)
   function stopStream(){
     if(state.stream){
       state.stream.getTracks().forEach(function(tr){ tr.stop(); });
@@ -2265,16 +2321,24 @@
     }
     showPermission('asking', "We'd love to see your smile ♡", "Please allow camera access when your browser asks.", false);
     stopStream();
+    // starting a camera can take a moment (or wait for "Allow"). If you left the camera page
+    // meanwhile, or a newer start is on its way, the camera that arrives late is switched off
+    // right away — otherwise it stayed on in the editor (and could block the live room's camera)
+    var req = ++camRequest;
+    function stale(){ return req !== camRequest || state.currentStep !== 'camera'; }
     var constraints = { video: { facingMode: state.facingMode }, audio:false };
-    navigator.mediaDevices.getUserMedia(constraints).catch(function(){
+    navigator.mediaDevices.getUserMedia(constraints).catch(function(err){
+      if(stale()) throw err;
       return navigator.mediaDevices.getUserMedia({video:true, audio:false});
     }).then(function(stream){
+      if(stale()){ stream.getTracks().forEach(function(tr){ tr.stop(); }); return; }
       state.stream = stream;
       video.srcObject = stream;
       video.classList.toggle('mirror', state.facingMode === 'user');
       playVideo(video);   // some browsers don't start it by themselves
       hidePermission();
     }).catch(function(err){
+      if(stale()) return;   // you already left: no message about a camera you no longer need
       var name = err && err.name;
       if(name === 'NotAllowedError' || name === 'PermissionDeniedError' || name === 'SecurityError'){
         showPermission('denied', "Oops! We can't access your camera ♡",
@@ -2729,6 +2793,7 @@
   }
   function leaveCamera(){
     boothRun++;
+    camRequest++;   // a camera still starting up is switched off when it arrives
     booting = false;
     stopFx();
     stopCamOverlay();
@@ -3495,6 +3560,7 @@
       var c = document.createElement('canvas');
       c.width = DUO_HALF_W; c.height = DUO_HALF_H;
       c.getContext('2d').drawImage(img, 0, 0, DUO_HALF_W, DUO_HALF_H);
+      freeImage(img);
       return c;
     });
   }
@@ -4853,11 +4919,15 @@
     if(window.createImageBitmap) return createImageBitmap(blob);
     return new Promise(function(resolve, reject){
       var img = new Image(), url = URL.createObjectURL(blob);
-      img.onload = function(){ resolve(img); };
-      img.onerror = reject;
+      // once loaded, the picture no longer needs its temporary address — let the browser free it
+      img.onload = function(){ URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = function(e){ URL.revokeObjectURL(url); reject(e); };
       img.src = url;
     });
   }
+  // a picture that was drawn once and isn't needed anymore: free its memory right away
+  // (never for pictures kept for redrawing, like customImages)
+  function freeImage(img){ if(img && img.close) img.close(); }
   // shrink big photos (phones make 4000px images) and keep transparency by saving as PNG
   function prepareImage(file){
     return loadImage(file).then(function(src){
@@ -4865,6 +4935,7 @@
       var c = document.createElement('canvas');
       c.width = Math.max(1, Math.round(w*k)); c.height = Math.max(1, Math.round(h*k));
       c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+      freeImage(src);
       return new Promise(function(resolve, reject){ c.toBlob(function(b){ b ? resolve(b) : reject(new Error('png')); }, 'image/png'); });
     });
   }
@@ -5089,9 +5160,12 @@
     renderCfBases();
     renderCf();
   }
+  // the little image buttons use temporary addresses (see renderCf): free them when they go away
+  function forgetItemUrl(it){ if(it && it.url){ URL.revokeObjectURL(it.url); it.url = null; } }
   function closeCfEditor(){
     $('cfEditor').hidden = true;
     document.body.style.overflow = '';
+    if(cf.draft) cf.draft.items.forEach(forgetItemUrl);
     cf.draft = null;
   }
   function cfDraftTemplate(){ return customTemplate(cf.draft); }
@@ -5204,6 +5278,7 @@
   });
   $('cfRemoveImg').addEventListener('click', function(){
     var d = cf.draft;
+    forgetItemUrl(d.items[cf.sel]);
     d.items.splice(cf.sel, 1);
     cf.sel = d.items.length ? Math.min(cf.sel, d.items.length - 1) : -1;
     renderCf();
@@ -5755,6 +5830,7 @@
         var c = document.createElement('canvas');
         c.width = img.width; c.height = img.height;
         c.getContext('2d').drawImage(img, 0, 0);
+        freeImage(img);
         c.dataset.from = from;
         return c;
       });
@@ -6398,8 +6474,37 @@
     noteDesignChange();   // designing together: tell your love what changed
     saveSessionSoon();    // remember the new design for "continue your last photos"
     clearTimeout(previewTimer);
-    previewTimer = setTimeout(function(){ buildBase(); textLimit.lane = null; syncTextLimit(); playAnim($('previewCanvas')); }, 60);
+    previewTimer = setTimeout(function(){
+      buildBase(); textLimit.lane = null; syncTextLimit();
+      playAnim($('zoomModal').hidden ? $('previewCanvas') : $('zoomCanvas'));   // zoom open: the big view shows it
+      syncZoomBtn();
+    }, 60);
   }
+  /* ---- editor "zoom": 3–4 photos make a tall strip that's only a few fingers wide on a phone —
+     the button shows it as big as the screen allows. The one animation loop moves over to the
+     big view while it's open (the small preview pauses), so it costs nothing extra. ---- */
+  function syncZoomBtn(){
+    var w = $('previewCanvas').getBoundingClientRect().width;
+    $('zoomBtn').hidden = !(w > 0 && w < 170);
+  }
+  function openZoom(){
+    $('zoomModal').hidden = false;
+    $('zoomModal').scrollTop = 0;
+    playAnim($('zoomCanvas'));
+    setTimeout(function(){ $('zoomX').focus(); }, 30);
+  }
+  function closeZoom(){
+    if($('zoomModal').hidden) return;
+    $('zoomModal').hidden = true;
+    if(state.currentStep === 'customize') playAnim($('previewCanvas'));
+  }
+  $('zoomBtn').addEventListener('click', openZoom);
+  $('zoomX').addEventListener('click', closeZoom);
+  $('zoomModal').addEventListener('click', function(e){ if(e.target === this) closeZoom(); });
+  window.addEventListener('resize', function(){
+    clearTimeout(syncZoomBtn.t);
+    syncZoomBtn.t = setTimeout(function(){ if(state.currentStep === 'customize') syncZoomBtn(); }, 200);
+  });
   /* The result page offers Photo (still) or Animated (video) — the second one only when
      something actually moves, and only if this browser can record video. The preview
      follows the choice, so you see exactly what you'll save. */
@@ -6586,7 +6691,8 @@
     dl.textContent = making ? 'MAKING YOUR VIDEO… ✨'
       : animated ? (SAVE_VIA_SHARE ? 'SAVE VIDEO TO PHOTOS ✨' : 'DOWNLOAD VIDEO ✨')
       : (SAVE_VIA_SHARE ? 'SAVE TO PHOTOS ♡' : 'DOWNLOAD PHOTO ♡');
-    sh.textContent = animated ? 'SHARE VIDEO' : 'SHARE';
+    // (short label for the one-row buttons; the Photo / Animated choice above says what gets shared)
+    sh.setAttribute('aria-label', animated ? 'Share video' : 'Share photo');
     var item = animated ? (MENU_ID ? 'Simpan Video' : 'Save Video') : (MENU_ID ? 'Simpan Gambar' : 'Save Image');
     var tip = making ? 'About ' + (LOOP*2) + ' seconds — stay on this page ✨'
             : SAVE_VIA_SHARE ? 'In the menu, tap "' + item + '" ♡' : '';
@@ -6618,7 +6724,7 @@
       if(why === 'Unsupported'){ showToast("Sharing isn't supported here — try downloading instead ♡"); return; }
       if(why === 'NotAllowedError'){
         // the phone said "too long after your tap"
-        var again = how === 'share' ? (isVideo ? 'SHARE VIDEO' : 'SHARE') : 'SAVE VIDEO TO PHOTOS';
+        var again = how === 'share' ? 'SHARE' : 'SAVE VIDEO TO PHOTOS';
         showToast(isVideo ? 'Your video is ready ♡ Tap ' + again + ' again' : 'Tap ' + again + ' again ♡');
         return;
       }
