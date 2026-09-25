@@ -1,0 +1,17 @@
+Copyright (c) 2026 fadlefatra-eng. All rights reserved.
+
+"Our Little Photo Booth" — the code, design, text and the original characters and
+illustrations drawn in it — is the work of its author.
+
+You may visit and use the website https://fadlefatra-eng.github.io/photo-booth/ for
+personal, non-commercial use, and you may look at the source code in this repository.
+
+Without written permission from the author you may NOT copy, modify, publish, host,
+distribute, sell or reuse this code, design or artwork, in whole or in part.
+
+Photos taken with the booth belong to the people in them. They are processed on the
+user's own device and are never uploaded by this website.
+
+Third-party parts keep their own licenses: PeerJS (MIT license) is loaded from
+cdn.jsdelivr.net, and the Playfair Display, Poppins and Dancing Script fonts
+(SIL Open Font License) are loaded from Google Fonts.

@@ -532,6 +532,11 @@
   .inapp-actions .btn{flex:1; min-width:130px; min-height:44px; padding:10px 12px; font-size:.78rem; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;}
   .inapp-close{position:absolute; top:4px; right:4px; width:40px; height:40px; border:none; background:none; color:#5C3A06; font-size:1.3rem; line-height:1;}
   .welcome-card .inapp{margin:14px 0 4px; padding-right:14px;}
+  /* "where to next?" (← on the result page) */
+  .back-card .btn{margin-top:10px; min-height:48px; padding:12px 14px; font-size:.84rem;}
+  .back-card p{margin-bottom:4px;}
+  .back-card .back-hint{font-size:.76rem; margin:8px 0 0; text-align:center;}
+  .back-stay{display:block; margin:6px auto 0;}
   /* "continue your last photos?" */
   .resume-card{padding:26px 22px;}
   .resume-card h2{margin-bottom:10px;}
@@ -607,6 +612,19 @@
         <button class="btn btn-ghost" id="confirmYes"></button>
         <button class="btn btn-primary" id="confirmNo"></button>
       </div>
+    </div>
+  </div>
+
+  <!-- ← on the result page: where to next? -->
+  <div class="code-modal" id="backModal" role="dialog" aria-modal="true" aria-labelledby="backTitle" hidden>
+    <div class="code-card back-card">
+      <h3 id="backTitle">Where to next? ♡</h3>
+      <p>Your photos stay saved on this device for 24 hours. Taking new ones replaces them.</p>
+      <button class="btn btn-primary btn-block" id="backEdit">✎ BACK TO EDITING</button>
+      <button class="btn btn-secondary btn-block" id="backRetake">↻ TAKE NEW PHOTOS</button>
+      <button class="btn btn-ghost btn-block" id="backHome">⌂ HOME PAGE</button>
+      <p class="back-hint" id="backHint" hidden>Going home also closes the live room.</p>
+      <button class="btn-text back-stay" id="backStay">stay here</button>
     </div>
   </div>
 
@@ -770,7 +788,7 @@
       <div class="privacy-note">🔒 Your photos stay on your device. We don't upload or store your photos.</div>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.6</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.7</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -1294,18 +1312,13 @@
   Array.prototype.forEach.call(document.querySelectorAll('.nav-links a'), function(a){
     a.addEventListener('click', function(){ $('navLinks').classList.remove('open'); });
   });
-  $('startBtn').addEventListener('click', enterApp);
+  $('startBtn').addEventListener('click', function(){ offerSavedThen(enterApp); });
   // the brand link leaves the app; ask first if there are photos that would be lost
+  // the brand link goes home — your photos stay saved for 24 hours; a live room asks first
   document.querySelector('.brand').addEventListener('click', function(e){
     if($('app').dataset.view !== 'app') return;
     e.preventDefault();
-    function goHome(){ exitApp(); history.pushState({pid:PAGE_ID, view:'landing'}, ''); window.scrollTo(0,0); }
-    if(!state.shots.length){ goHome(); return; }
-    confirmBox({
-      title: 'Leave your photos? ♡',
-      text: "Going back to the home page clears the photos you haven't downloaded yet.",
-      yes: 'LEAVE', no: 'STAY ♡'
-    }).then(function(yes){ if(yes) goHome(); });
+    confirmLeaveRoom().then(function(ok){ if(ok) goHome(); });
   });
   $('howBtn').addEventListener('click', function(){
     document.getElementById('howitworks').scrollIntoView({behavior:'smooth'});
@@ -1570,18 +1583,21 @@
     $('app').setAttribute('data-view','app');
     goToStep('count');
   }
+  // back to the home page. Your photos stay saved for 24 hours: "Welcome back ♡" offers them again
   function exitApp(){
     stopStream();
     if(state.currentStep === 'camera') leaveCamera();
     destroyLive();
     stopAnim();
-    if(state.shots.length) clearSession();   // you chose to leave your photos
+    if(state.shots.length){
+      saveSession();           // store the very latest first…
+      session.pending = true;  // …and don't let the empty strip overwrite it before you've answered
+      showToast('Your photos are saved on this device for 24 hours ♡');
+    }
     state.shots = [];
     $('app').setAttribute('data-view','landing');
   }
-  // opts.noHistory: we got here *because* of the back button, so don't add a new history entry
-  function goToStep(step, opts){
-    opts = opts || {};
+  function goToStep(step){
     if(state.currentStep === 'camera' && step !== 'camera'){
       stopStream();
       leaveCamera();
@@ -1589,7 +1605,8 @@
     if(state.currentStep === 'live' && step !== 'live') leaveLiveStep();
     stopAnim();
     state.currentStep = step;
-    if(!opts.noHistory) history.pushState({pid:PAGE_ID, step:step}, '');
+    if(step === 'camera' || step === 'live') state.captureStep = step;   // where ← from the editor goes back to
+    ensureAppEntry();
     Array.prototype.forEach.call(document.querySelectorAll('.step'), function(s){
       s.classList.toggle('active', s.dataset.step === step);
     });
@@ -1610,14 +1627,33 @@
     saveSessionSoon();
   }
 
-  /* ---------------- phone back button + "are you sure?" ----------------
-     Every step gets its own browser history entry (pushState), so the phone's back
-     button moves one step back inside the app instead of leaving the site.
-     Underneath the home page sits one extra "guard" entry: landing on it means the
-     next back press would leave the site, so we ask first. */
+  /* ---------------- back button (← on screen and the phone's back) ----------------
+     Both always go ONE page back along your path — they never replay pages you saw before:
+       count → home · frame → count · camera → frame · live room → where you came from
+       editor → camera or live room (photos stay) · result → "Where to next?" (edit / new photos / home)
+     How: while you're in the app, the browser history holds exactly one extra "app" entry above
+     the home page. The phone's back button removes it (a "popstate"); we then decide where to go
+     ourselves and put the entry back if you stay in the app.
+     Underneath the home page sits one "guard" entry: landing on it means the next back press
+     would leave the site, so we ask first. */
   var PAGE_ID = Date.now() + '-' + Math.random().toString(36).slice(2);   // ignores entries left over from before a reload
   var leaving = false;
+  var afterBack = null;   // what to do when our own history.back() arrives (going home)
   history.replaceState({pid:PAGE_ID, view:'landing'}, '');
+  function appEntry(){ return {pid:PAGE_ID, app:true}; }
+  function onAppEntry(){ return !!(history.state && history.state.pid === PAGE_ID && history.state.app); }
+  function ensureAppEntry(){ if($('app').dataset.view === 'app' && !onAppEntry()) history.pushState(appEntry(), ''); }
+  // leave the app for the home page, taking the "app" history entry away with us
+  function goHome(){
+    if(!onAppEntry()){ goHomeNow(); return; }
+    afterBack = goHomeNow;
+    history.back();
+    setTimeout(function(){ if(afterBack === goHomeNow){ afterBack = null; goHomeNow(); } }, 700);   // browser never answered
+  }
+  function goHomeNow(){
+    if($('app').dataset.view === 'app') exitApp();
+    window.scrollTo(0,0);
+  }
   // browsers skip history entries added before the visitor touches the page, so wait for a first tap
   function installGuard(){
     document.removeEventListener('click', installGuard, true);
@@ -1629,10 +1665,11 @@
   document.addEventListener('keydown', installGuard, true);
 
   function currentEntry(){
-    return $('app').dataset.view === 'app' ? {pid:PAGE_ID, step:state.currentStep} : {pid:PAGE_ID, view:'landing'};
+    return $('app').dataset.view === 'app' ? appEntry() : {pid:PAGE_ID, view:'landing'};
   }
   window.addEventListener('popstate', function(e){
     var s = e.state || {};
+    if(afterBack){ var fn = afterBack; afterBack = null; fn(); return; }   // our own step towards home
     if(!$('cfEditor').hidden){   // back while editing a custom frame just closes the editor
       closeCfEditor();
       history.pushState(currentEntry(), '');
@@ -1640,30 +1677,62 @@
     }
     closeCodeModal();   // back button should close an open code box, not leave it floating over another step
     if(s.guard){ askToLeave(); return; }
-    if(s.pid === PAGE_ID && s.step){
-      $('app').setAttribute('data-view','app');
-      goToStep(s.step, {noHistory:true});
+    if($('app').dataset.view !== 'app'){
+      if(s.app) history.replaceState({pid:PAGE_ID, view:'landing'}, '');   // "forward" onto an old app entry
       return;
     }
-    // back to the home page (or an entry from before a reload)
-    if($('app').dataset.view !== 'app') return;
-    if(!state.shots.length){ exitApp(); return; }
-    var here = currentEntry();
-    confirmBox({
-      title: 'Leave your photos? ♡',
-      text: "Going back to the home page clears the photos you haven't downloaded yet.",
-      yes: 'LEAVE', no: 'STAY ♡'
-    }).then(function(yes){
-      if(yes === null) return;
-      if(yes) exitApp();
-      else history.pushState(here, '');
-    });
+    if(s.app) return;
+    // back inside the app: an open question just closes first
+    if(!$('confirmModal').hidden){ closeConfirm(null); history.pushState(appEntry(), ''); return; }
+    if(!$('backModal').hidden){ closeBackChooser(); history.pushState(appEntry(), ''); return; }
+    if(!$('designModal').hidden){ history.pushState(appEntry(), ''); return; }   // answer your love first
+    stepBack(true);
   });
+  // one page back from where you are. popped: the phone's back button already took our app entry away
+  function stepBack(popped){
+    function stay(){ if(popped) history.pushState(appEntry(), ''); }
+    var step = state.currentStep;
+    if(step === 'result'){ stay(); openBackChooser(); return; }
+    if(step === 'customize'){ stay(); goToStep(state.captureStep === 'live' && live.peer ? 'live' : 'camera'); return; }
+    if(step === 'camera'){ stay(); goToStep('frame'); return; }
+    if(step === 'frame'){ stay(); goToStep('count'); return; }
+    if(step === 'live'){
+      var toCamera = live.from === 'camera';
+      stay();
+      confirmLeaveRoom().then(function(ok){
+        if(!ok) return;
+        destroyLive(); setLiveError('');
+        if(toCamera) goToStep('camera'); else goHome();
+      });
+      return;
+    }
+    if(popped) goHomeNow(); else goHome();   // the first page (how many photos)
+  }
+  // still in a live room? ask before closing it
+  function confirmLeaveRoom(){
+    if(!live.peer) return Promise.resolve(true);
+    return confirmBox({
+      title: 'Leave the live room?',
+      text: live.connected ? 'Going back closes the room — your love will see that you left.' : 'Going back closes your room, so the code stops working.',
+      yes: 'LEAVE ROOM', no: 'STAY ♡'
+    }).then(function(yes){ return yes === true; });
+  }
+  // before photos get replaced by new ones
+  function confirmReplace(together){
+    var n = state.shots.length;
+    if(!n) return Promise.resolve(true);
+    return confirmBox({
+      title: together ? 'Take new photos together? ♡' : 'Take new photos? ♡',
+      text: 'Your ' + n + (n === 1 ? ' photo' : ' photos') + ' will be replaced' + (together ? ' on both phones' : '') +
+            '. Download them first if you want to keep them.',
+      yes: 'TAKE NEW', no: 'KEEP THESE ♡'
+    }).then(function(yes){ return yes === true; });
+  }
   function askToLeave(){
     var here = currentEntry();
     confirmBox({
       title: 'Leave the photo booth?',
-      text: state.shots.length ? "Your photos haven't been downloaded yet — they'll be gone." : 'You can come back anytime ♡',
+      text: state.shots.length ? 'Your photos stay saved on this device for 24 hours ♡' : 'You can come back anytime ♡',
       yes: 'LEAVE', no: 'STAY ♡'
     }).then(function(yes){
       if(yes === null) return;
@@ -1701,6 +1770,7 @@
   document.addEventListener('keydown', function(e){
     if(e.key !== 'Escape') return;
     if(!$('confirmModal').hidden) closeConfirm(false);
+    else if(!$('backModal').hidden) closeBackChooser();
     else if(!$('cfEditor').hidden) closeCfEditor();
   });
   function renderDots(){
@@ -1715,10 +1785,8 @@
   }
   // the on-screen ← behaves exactly like the phone's back button
   $('backBtn').addEventListener('click', function(){
-    if(history.state && history.state.pid === PAGE_ID && history.state.step){ history.back(); return; }
-    var i = STEP_ORDER.indexOf(state.currentStep);
-    if(i <= 0){ exitApp(); return; }
-    goToStep(STEP_ORDER[i-1]);
+    if(onAppEntry()) history.back();   // exactly what the phone's back button does
+    else stepBack(false);
   });
   $('toFrameBtn').addEventListener('click', function(){ goToStep('frame'); });
   $('toCameraBtn').addEventListener('click', function(){
@@ -1735,11 +1803,30 @@
   });
   // skipping keeps the current frame (Classic Strip by default) — it can still be changed at the end
   $('skipFrameBtn').addEventListener('click', function(){ $('toCameraBtn').click(); });
-  $('retakeBtn').addEventListener('click', function(){
+  // start over with new photos. In a live room nothing is lost yet: the heart asks before replacing
+  function takeNewPhotos(){
+    if(live.peer){ goToStep('live'); return; }
     state.shots = [];
     clearSession();   // taking new photos: last time's are no longer offered
-    goToStep(live.connected ? 'live' : 'camera');   // still in a live room? shoot again together
+    goToStep('camera');
+  }
+  $('retakeBtn').addEventListener('click', function(){
+    if(live.peer){ takeNewPhotos(); return; }
+    confirmReplace(false).then(function(yes){ if(yes) takeNewPhotos(); });
   });
+
+  /* ---- "Where to next?" — ← on the result page ---- */
+  function openBackChooser(){
+    $('backHint').hidden = !live.peer;
+    $('backModal').hidden = false;
+    setTimeout(function(){ $('backEdit').focus(); }, 30);
+  }
+  function closeBackChooser(){ $('backModal').hidden = true; }
+  $('backEdit').addEventListener('click', function(){ closeBackChooser(); goToStep('customize'); });
+  $('backRetake').addEventListener('click', function(){ closeBackChooser(); takeNewPhotos(); });   // the chooser was the question
+  $('backHome').addEventListener('click', function(){ closeBackChooser(); goHome(); });
+  $('backStay').addEventListener('click', closeBackChooser);
+  $('backModal').addEventListener('click', function(e){ if(e.target === this) closeBackChooser(); });
 
   function prepCustomizeDefaults(){
     if(!state.colorId) state.colorId = templateById(state.templateId).color;
@@ -1891,6 +1978,7 @@
       state.stream = stream;
       video.srcObject = stream;
       video.classList.toggle('mirror', state.facingMode === 'user');
+      playVideo(video);   // some browsers don't start it by themselves
       hidePermission();
     }).catch(function(err){
       var name = err && err.name;
@@ -2237,8 +2325,15 @@
     if(state.cameraFallbackMode){ $(IS_PHONE ? 'cameraAppInput' : 'galleryInput').click(); return; }
     if(booting || $('takePhotoBtn').disabled) return;
     if(state.shots.length >= state.shotCount){
-      showToast('You already have ' + state.shotCount + ' photos ♡');
-      goToStep('customize');
+      // all photos taken: ask before replacing them (instead of jumping to the editor, which made
+      // ← and the shutter bounce you back and forth)
+      confirmReplace(false).then(function(yes){
+        if(state.currentStep !== 'camera') return;
+        if(!yes){ showToast('Tap × on a photo to retake just that one ♡'); return; }
+        state.shots = [];
+        updateTray();
+        $('takePhotoBtn').click();   // and start the countdown
+      });
       return;
     }
     booting = true;
@@ -2440,9 +2535,7 @@
       })
       .then(function(stream){
         live.localStream = stream;
-        var el = $('liveLocal');
-        el.srcObject = stream;
-        el.classList.toggle('mirror', state.facingMode === 'user');
+        showLocal();
         var hasMic = stream.getAudioTracks().length > 0;
         $('liveMicBtn').hidden = !hasMic;
         setMicIcon(hasMic);
@@ -2456,6 +2549,56 @@
   function setLocalVideoEnabled(on){
     if(!live.localStream) return;
     live.localStream.getVideoTracks().forEach(function(t){ t.enabled = on; });
+  }
+  // Some phones' browsers pause a video while its page is hidden (e.g. while you decorate) and don't
+  // start it again by themselves — "autoplay" alone isn't enough there, so we always ask it to play.
+  function playVideo(el){
+    try{ var p = el.play(); if(p && p.catch) p.catch(function(){}); }catch(e){}
+  }
+  // show your own camera in the "me" tile: attach it fresh (so every browser notices a new
+  // camera track) and press play
+  function showLocal(){
+    var el = $('liveLocal');
+    el.srcObject = null;
+    el.srcObject = live.localStream;
+    el.classList.toggle('mirror', state.facingMode === 'user');
+    playVideo(el);
+  }
+  // open the camera (again) for the live room and swap it into the call without hanging up.
+  // Used by ↻ (switch camera) and when the phone took the camera away (another app, a call…).
+  function reopenLiveCamera(facing){
+    var old = live.localStream.getVideoTracks()[0];
+    if(old) old.stop();   // many phones can't open two cameras at once
+    return navigator.mediaDevices.getUserMedia({video:{facingMode:facing, width:{ideal:1280}, height:{ideal:720}}}).then(function(s){
+      var track = s.getVideoTracks()[0];
+      // the call's video "sender" still points at the old camera track — swap it
+      var pc = live.call && live.call.peerConnection, sender = null;
+      if(pc && pc.getTransceivers){
+        pc.getTransceivers().forEach(function(tr){
+          if(!sender && tr.receiver && tr.receiver.track && tr.receiver.track.kind === 'video') sender = tr.sender;
+        });
+      }
+      if(!sender && pc) sender = pc.getSenders().filter(function(x){ return x.track === old || (x.track && x.track.kind === 'video'); })[0] || null;
+      live.localStream.getVideoTracks().forEach(function(t){ live.localStream.removeTrack(t); });
+      live.localStream.addTrack(track);
+      state.facingMode = facing;
+      showLocal();
+      sendLive({type:'facing', facing:facing});
+      return sender ? sender.replaceTrack(track) : null;
+    });
+  }
+  // back on the live screen: make sure your camera is really running, and both videos play
+  function wakeLiveVideos(){
+    if(!live.localStream) return;
+    var cam = live.localStream.getVideoTracks()[0];
+    if(!cam || cam.readyState === 'ended'){
+      reopenLiveCamera(state.facingMode).catch(function(){
+        showToast("Your camera stopped — close other apps using it, then tap ↻ ♡");
+      });
+    } else {
+      playVideo($('liveLocal'));
+    }
+    if(live.remoteStream) playVideo($('liveRemote'));
   }
   function showRemote(stream){
     live.remoteStream = stream;
@@ -2657,7 +2800,7 @@
         var wasReady = live.partnerReady;
         live.partnerReady = !!msg.ready;
         if(live.partnerReady && !wasReady && state.currentStep !== 'live' && live.connected){
-          showToast('Your love is at the camera ♡ Tap ← or TAKE AGAIN to join');
+          showToast('Your love is at the camera ♡ Tap ← to join');
         }
         updateShutter();
         break;
@@ -2709,6 +2852,13 @@
      starting its own countdown, so both countdowns hit CLICK at about the same moment. */
   function pressLiveShutter(){
     if($('liveShutter').disabled) return;
+    if(state.shots.length){   // photos from before: ask first (they're replaced on both phones)
+      confirmReplace(true).then(function(yes){ if(yes && !$('liveShutter').disabled) startLiveShot(); });
+      return;
+    }
+    startLiveShot();
+  }
+  function startLiveShot(){
     var rounds = live.rounds;
     sendLive({type:'start', rounds:rounds});
     live.running = true; updateShutter();
@@ -2797,6 +2947,9 @@
 
   /* ---- entering / leaving the live step ---- */
   function enterLive(code){
+    live.from = 'home';   // ← from the live room goes back to the home page
+    // joining from an invite starts something new: it may replace last time's saved photos
+    if(code && session.pending && !session.offer) session.pending = false;
     $('app').setAttribute('data-view','app');
     // a 2x2 grid puts "me" and "you" side by side on each row
     if(!state.shots.length){ state.templateId = 'grid'; state.frameTab = 'plain'; state.colorId = null; syncFrameSelection(); }
@@ -2808,6 +2961,7 @@
     updateLivePanels();
     // always turn the picture back on — even if your love isn't connected (yet), they'll need it when they join
     setLocalVideoEnabled(true);
+    wakeLiveVideos();
     if(live.connected) sendLive({type:'ready', ready:true});
     live.roundIdx = 0;
     startLiveOverlay();
@@ -2822,9 +2976,9 @@
   }
 
   /* ---- buttons ---- */
-  $('liveBtn').addEventListener('click', function(){ enterLive(); });
+  $('liveBtn').addEventListener('click', function(){ offerSavedThen(function(){ enterLive(); }); });
   Array.prototype.forEach.call(document.querySelectorAll('.js-go-live'), function(b){
-    b.addEventListener('click', function(){ goToStep('live'); });
+    b.addEventListener('click', function(){ live.from = 'camera'; goToStep('live'); });
   });
   $('liveCreateBtn').addEventListener('click', function(){ startLive('host'); });
   $('liveJoinBtn').addEventListener('click', function(){
@@ -2866,27 +3020,11 @@
   });
   $('liveSwitchBtn').addEventListener('click', function(){
     if(!live.localStream || live.running) return;
-    var next = state.facingMode === 'user' ? 'environment' : 'user';
-    var old = live.localStream.getVideoTracks()[0];
-    if(old) old.stop();   // many phones can't open two cameras at once
-    function useFacing(facing){
-      return navigator.mediaDevices.getUserMedia({video:{facingMode:facing, width:{ideal:1280}, height:{ideal:720}}}).then(function(s){
-        var track = s.getVideoTracks()[0];
-        // the video "sender" of the call still points at the old camera track — swap it without hanging up
-        var pc = live.call && live.call.peerConnection;
-        var sender = pc ? pc.getSenders().filter(function(x){ return x.track === old || (x.track && x.track.kind === 'video'); })[0] : null;
-        if(old) live.localStream.removeTrack(old);
-        live.localStream.addTrack(track);
-        state.facingMode = facing;
-        $('liveLocal').srcObject = live.localStream;
-        $('liveLocal').classList.toggle('mirror', facing === 'user');
-        sendLive({type:'facing', facing:facing});
-        return sender ? sender.replaceTrack(track) : null;
-      });
-    }
-    useFacing(next).catch(function(){
+    var before = state.facingMode;
+    var next = before === 'user' ? 'environment' : 'user';
+    reopenLiveCamera(next).catch(function(){
       showToast("Couldn't switch camera ♡");
-      return useFacing(state.facingMode);   // bring the old camera back
+      return reopenLiveCamera(before);   // bring the old camera back
     }).catch(function(){});
   });
   (function buildRounds(){
@@ -2924,6 +3062,10 @@
   window.addEventListener('hashchange', readRoomLink);
   // leaving the page closes the room right away, so the code is free again
   window.addEventListener('pagehide', function(){ if(live.peer) destroyLive(); });
+  // back from another app (a call, a message…): the phone may have paused or taken the camera
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden && state.currentStep === 'live' && $('app').dataset.view === 'app') wakeLiveVideos();
+  });
   // the "good to know" card shows until it's been read once on this device
   (function initLiveTips(){
     var seen = false;
@@ -4724,12 +4866,15 @@
   function sessionDb(){
     if(sessionDbPromise) return sessionDbPromise;
     sessionDbPromise = new Promise(function(resolve){
+      // some browsers never answer (a stuck or buggy database): after 3 s we go on without auto-save,
+      // so START and LIVE can never hang waiting for it
+      var timer = setTimeout(function(){ resolve(null); }, 3000);
       try{
         var req = indexedDB.open('our-little-booth-session', 1);
         req.onupgradeneeded = function(){ req.result.createObjectStore('last'); };
-        req.onsuccess = function(){ resolve(req.result); };
-        req.onerror = req.onblocked = function(){ resolve(null); };
-      }catch(e){ resolve(null); }   // private windows may block it: then there's simply no auto-save
+        req.onsuccess = function(){ clearTimeout(timer); resolve(req.result); };
+        req.onerror = req.onblocked = function(){ clearTimeout(timer); resolve(null); };
+      }catch(e){ clearTimeout(timer); resolve(null); }   // private windows may block it: then there's simply no auto-save
     });
     return sessionDbPromise;
   }
@@ -4834,7 +4979,12 @@
     session.pending = false;
     $('resumeOverlay').classList.remove('show');
     try{ sessionStorage.setItem('oob-welcomed', '1'); }catch(e){}
-    if(!cont){ clearSession(); showToast('Starting fresh ♡'); return; }
+    if(!cont){
+      clearSession();
+      showToast('Starting fresh ♡');
+      if(o.proceed) o.proceed();   // you had tapped START / LIVE: carry on with that
+      return;
+    }
     session.savedThisPage = true;   // what's stored is now this page's session
     state.shots = o.shots;
     state.shotCount = clamp(o.rec.shotCount || o.shots.length, o.shots.length, MAX_SHOTS);
@@ -4845,15 +4995,33 @@
     updateTray();
     showToast('Welcome back ♡');
   }
+  // START / LIVE tapped after going home (the photos were kept): offer them first
+  function offerSavedThen(proceed){
+    if(!session.pending || session.offer){ proceed(); return; }
+    var done = false;
+    function go(){ if(done) return; done = true; session.pending = false; proceed(); }
+    setTimeout(go, 1500);   // the saved photos take too long to load: don't keep you waiting
+    loadSession().then(function(rec){
+      if(!rec){ go(); return; }
+      return sessionCanvases(rec).then(function(canvases){
+        if(done) return;
+        done = true;
+        session.offer = {rec:rec, shots:canvases, design:sessionDesign(rec), proceed:proceed};
+        showResume();
+      });
+    }).catch(go);
+  }
   $('resumeContinue').addEventListener('click', function(){ answerResume(true); });
   $('resumeFresh').addEventListener('click', function(){ answerResume(false); });
   // runs once on start; the welcome card waits for it (see initWelcome)
   var fontsReadyForResume = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
   var resumeCheck = Promise.all([loadSession(), customFramesReady, fontsReadyForResume]).then(function(res){
     var rec = res[0];
+    if(session.offer) return true;   // START was tapped meanwhile and already offered it
     // opened from a live-room invite, or already busy in the app: don't interrupt
     if(!rec || pendingRoom || state.shots.length || $('app').dataset.view === 'app'){ session.pending = false; return false; }
     return sessionCanvases(rec).then(function(canvases){
+      if(session.offer) return true;
       if(state.shots.length || $('app').dataset.view === 'app'){ session.pending = false; return false; }
       session.offer = {rec:rec, shots:canvases, design:sessionDesign(rec)};
       showResume();
@@ -5511,7 +5679,7 @@
   });
 
   /* init */
-  goToStep('count', {noHistory:true});
+  goToStep('count');   // (on the home page this adds no history entry)
 })();
 </script>
 
