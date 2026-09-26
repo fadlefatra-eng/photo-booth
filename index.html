@@ -1013,7 +1013,7 @@
       <div class="privacy-note">🔒 Your photos stay on your device. We don't upload or store your photos.</div>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.9.6</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.9.7</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -2897,7 +2897,7 @@
     {urls:'stun:stun.l.google.com:19302'},
     {urls:'stun:stun1.l.google.com:19302'}
   ];
-  var TURN_URL = '';   // the Worker's address (not a secret). Empty = no relay: direct connections only
+  var TURN_URL = 'https://booth-turn-a154.fadlefatra.workers.dev/';   // the Worker's address (not a secret). Empty = no relay
   var iceCache = null;   // {servers, until}: one set of relay logins is reused for a few hours
   // only well-formed relay entries get through (never trust what comes over the network);
   // port 53 is left out because browsers block it (Cloudflare's advice) — it would only slow connecting
