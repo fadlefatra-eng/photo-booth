@@ -511,6 +511,7 @@
   .since-row[hidden]{display:none;}
   .since-row label{display:block; font-size:.8rem; font-weight:600; color:var(--rose-800); margin-bottom:4px;}
   .since-row p{font-size:.74rem; color:var(--rose-800); line-height:1.4; margin:4px 0 0;}
+  .since-row p.err{color:#B3261E; font-weight:600;}
   .switch-row{display:flex; align-items:center; gap:10px; font-size:.92rem;}
   .switch-row input{width:20px; height:20px;}
 
@@ -763,7 +764,7 @@
   .hold-preview img{max-height:52vh; width:auto; max-width:100%; border-radius:12px; box-shadow:var(--shadow-soft);
     -webkit-touch-callout:default; -webkit-user-select:auto; user-select:auto;}
   #holdDone{min-height:48px;}
-  /* "Save for printing": the strip twice (4R) or four times (A4) on one photo-paper sheet */
+  /* "Save for printing": your strip once, on a 4R or A4 sheet of photo paper */
   .print-link{display:block; margin:10px auto 0; min-height:44px;}
   .print-modal{overflow-y:auto;}
   .print-modal .code-card{margin:auto;}
@@ -916,10 +917,10 @@
     <div class="code-card">
       <button type="button" class="x-btn" id="printX" aria-label="Close">✕</button>
       <h3 id="printTitle">Save for printing ♡</h3>
-      <p>Your strip on one sheet of photo paper, with thin lines to cut along — one for you, one for your love.</p>
+      <p>Your strip on a sheet of photo paper, as big as it stays sharp — with a thin line to cut along.</p>
       <div class="print-sizes" role="radiogroup" aria-label="Paper size">
-        <button type="button" class="save-opt" data-size="4r" role="radio"><b>4R</b><small>10 × 15 cm · 2 strips</small></button>
-        <button type="button" class="save-opt" data-size="a4" role="radio"><b>A4</b><small>21 × 29.7 cm · 4 strips</small></button>
+        <button type="button" class="save-opt" data-size="4r" role="radio"><b>4R</b><small>10 × 15 cm photo paper</small></button>
+        <button type="button" class="save-opt" data-size="a4" role="radio"><b>A4</b><small>21 × 29.7 cm paper</small></button>
       </div>
       <div class="print-preview"><canvas id="printCanvas" width="10" height="10" aria-label="Print preview"></canvas></div>
       <button class="btn btn-primary btn-block" id="printGo">DOWNLOAD FOR PRINT ♡</button>
@@ -1362,7 +1363,7 @@
               </select>
               <div class="since-row" id="sinceRow" hidden>
                 <label for="sinceInput">Together since</label>
-                <input type="date" id="sinceInput" aria-describedby="sinceHint">
+                <input type="date" id="sinceInput" min="1900-01-01" aria-describedby="sinceHint">
                 <p id="sinceHint">Pick the day you got together ♡ Saved on this device only.</p>
               </div>
             </div>
@@ -2016,16 +2017,38 @@
     });
     $('dateLabelSelect').addEventListener('change', function(){
       state.dateLabel = this.value;
+      // choosing a date label means you want the date line: "Show date" turns on (it did nothing while off)
+      if(!state.showDate){ state.showDate = true; $('showDateToggle').checked = true; }
       syncSinceRow();
       renderPreview();
     });
-    $('sinceInput').addEventListener('change', function(){
-      var v = cleanSince(this.value);
-      if(this.value && !v){ this.value = state.since; showToast('Please pick a day that already happened ♡'); return; }
+    /* While you type, the date field passes through half-typed years (typing "2" of 2025 makes 0002-02-14).
+       Only a complete, real day that already happened is used; everything else simply waits — nothing is
+       reset while you type. When you leave the field: emptied = no day, unfinished or in the future = your
+       last day comes back with a note. */
+    function applySince(v){
       state.since = v;
       rememberSince();
       syncSinceRow();
       renderPreview();
+    }
+    function onSinceEdit(){
+      var v = cleanSince(this.value);
+      if(v && v !== state.since) applySince(v);
+    }
+    $('sinceInput').addEventListener('input', onSinceEdit);
+    $('sinceInput').addEventListener('change', onSinceEdit);
+    $('sinceInput').addEventListener('blur', function(){
+      var raw = this.value, unfinished = this.validity && this.validity.badInput;
+      if(!raw && !unfinished){ if(state.since) applySince(''); return; }
+      if(!cleanSince(raw)){
+        this.value = state.since;
+        syncSinceRow();
+        $('sinceHint').textContent = unfinished || !raw
+          ? 'That date wasn\'t finished — ' + (state.since ? 'your last one is back ♡' : 'please pick the whole date ♡')
+          : 'Please pick a day that already happened ♡';
+        $('sinceHint').classList.add('err');
+      }
     });
     $('animToggle').checked = state.animated;
     $('animToggle').addEventListener('change', function(){
@@ -2996,14 +3019,17 @@
   }
   // 3 = the quick count between photos (as always); 5 and 10 = the timer before the first photo,
   // real seconds, so there's time to put the phone down and step back
-  function countdownFrom(n, id){
+  // alive(): false once you left (or your love left the room) — the numbers stop at once, so an old
+  // 10-second count can't keep running behind the screen and mix with a new one
+  function countdownFrom(n, id, alive){
     var p = Promise.resolve();
     var seq = [], tick = n > 3 ? 1000 : 650;
+    function on(){ return !alive || alive(); }
     for(var i=n;i>=1;i--){ seq.push(i); }
     return seq.reduce(function(chain, num){
-      return chain.then(function(){ showCountdownText(String(num), id); return wait(tick); });
-    }, p).then(function(){ showCountdownText('CLICK!', id); return wait(220); })
-      .then(function(){ $(id || 'countdown').classList.remove('show'); });   // don't leave "CLICK!" hanging on screen
+      return chain.then(function(){ if(!on()) return; showCountdownText(String(num), id); return wait(tick); });
+    }, p).then(function(){ if(!on()) return; showCountdownText('CLICK!', id); return wait(220); })
+      .then(function(){ if(on()) $(id || 'countdown').classList.remove('show'); });   // don't leave "CLICK!" hanging on screen
   }
   function setShotIndicator(txt){ $('shotIndicator').textContent = txt; }
   function showTransition(l1, l2){
@@ -3054,7 +3080,7 @@
       setShotIndicator('SHOT ' + (state.shots.length+1) + ' / ' + state.shotCount);
       var secs = first ? state.timer : 3;
       first = false;
-      return countdownFrom(secs).then(function(){
+      return countdownFrom(secs, 'countdown', stillHere).then(function(){
         if(!stillHere()) return;
         playShutter();
         triggerFlash();
@@ -3576,6 +3602,7 @@
     live.connected = false; live.partnerReady = false; live.partnerDuo = false; live.partnerVer = '';
     live.partnerTimer = false;
     syncLiveTimer();
+    endShotUI();   // your love left mid-count: the numbers stop, the face guides come back
     endTogether();   // designing together needs both of you (your design stays as it is)
     $('liveRemote').srcObject = null;
     $('liveUnmute').hidden = true;
@@ -3752,7 +3779,7 @@
       // a pose idea gets a moment to be read before the countdown starts (same on both phones)
       return wait(pose ? 1800 : 0).then(function(){
         if(!still()) return;
-        return countdownFrom(r === 0 ? (secs || 3) : 3, 'liveCountdown');
+        return countdownFrom(r === 0 ? (secs || 3) : 3, 'liveCountdown', still);
       }).then(function(){
         if(!still()) return;
         playShutter();
@@ -4127,6 +4154,7 @@
   }
   function endShotUI(){
     $('liveTiles').classList.remove('running');
+    $('liveCountdown').classList.remove('show');   // a count that was stopped doesn't stay on screen
     showPose(null);
   }
   function poseIcon(p){
@@ -6083,7 +6111,9 @@
     $('sinceRow').hidden = !on;
     if(!on) return;
     $('sinceInput').max = todayIso();
-    if($('sinceInput').value !== state.since) $('sinceInput').value = state.since;
+    // never while you're typing in it (e.g. a change from your love while designing together)
+    if(document.activeElement !== $('sinceInput') && $('sinceInput').value !== state.since) $('sinceInput').value = state.since;
+    $('sinceHint').classList.remove('err');
     var n = dayNumber(state.since);
     $('sinceHint').textContent = n ? 'Today is day ' + n.toLocaleString('en-US') + ' ♡ Saved on this device only.'
                                    : 'Pick the day you got together ♡ Saved on this device only.';
@@ -7360,27 +7390,27 @@
   $('holdModal').addEventListener('click', function(e){ if(e.target === this) closeHoldSheet(); });
 
   /* ---------------- save for printing ----------------
-     The still strip laid out on a sheet of photo paper at 300 dpi: 4R (10 x 15 cm) holds it twice, A4 four
-     times, with thin dashed lines to cut along. Tall strips stand side by side; squarer ones (grid) are
-     stacked — whichever makes them biggest. Saved as a JPEG that tells printers it's 300 dpi, so a print shop
-     or a home printer prints it at the real size. Like the photo, the file is made BEFORE you tap
-     (phones only open the share menu right after a tap). */
+     Your strip ONCE — exactly the photos you took, never copied — on a sheet of photo paper at 300 dpi:
+     4R (10 x 15 cm) or A4. It's made as big as the paper allows (up to 1.6x its own size: bigger would
+     only look blurry), the sheet turns sideways when that fits a wide strip better, and a thin dashed line
+     around it shows where to cut. Saved as a JPEG that tells printers it's 300 dpi, so a print shop or a
+     home printer prints it at the real size. Like the photo, the file is made BEFORE you tap (phones only
+     open the share menu right after a tap). */
   var PRINT_SIZES = {
-    '4r': {name:'4R', w:1200, h:1800, copies:2, margin:60, pad:30},
-    'a4': {name:'A4', w:2480, h:3508, copies:4, margin:118, pad:40}
+    '4r': {name:'4R', w:1200, h:1800, margin:60},    // 5 mm edge (printers can't print to the very edge)
+    'a4': {name:'A4', w:2480, h:3508, margin:118}    // 1 cm edge
   };
+  var PRINT_MAX_SCALE = 1.6, CUT_GAP = 18;   // 18 px = 1.5 mm of white between the strip and the cut line
   var printSize = '4r';
   var printJob = null;   // {base, size, promise, blob}
+  // upright or sideways paper: whichever shows the strip bigger (upright when it's the same)
   function printLayout(P, sw, sh){
-    var options = [[P.copies, 1], [1, P.copies]];
-    if(P.copies === 4) options.push([2, 2]);
-    var best = null;
-    options.forEach(function(o){
-      var cw = (P.w - 2*P.margin) / o[0], ch = (P.h - 2*P.margin) / o[1];
-      var k = Math.min((cw - 2*P.pad) / sw, (ch - 2*P.pad) / sh, 1.6);   // (a little bigger than the photo is fine)
-      if(!best || k > best.k) best = {cols:o[0], rows:o[1], cw:cw, ch:ch, k:k};
-    });
-    return best;
+    function fit(w, h){
+      var room = 2 * (P.margin + CUT_GAP);
+      return {w:w, h:h, k:Math.min((w - room) / sw, (h - room) / sh, PRINT_MAX_SCALE)};
+    }
+    var up = fit(P.w, P.h), side = fit(P.h, P.w);
+    return side.k > up.k * 1.02 ? side : up;
   }
   function drawPrintSheet(size){
     var P = PRINT_SIZES[size];
@@ -7388,27 +7418,20 @@
     drawFrame(strip, 0);   // the "resting" pose, like the saved photo
     var L = printLayout(P, strip.width, strip.height);
     var sheet = document.createElement('canvas');
-    sheet.width = P.w; sheet.height = P.h;
+    sheet.width = L.w; sheet.height = L.h;
     var ctx = sheet.getContext('2d');
     ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, P.w, P.h);
+    ctx.fillRect(0, 0, L.w, L.h);
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     var dw = Math.round(strip.width * L.k), dh = Math.round(strip.height * L.k);
-    for(var r = 0; r < L.rows; r++){
-      for(var c = 0; c < L.cols; c++){
-        var x = P.margin + c*L.cw + (L.cw - dw)/2, y = P.margin + r*L.ch + (L.ch - dh)/2;
-        ctx.drawImage(strip, Math.round(x), Math.round(y), dw, dh);
-      }
-    }
-    // cut lines between the copies, edge to edge (they only cross the white space)
+    var x = Math.round((L.w - dw) / 2), y = Math.round((L.h - dh) / 2);
+    ctx.drawImage(strip, x, y, dw, dh);
+    // where to cut: a thin dashed line around the strip, in the white just outside it
     ctx.strokeStyle = '#BBBBBB';
-    ctx.lineWidth = Math.max(2, Math.round(P.w / 400));
-    ctx.setLineDash([P.w / 60, P.w / 80]);
-    ctx.beginPath();
-    for(var i = 1; i < L.cols; i++){ var lx = Math.round(P.margin + i*L.cw) + 0.5; ctx.moveTo(lx, 0); ctx.lineTo(lx, P.h); }
-    for(var j = 1; j < L.rows; j++){ var ly = Math.round(P.margin + j*L.ch) + 0.5; ctx.moveTo(0, ly); ctx.lineTo(P.w, ly); }
-    ctx.stroke();
+    ctx.lineWidth = 3;
+    ctx.setLineDash([24, 16]);
+    ctx.strokeRect(x - CUT_GAP + 0.5, y - CUT_GAP + 0.5, dw + 2*CUT_GAP - 1, dh + 2*CUT_GAP - 1);
     strip.width = strip.height = 0;   // free the big picture right away
     return sheet;
   }
@@ -7447,7 +7470,7 @@
   }
   function readyPrint(){ return printJob && printJob.base === base && printJob.size === printSize ? printJob.blob : null; }
   function drawPrintPreview(sheet){
-    var c = $('printCanvas'), k = Math.min(1, 520 / sheet.height);
+    var c = $('printCanvas'), k = Math.min(1, 520 / Math.max(sheet.width, sheet.height));
     c.width = Math.round(sheet.width * k); c.height = Math.round(sheet.height * k);
     var ctx = c.getContext('2d');
     ctx.imageSmoothingQuality = 'high';
