@@ -309,6 +309,12 @@
   .fx-row{margin-top:20px; text-align:center;}
   .fx-row h3{font-size:.82rem; text-transform:uppercase; letter-spacing:.06em; color:var(--rose-800); margin-bottom:10px; font-family:var(--font-body); font-weight:600;}
   .fx-row .chip-row{justify-content:center;}
+  /* timer under the heart (solo camera + live room): below the controls, so the heart never moves */
+  .timer-row{justify-content:center; align-items:center; gap:6px; margin:8px 0 0;}
+  .timer-row[hidden]{display:none;}
+  .timer-row .chip-label{font-size:.8rem; font-weight:600; color:var(--rose-800); margin-right:2px;}
+  .timer-row .chip{min-width:48px; min-height:42px; padding:9px 10px;}
+  .timer-row .chip[disabled]{opacity:.55;}
   .flash{position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none;}
   .flash.on{animation:flash-pop .38s ease;}
   @keyframes flash-pop{0%{opacity:0;}15%{opacity:.9;}100%{opacity:0;}}
@@ -432,6 +438,11 @@
   .frame-card.cf-new .cf-plus{font-size:1.8rem; line-height:1; color:var(--rose-600);}
   .cf-edit-btn{display:block; margin:10px auto 0;}
   .cf-edit-btn[hidden]{display:none;}
+  /* Custom tab: save all your frames into one file / bring them back from it (new phone, cleared browser) */
+  .cf-backup{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:12px 0 0;}
+  .cf-backup[hidden], .cf-backup .btn[hidden]{display:none;}
+  .cf-backup .btn{flex:1 1 140px; max-width:220px; min-height:44px; padding:10px 12px; font-size:.74rem;}
+  .cf-backup p{flex:1 1 100%; text-align:center; font-size:.74rem; color:var(--rose-800); line-height:1.4; margin:0;}
   #confirmModal{z-index:95;}   /* "are you sure?" must show above the custom frame editor */
   .cf-editor{position:fixed; inset:0; z-index:88; background:var(--blush-50); overflow-y:auto; -webkit-overflow-scrolling:touch;}
   .cf-inner{max-width:560px; margin:0 auto; padding:0 16px 40px;}
@@ -490,11 +501,16 @@
     font-size:.82rem; font-weight:500; color:var(--plum-900);
   }
   .chip.active{background:var(--rose-600); border-color:var(--rose-600); color:#fff;}
-  input[type="text"], select{
+  input[type="text"], input[type="date"], select{
     width:100%; padding:13px 16px; border-radius:12px; border:1.5px solid var(--blush-100);
     font-family:inherit; font-size:.95rem; background:var(--white); color:var(--plum-900); min-height:48px;
   }
   select{margin-top:8px;}
+  /* "Day N together": the day you got together (only shown for that date label) */
+  .since-row{margin-top:10px;}
+  .since-row[hidden]{display:none;}
+  .since-row label{display:block; font-size:.8rem; font-weight:600; color:var(--rose-800); margin-bottom:4px;}
+  .since-row p{font-size:.74rem; color:var(--rose-800); line-height:1.4; margin:4px 0 0;}
   .switch-row{display:flex; align-items:center; gap:10px; font-size:.92rem;}
   .switch-row input{width:20px; height:20px;}
 
@@ -523,7 +539,7 @@
     #step-result > h2, #step-result > .step-sub{grid-column:1 / -1;}
     #step-result .result-frame{grid-column:1; grid-row:3 / span 6; margin:14px 0 0;}
     #step-result .result-frame canvas{max-height:calc(100vh - 270px); max-height:calc(100svh - 270px);}   /* fits without scrolling */
-    #step-result > .save-as, #step-result > .save-note, #step-result > .result-more,
+    #step-result > .save-as, #step-result > .save-note, #step-result > .result-more, #step-result > .print-link,
     #step-result > .result-actions, #step-result > .privacy-inline{grid-column:2;}
     #step-result > .save-as{margin-top:14px;}
   }
@@ -747,6 +763,17 @@
   .hold-preview img{max-height:52vh; width:auto; max-width:100%; border-radius:12px; box-shadow:var(--shadow-soft);
     -webkit-touch-callout:default; -webkit-user-select:auto; user-select:auto;}
   #holdDone{min-height:48px;}
+  /* "Save for printing": the strip twice (4R) or four times (A4) on one photo-paper sheet */
+  .print-link{display:block; margin:10px auto 0; min-height:44px;}
+  .print-modal{overflow-y:auto;}
+  .print-modal .code-card{margin:auto;}
+  .print-sizes{display:flex; gap:10px; margin:0 0 12px;}
+  .print-sizes .save-opt{flex:1; min-height:64px;}
+  .print-preview{display:flex; justify-content:center; margin:0 0 10px;}
+  .print-preview canvas{max-height:34vh; width:auto; max-width:100%; border:1px solid var(--blush-100); border-radius:4px; box-shadow:var(--shadow-soft); background:#fff;}
+  #printGo{min-height:48px; white-space:nowrap; padding-left:10px; padding-right:10px;}
+  @media (max-width:380px){ #printGo{font-size:.8rem;} }   /* one line on small phones */
+  #printGo[disabled]{opacity:.7;}
   .design-modal{overflow-y:auto; z-index:90;}   /* above the custom frame editor, below "are you sure?" */
   .design-modal .code-card{margin:auto;}
   .design-preview{display:flex; justify-content:center; margin:4px 0 12px;}
@@ -883,6 +910,22 @@
       <button class="btn btn-primary btn-block" id="holdDone">DONE ♡</button>
     </div>
   </div>
+
+  <!-- result page: the strip laid out on photo paper, ready for a print shop -->
+  <div class="code-modal print-modal" id="printModal" role="dialog" aria-modal="true" aria-labelledby="printTitle" hidden>
+    <div class="code-card">
+      <button type="button" class="x-btn" id="printX" aria-label="Close">✕</button>
+      <h3 id="printTitle">Save for printing ♡</h3>
+      <p>Your strip on one sheet of photo paper, with thin lines to cut along — one for you, one for your love.</p>
+      <div class="print-sizes" role="radiogroup" aria-label="Paper size">
+        <button type="button" class="save-opt" data-size="4r" role="radio"><b>4R</b><small>10 × 15 cm · 2 strips</small></button>
+        <button type="button" class="save-opt" data-size="a4" role="radio"><b>A4</b><small>21 × 29.7 cm · 4 strips</small></button>
+      </div>
+      <div class="print-preview"><canvas id="printCanvas" width="10" height="10" aria-label="Print preview"></canvas></div>
+      <button class="btn btn-primary btn-block" id="printGo">DOWNLOAD FOR PRINT ♡</button>
+    </div>
+  </div>
+  <input type="file" id="cfImportInput" accept=".json,application/json" class="sr-only" tabindex="-1" aria-hidden="true">
 
   <!-- "zoom" in the editor: the whole strip as big as the screen allows (scroll to see it all) -->
   <div class="code-modal zoom-modal" id="zoomModal" role="dialog" aria-modal="true" aria-label="Your strip, bigger" hidden>
@@ -1072,7 +1115,7 @@
       </details>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.9.9</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.10</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -1101,6 +1144,11 @@
         <div class="frame-tabs" id="frameTabsStep" role="tablist" aria-label="Frame types"></div>
         <div class="frame-grid" id="frameGrid" role="group" aria-label="Choose a frame"></div>
         <button type="button" class="btn-text cf-edit-btn js-cf-edit" hidden>✎ Edit this custom frame</button>
+        <div class="cf-backup js-cf-backup" hidden>
+          <button type="button" class="btn btn-ghost js-cf-export">⬇ BACKUP MY FRAMES</button>
+          <button type="button" class="btn btn-ghost js-cf-import">⬆ RESTORE FROM FILE</button>
+          <p>One file with all your frames — keep it in your Drive or chat, and restore it on a new phone ♡</p>
+        </div>
         <div class="step-footer">
           <button class="btn btn-primary btn-block" id="toCameraBtn">START PHOTO BOOTH ♡</button>
           <button type="button" class="btn-text skip-link" id="skipFrameBtn">Skip — I'll choose after</button>
@@ -1137,6 +1185,7 @@
           <button class="btn btn-shutter" id="takePhotoBtn" aria-label="Start capturing"><span class="shutter-label" id="takePhotoLabel" aria-hidden="true"></span></button>
           <button class="icon-btn" id="changeFrameFromCamera" aria-label="Choose a different frame">🖼</button>
         </div>
+        <div class="chip-row timer-row" id="timerRow" role="group" aria-label="Timer for the first photo"></div>
         <div class="fx-row">
           <h3>Live effects ✨</h3>
           <div class="chip-row" id="fxChips" role="group" aria-label="Live camera effects"></div>
@@ -1237,6 +1286,7 @@
             <button class="btn btn-shutter" id="liveShutter" aria-label="Start the countdown for both of you" disabled><span class="shutter-label" id="liveShutterLabel" aria-hidden="true"></span></button>
             <button class="icon-btn" id="liveMicBtn" aria-label="Mute microphone">🎙</button>
           </div>
+          <div class="chip-row timer-row" id="liveTimerRow" role="group" aria-label="Timer for the first photo" hidden></div>
           <!-- below the controls, so it never pushes the heart button off a phone screen -->
           <div class="live-tips" id="liveTips" hidden>
             <p class="live-tips-title">Good to know ♡</p>
@@ -1278,6 +1328,10 @@
               <div class="frame-tabs" id="frameTabsCustomize" role="tablist" aria-label="Frame types"></div>
               <div class="frame-pick-row" id="framePickRow" role="group" aria-label="Choose a frame"></div>
               <button type="button" class="btn-text cf-edit-btn js-cf-edit" hidden>✎ Edit this custom frame</button>
+              <div class="cf-backup js-cf-backup" hidden>
+                <button type="button" class="btn btn-ghost js-cf-export">⬇ BACKUP MY FRAMES</button>
+                <button type="button" class="btn btn-ghost js-cf-import">⬆ RESTORE FROM FILE</button>
+              </div>
               <label class="switch-row" id="popoutToggleRow" hidden><input type="checkbox" id="popoutToggle" checked><span>Let decorations peek over photos</span></label>
             </div>
             <div class="tool-panel" data-panel="color" role="tabpanel" hidden>
@@ -1304,7 +1358,13 @@
                 <option value="Our Date">Our Date</option>
                 <option value="Love Day">Love Day</option>
                 <option value="Best Day">Best Day</option>
+                <option value="day">Day N together ♡</option>
               </select>
+              <div class="since-row" id="sinceRow" hidden>
+                <label for="sinceInput">Together since</label>
+                <input type="date" id="sinceInput" aria-describedby="sinceHint">
+                <p id="sinceHint">Pick the day you got together ♡ Saved on this device only.</p>
+              </div>
             </div>
             <!-- only while you're in a live room together -->
             <div class="live-design" id="liveDesign" hidden>
@@ -1360,6 +1420,7 @@
           <button class="btn btn-ghost" id="changeFrameBtn" aria-label="Change frame">🖼 FRAME</button>
           <button class="btn btn-ghost" id="shareBtn" aria-label="Share">↗ SHARE</button>
         </div>
+        <button type="button" class="btn-text print-link" id="printBtn">🖨 Save for printing (4R · A4)</button>
         <div class="result-actions">
           <button class="btn btn-primary btn-block" id="downloadBtn">DOWNLOAD PHOTO ♡</button>
           <p class="save-hint" id="saveHint" aria-live="polite" hidden></p>
@@ -1494,6 +1555,8 @@
     customText: '',
     showDate: true,
     dateLabel: 'date',
+    since: '',         // "Day N together": the day you got together, 'YYYY-MM-DD' ('' = not set)
+    timer: 3,          // seconds before the FIRST photo (3 / 5 / 10); the rest always count 3
     facingMode: 'user',
     shots: [],
     stream: null,
@@ -1504,6 +1567,9 @@
     animated: true
   };
   try{ state.muted = localStorage.getItem('oob-muted') === '1'; }catch(e){}
+  var TIMERS = [3, 5, 10];
+  try{ var savedTimer = +localStorage.getItem('oob-timer'); if(TIMERS.indexOf(savedTimer) !== -1) state.timer = savedTimer; }catch(e){}
+  try{ state.since = cleanSince(localStorage.getItem('oob-since')); }catch(e){}
   if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) state.animated = false;
 
   // phones & tablets get phone wording; laptops/PCs get computer wording (see .phone-only / .desktop-only)
@@ -1622,6 +1688,26 @@
     var d = new Date();
     var months = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
     return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+  }
+  // "Day N together": a real calendar day 'YYYY-MM-DD', not in the future (anything else → '')
+  function cleanSince(v){
+    var m = typeof v === 'string' && /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+    if(!m) return '';
+    var y = +m[1], mo = +m[2] - 1, d = +m[3], t = new Date(y, mo, d);
+    if(y < 1900 || t.getFullYear() !== y || t.getMonth() !== mo || t.getDate() !== d) return '';   // e.g. 31 February
+    return dayNumber(v) ? v : '';
+  }
+  // the day you got together is Day 1; counted in whole calendar days, so summer time can't shift it
+  function dayNumber(since){
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(since || '');
+    if(!m) return 0;
+    var now = new Date();
+    var n = Math.round((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - Date.UTC(+m[1], +m[2] - 1, +m[3])) / 86400000) + 1;
+    return n >= 1 && n < 100000 ? n : 0;
+  }
+  function todayIso(){
+    var d = new Date();
+    return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
   }
   function templateById(id){
     for(var i=0;i<TEMPLATES.length;i++){ if(TEMPLATES[i].id===id) return TEMPLATES[i]; }
@@ -1823,6 +1909,7 @@
     });
     if(state.currentStep === 'frame') fillThumbs($('frameGrid'), 0.2);
     if(state.currentStep === 'customize') fillThumbs($('framePickRow'), 0.14);
+    syncBackupRow();
   }
 
   function syncFrameSelection(){
@@ -1929,6 +2016,15 @@
     });
     $('dateLabelSelect').addEventListener('change', function(){
       state.dateLabel = this.value;
+      syncSinceRow();
+      renderPreview();
+    });
+    $('sinceInput').addEventListener('change', function(){
+      var v = cleanSince(this.value);
+      if(this.value && !v){ this.value = state.since; showToast('Please pick a day that already happened ♡'); return; }
+      state.since = v;
+      rememberSince();
+      syncSinceRow();
       renderPreview();
     });
     $('animToggle').checked = state.animated;
@@ -1965,6 +2061,7 @@
     stopAnim();
     cancelVideo();
     closeHoldSheet();
+    closePrintSheet();
     if(state.shots.length){
       saveSession();           // store the very latest first…
       session.pending = true;  // …and don't let the empty strip overwrite it before you've answered
@@ -1982,6 +2079,7 @@
     stopAnim();
     cancelVideo();       // a video still being made on the result page isn't needed anymore
     closeHoldSheet();
+    closePrintSheet();
     state.currentStep = step;
     closeZoom();         // (after the step changes, so it doesn't restart the editor's animation elsewhere)
     if(step === 'camera' || step === 'live') state.captureStep = step;   // where ← from the editor goes back to
@@ -2089,6 +2187,7 @@
     if(!$('confirmModal').hidden){ closeConfirm(null); history.pushState(appEntry(), ''); return; }
     if(!$('backModal').hidden){ closeBackChooser(); history.pushState(appEntry(), ''); return; }
     if(!$('holdModal').hidden){ closeHoldSheet(); history.pushState(appEntry(), ''); return; }
+    if(!$('printModal').hidden){ closePrintSheet(); history.pushState(appEntry(), ''); return; }
     if(!$('zoomModal').hidden){ closeZoom(); history.pushState(appEntry(), ''); return; }
     if(!$('duoHelp').hidden){ closeDuoHelp(); history.pushState(appEntry(), ''); return; }
     if(!$('poseSheet').hidden){ closePoseSheet(); history.pushState(appEntry(), ''); return; }
@@ -2180,6 +2279,7 @@
     if(!$('confirmModal').hidden) closeConfirm(false);
     else if(!$('backModal').hidden) closeBackChooser();
     else if(!$('holdModal').hidden) closeHoldSheet();
+    else if(!$('printModal').hidden) closePrintSheet();
     else if(!$('zoomModal').hidden) closeZoom();
     else if(!$('duoHelp').hidden) closeDuoHelp();
     else if(!$('poseSheet').hidden) closePoseSheet();
@@ -2326,6 +2426,8 @@
     $('titleToggle').checked = state.showTitle;
     $('popoutToggle').checked = state.popout;
     $('showDateToggle').checked = state.showDate;
+    $('dateLabelSelect').value = state.dateLabel;
+    syncSinceRow();
     renderFilterThumbs();
   }
   function renderFilterThumbs(){
@@ -2455,6 +2557,7 @@
     $('takePhotoLabel').textContent = state.cameraFallbackMode
       ? (IS_PHONE ? 'tap to take a photo' : 'click to choose photos')
       : state.shots.length >= state.shotCount ? TAP + ' for new photos' : PRESS + ' to start ♡';
+    $('timerRow').hidden = state.cameraFallbackMode;   // the phone's camera app / gallery has no countdown
   }
   syncShutterLabel();
   $('liveShutterLabel').textContent = PRESS + ' to start for both of you ♡';
@@ -2891,12 +2994,14 @@
     el.textContent = txt;
     el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
   }
+  // 3 = the quick count between photos (as always); 5 and 10 = the timer before the first photo,
+  // real seconds, so there's time to put the phone down and step back
   function countdownFrom(n, id){
     var p = Promise.resolve();
-    var seq = [];
+    var seq = [], tick = n > 3 ? 1000 : 650;
     for(var i=n;i>=1;i--){ seq.push(i); }
     return seq.reduce(function(chain, num){
-      return chain.then(function(){ showCountdownText(String(num), id); return wait(650); });
+      return chain.then(function(){ showCountdownText(String(num), id); return wait(tick); });
     }, p).then(function(){ showCountdownText('CLICK!', id); return wait(220); })
       .then(function(){ $(id || 'countdown').classList.remove('show'); });   // don't leave "CLICK!" hanging on screen
   }
@@ -2932,6 +3037,7 @@
   });
   function runBooth(runId){
     function stillHere(){ return runId === boothRun && state.currentStep === 'camera'; }
+    var first = true;   // the timer (3 / 5 / 10) is for the first photo; the others count 3
     function next(){
       if(!stillHere()) return Promise.resolve();
       // count what we already have (e.g. gallery photos), so we only take what's missing
@@ -2946,7 +3052,9 @@
         });
       }
       setShotIndicator('SHOT ' + (state.shots.length+1) + ' / ' + state.shotCount);
-      return countdownFrom(3).then(function(){
+      var secs = first ? state.timer : 3;
+      first = false;
+      return countdownFrom(secs).then(function(){
         if(!stillHere()) return;
         playShutter();
         triggerFlash();
@@ -2956,6 +3064,37 @@
     }
     return next();
   }
+  /* ---- timer chips "⏱ timer 3s 5s 10s" under the heart (solo camera + live room) ---- */
+  function buildTimerRow(row, value, disabled, pick){
+    row.innerHTML = '';
+    var lab = document.createElement('span');
+    lab.className = 'chip-label'; lab.textContent = '⏱ timer'; lab.setAttribute('aria-hidden', 'true');
+    row.appendChild(lab);
+    TIMERS.forEach(function(s){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip' + (s === value ? ' active' : '');
+      b.textContent = s + 's';
+      b.setAttribute('aria-label', s + ' seconds before the first photo');
+      b.setAttribute('aria-pressed', s === value ? 'true' : 'false');
+      b.disabled = !!disabled;
+      b.addEventListener('click', function(){
+        if(b.disabled || s === value) return;
+        var i = Array.prototype.indexOf.call(row.children, b), had = document.activeElement === b;
+        pick(s);   // (rebuilds the row)
+        if(had && row.children[i]) row.children[i].focus();   // a keyboard user stays on the chip
+      });
+      row.appendChild(b);
+    });
+  }
+  function buildSoloTimer(){
+    buildTimerRow($('timerRow'), state.timer, false, function(s){
+      state.timer = s;
+      try{ localStorage.setItem('oob-timer', String(s)); }catch(e){}
+      buildSoloTimer();
+    });
+  }
+  buildSoloTimer();
   function leaveCamera(){
     boothRun++;
     camRequest++;   // a camera still starting up is switched off when it arrives
@@ -3106,8 +3245,23 @@
     ice:null,   // STUN (+ relay) servers for this room, from getIceServers()
     // Together ("duo") = both of you in one photo; Separate = two photos per shot (see TOGETHER below)
     mode:'duo', showStyles:false, roundsBy:{duo:4, separate:2}, partnerDuo:false, partnerVer:'', duoHalves:{},
-    poseMode:'surprise', posePick:[], autoTemplate:false
+    poseMode:'surprise', posePick:[], autoTemplate:false,
+    // timer before the first photo: the same on both phones (every room starts at 3). Only offered when your
+    // love's page knows it too (partnerTimer, from "hello") — an older page would count 3 and click early
+    timer:3, partnerTimer:false
   };
+  function liveTimer(){ return live.partnerTimer ? live.timer : 3; }
+  function syncLiveTimer(){
+    var row = $('liveTimerRow');
+    row.hidden = !(live.connected && live.partnerTimer);
+    if(row.hidden) return;
+    buildTimerRow(row, live.timer, live.running, function(s){
+      if(live.running) return;
+      live.timer = s;
+      syncLiveTimer();
+      sendLive({type:'timer', s:s});   // both phones always show the same timer
+    });
+  }
   var pendingRoom = null;   // room code from an invite link (#room=K7X2MQ)
 
   // only download PeerJS when someone actually opens a live room
@@ -3156,6 +3310,7 @@
   function updateShutter(){
     var canShoot = live.connected && live.partnerReady && !live.running;
     $('liveShutter').disabled = !canShoot;
+    syncLiveTimer();
     if(!live.connected || live.running) return;
     setLiveStatus(live.partnerReady
       ? 'Both here ♡ either one can press the heart'
@@ -3259,6 +3414,7 @@
     // carry over (the room maker's style is copied to the other phone when you connect)
     live.mode = 'duo';
     live.showStyles = false;
+    live.timer = 3;
     if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.RTCPeerConnection){
       setLiveError("This browser can't do live video. Try Chrome or Safari ♡");
       return;
@@ -3364,7 +3520,7 @@
     live.conn = conn;
     conn.on('open', function(){
       // duo: this page can do "Together" · ver: its version, so both phones can tell if one is out of date
-      sendLive({type:'hello', facing:state.facingMode, duo:true, ver:APP_VERSION});
+      sendLive({type:'hello', facing:state.facingMode, duo:true, ver:APP_VERSION, timer:true});
       if(live.role === 'host') sendLive({type:'mode', mode:live.mode});   // the room maker's style is the starting point
       sendLive({type:'ping', t:Date.now()});
       sendLive({type:'ready', ready: state.currentStep === 'live'});
@@ -3418,6 +3574,8 @@
     var conn = live.conn, call = live.call;
     live.conn = null; live.call = null; live.remoteStream = null;
     live.connected = false; live.partnerReady = false; live.partnerDuo = false; live.partnerVer = '';
+    live.partnerTimer = false;
+    syncLiveTimer();
     endTogether();   // designing together needs both of you (your design stays as it is)
     $('liveRemote').srcObject = null;
     $('liveUnmute').hidden = true;
@@ -3457,6 +3615,9 @@
         $('liveRemote').classList.toggle('mirror', live.remoteFacing === 'user');
         live.partnerDuo = msg.duo === true;   // an older page can't do "Together": then it's Separate for both
         live.partnerVer = typeof msg.ver === 'string' ? msg.ver.slice(0, 16) : '';   // pages before v4.9.2 send none
+        live.partnerTimer = msg.timer === true;   // pages before v4.10 have no timer
+        if(live.partnerTimer && live.role === 'host') sendLive({type:'timer', s:live.timer});   // the room maker's is the start
+        syncLiveTimer();
         syncLiveModeUI();
         if(state.currentStep === 'live') startLiveOverlay();
         break;
@@ -3465,6 +3626,12 @@
           live.mode = msg.mode;
           syncLiveModeUI();
           if(state.currentStep === 'live') startLiveOverlay();
+        }
+        break;
+      case 'timer':   // your love picked another timer
+        if(!live.running && TIMERS.indexOf(msg.s) !== -1 && msg.s !== live.timer){
+          live.timer = msg.s;
+          syncLiveTimer();
         }
         break;
       case 'facing':
@@ -3485,11 +3652,12 @@
         if(state.currentStep === 'live' && live.connected && !live.running){
           // whoever pressed the heart decides the style, the number of shots and the poses
           var sid = typeof msg.sid === 'string' ? msg.sid.slice(0, 16) : null;   // (older pages send none)
+          var secs = TIMERS.indexOf(msg.timer) !== -1 ? msg.timer : 3;          // (and no timer: 3)
           if(msg.mode === 'duo' && live.partnerDuo){
             var n = clamp(Math.round(+msg.rounds) || 1, 1, MAX_SHOTS);
-            runLiveSession(n, 'duo', cleanPoses(msg.poses, n), sid);
+            runLiveSession(n, 'duo', cleanPoses(msg.poses, n), sid, secs);
           } else {
-            runLiveSession(msg.rounds === 1 ? 1 : 2, 'separate', null, sid);
+            runLiveSession(msg.rounds === 1 ? 1 : 2, 'separate', null, sid, secs);
           }
         }
         break;
@@ -3546,13 +3714,15 @@
     var mode = liveMode(), rounds = live.rounds;
     var poses = mode === 'duo' ? planPoses(rounds) : null;
     var sid = Math.random().toString(36).slice(2, 10);   // this session's name, carried by its photos
-    sendLive({type:'start', rounds:rounds, mode:mode, poses:poses, sid:sid});
+    var secs = liveTimer();
+    sendLive({type:'start', rounds:rounds, mode:mode, poses:poses, sid:sid, timer:secs});
     live.running = true; updateShutter();
-    setTimeout(function(){ runLiveSession(rounds, mode, poses, sid); }, Math.round(live.rtt/2));
+    setTimeout(function(){ runLiveSession(rounds, mode, poses, sid, secs); }, Math.round(live.rtt/2));
   }
   // mode 'duo' (Together: one joined photo per shot) or 'separate' (your photo + theirs per shot)
   // sid: the session's name — a photo that arrives very late from an earlier session is ignored
-  function runLiveSession(rounds, mode, poses, sid){
+  // secs: the countdown before the first photo (3 / 5 / 10 — the rest count 3)
+  function runLiveSession(rounds, mode, poses, sid, secs){
     var duo = mode === 'duo';
     var id = ++live.runId;
     live.running = true; live.pending = {}; live.early = {}; live.duoHalves = {};
@@ -3565,6 +3735,7 @@
     live.roundIdx = 0;
     // your love may have picked another style or count: follow theirs
     live.mode = mode; live.rounds = rounds; live.roundsBy[mode] = rounds;
+    if(live.partnerTimer) live.timer = secs || 3;
     syncLiveModeUI();      // (also picks a strip that suits this style, unless you chose a frame)
     startLiveOverlay();
     $('liveTiles').classList.add('running');
@@ -3581,7 +3752,7 @@
       // a pose idea gets a moment to be read before the countdown starts (same on both phones)
       return wait(pose ? 1800 : 0).then(function(){
         if(!still()) return;
-        return countdownFrom(3, 'liveCountdown');
+        return countdownFrom(r === 0 ? (secs || 3) : 3, 'liveCountdown');
       }).then(function(){
         if(!still()) return;
         playShutter();
@@ -5336,6 +5507,7 @@
       else box.insertBefore(card, box.querySelector('.cf-new').nextSibling);   // newest first, after "create"
       card.hidden = state.frameTab !== 'custom';
     });
+    syncBackupRow();
     return t;
   }
   function unregisterCustom(rec){
@@ -5343,6 +5515,7 @@
     TEMPLATES = TEMPLATES.filter(function(x){ return x.id !== id; });
     Array.prototype.forEach.call(document.querySelectorAll('[data-template="' + id + '"]'), function(c){ c.remove(); });
     rec.items.forEach(function(it){ delete customImages[it.id]; });
+    syncBackupRow();
   }
   // on start: load saved frames from the device
   function loadCustomFrames(){
@@ -5556,6 +5729,146 @@
       if(t.custom) openCfEditor(t.rec);
     });
   });
+  /* ---- backup: all your custom frames in one file ----
+     Custom frames live only in this browser on this phone (a new phone, "clear site data" or Safari's
+     7-day rule loses them). BACKUP MY FRAMES saves one .json file with every saved frame and its images;
+     RESTORE FROM FILE adds the frames from such a file that aren't here yet. Everything read from a file
+     is checked like a frame from your love (known spots and bases, image sizes) and every image is
+     re-drawn by us — a file can't make the app do anything else. */
+  var BACKUP_KIND = 'our-little-photo-booth/frames';
+  var MAX_BACKUP_FILE = 80*1024*1024, MAX_BACKUP_FRAMES = 60;
+  function hasCustomFrames(){ return TEMPLATES.some(function(t){ return t.custom; }); }
+  function syncBackupRow(){
+    var on = state.frameTab === 'custom';
+    Array.prototype.forEach.call(document.querySelectorAll('.js-cf-backup'), function(row){ row.hidden = !on; });
+    Array.prototype.forEach.call(document.querySelectorAll('.js-cf-export'), function(b){ b.hidden = !hasCustomFrames(); });
+  }
+  function blobToDataUrl(blob){
+    return new Promise(function(resolve, reject){
+      var r = new FileReader();
+      r.onload = function(){ resolve(r.result); };
+      r.onerror = function(){ reject(r.error); };
+      r.readAsDataURL(blob);
+    });
+  }
+  function dataUrlBytes(s){
+    var m = typeof s === 'string' && /^data:image\/(png|jpeg|webp|gif);base64,([A-Za-z0-9+\/=]+)$/.exec(s);
+    if(!m || m[2].length > MAX_FRAME_IMG * 1.4) return null;
+    try{
+      var bin = atob(m[2]), out = new Uint8Array(bin.length);
+      for(var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+      return out;
+    }catch(e){ return null; }
+  }
+  function savedFrameRecs(){
+    // the saved ones (not a frame your love only let you use once); private windows: what's on screen
+    return customDbRun('readonly', function(store){ return store.getAll(); }).then(function(recs){
+      if(recs) return recs;
+      return TEMPLATES.filter(function(t){ return t.custom && !together.unsaved[t.id]; }).map(function(t){ return t.rec; });
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.js-cf-export'), function(btn){
+    btn.addEventListener('click', function(){
+      if(btn.disabled) return;
+      btn.disabled = true;
+      savedFrameRecs().then(function(recs){
+        if(!recs.length){ showToast('No saved frames to back up yet ♡'); return; }
+        recs.sort(function(a, b){ return a.created - b.created; });
+        return Promise.all(recs.map(function(rec){
+          return Promise.all(rec.items.map(function(it){ return blobToDataUrl(it.blob); })).then(function(urls){
+            return {id:rec.id, srcId:rec.srcId, name:rec.name, baseId:rec.baseId, colorId:rec.colorId, wiggle:!!rec.wiggle,
+                    created:rec.created, items:rec.items.map(function(it, i){ return {pos:it.pos, size:it.size, v:it.v, png:urls[i]}; })};
+          });
+        })).then(function(frames){
+          var file = JSON.stringify({kind:BACKUP_KIND, v:1, saved:new Date().toISOString(), frames:frames});
+          // a download on every device (on iPhones it goes to the Files app — the right place for a backup)
+          saveBlob(new Blob([file], {type:'application/json'}), 'our-little-frames-' + todayIso() + '.json');
+        });
+      }).catch(function(){
+        showToast("Couldn't make the backup. Please try again ♡");
+      }).then(function(){ btn.disabled = false; });
+    });
+  });
+  function restoreFrame(f){
+    var id = f && typeof f.id === 'string' && /^[a-z0-9]{4,32}$/.test(f.id) ? f.id : null;
+    if(!id || !Array.isArray(f.items) || !f.items.length || f.items.length > 12) return Promise.reject(new Error('frame'));
+    var baseOk = CF_BASES.indexOf(f.baseId) !== -1 ||
+      TEMPLATES.some(function(t){ return t.id === f.baseId && t.tab === 'illustrated'; });
+    var total = 0, bytes = [];
+    var itemsOk = f.items.every(function(it){
+      var b = it && dataUrlBytes(it.png);
+      if(!b || b.byteLength > MAX_FRAME_IMG) return false;
+      total += b.byteLength; bytes.push(b);
+      return CUSTOM_POSITIONS.some(function(p){ return p.id === it.pos; }) && typeof it.size === 'number' && isFinite(it.size);
+    });
+    if(!baseOk || !itemsOk || total > MAX_FRAME_TOTAL) return Promise.reject(new Error('frame'));
+    var rec = {
+      id: id,
+      srcId: typeof f.srcId === 'string' && /^[a-z0-9]{4,32}$/.test(f.srcId) ? f.srcId : undefined,
+      name: (typeof f.name === 'string' ? f.name.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 24) : '') || 'My frame',
+      baseId: f.baseId,
+      colorId: COLOR_OPTIONS.some(function(c){ return c.id === f.colorId; }) ? f.colorId : templateById(f.baseId).color,
+      wiggle: f.wiggle === true,
+      created: typeof f.created === 'number' && isFinite(f.created) ? f.created : Date.now(),
+      items: []
+    };
+    // one image at a time (old phones), each re-drawn as a clean PNG
+    var items = [];
+    return f.items.reduce(function(chain, it, i){
+      return chain.then(function(){
+        return prepareImage(new Blob([bytes[i]])).then(function(blob){
+          var item = {id:cfUid(), pos:it.pos, size:clamp(Math.round(it.size), 1, 100), v:it.v === 2 ? 2 : undefined, blob:blob};
+          return loadImage(blob).then(function(img){ customImages[item.id] = img; items.push(item); });
+        });
+      });
+    }, Promise.resolve()).then(function(){ rec.items = items; return rec; }, function(err){
+      items.forEach(function(it){ delete customImages[it.id]; });
+      throw err;
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.js-cf-import'), function(btn){
+    btn.addEventListener('click', function(){ $('cfImportInput').value = ''; $('cfImportInput').click(); });
+  });
+  $('cfImportInput').addEventListener('change', function(){
+    var file = this.files && this.files[0];
+    this.value = '';
+    if(!file) return;
+    if(file.size > MAX_BACKUP_FILE){ showToast("That file is too big to be a frame backup ♡"); return; }
+    var readText = file.text ? file.text() : new Promise(function(resolve, reject){
+      var r = new FileReader(); r.onload = function(){ resolve(r.result); }; r.onerror = function(){ reject(r.error); }; r.readAsText(file);
+    });
+    readText.then(function(text){
+      var data;
+      try{ data = JSON.parse(text); }catch(e){ data = null; }
+      if(!data || data.kind !== BACKUP_KIND || !Array.isArray(data.frames)){
+        showToast("That isn't a frame backup from Our Little Photo Booth ♡");
+        return;
+      }
+      var added = 0, had = 0, bad = 0;
+      return data.frames.slice(0, MAX_BACKUP_FRAMES).reduce(function(chain, f){
+        return chain.then(function(){
+          var here = f && TEMPLATES.some(function(t){
+            // the same frame, or a copy of it that went phone to phone (srcId = the first phone's id)
+            return t.custom && (t.rec.id === f.id || (f.srcId && (t.rec.srcId === f.srcId || t.rec.id === f.srcId)));
+          });
+          if(here){ had++; return; }
+          return restoreFrame(f).then(function(rec){
+            registerCustom(rec);
+            added++;
+            return customDbRun('readwrite', function(store){ return store.put(rec); }).catch(function(){});
+          }, function(){ bad++; });
+        });
+      }, Promise.resolve()).then(function(){
+        if(added) keepStorage();
+        showFrameTab('custom');
+        var msg = added ? 'Restored ' + added + (added === 1 ? ' frame' : ' frames') + ' ♡' : 'Nothing new to restore ♡';
+        if(had) msg += ' (' + had + ' already here)';
+        if(bad) msg += ' · ' + bad + " couldn't be opened";
+        showToast(msg);
+      });
+    }).catch(function(){ showToast("Couldn't read that file. Please try again ♡"); });
+  });
+
   var customFramesReady = loadCustomFrames();   // the "continue your last photos" check waits for these
 
   /* ================= SEND MY DESIGN (live room) =================
@@ -5565,8 +5878,9 @@
      (like the photos) and they can keep the frame.
      Everything that arrives is checked first: only known ids, short texts, and real images of a
      sensible size, which we re-draw ourselves — a message can't make the app do anything else. */
-  var DESIGN_KEYS = ['templateId','colorId','showTitle','popout','filterId','stickers','customText','showDate','dateLabel','animated'];
-  var DATE_LABELS = ['date','Our Date','Love Day','Best Day'];
+  // (older pages ignore 'since' and turn the 'day' label into the plain date — nothing breaks)
+  var DESIGN_KEYS = ['templateId','colorId','showTitle','popout','filterId','stickers','customText','showDate','dateLabel','since','animated'];
+  var DATE_LABELS = ['date','Our Date','Love Day','Best Day','day'];
   var MAX_FRAME_IMG = 2*1024*1024, MAX_FRAME_TOTAL = 10*1024*1024;
   var designOffer = null;   // {design, rec, kind} waiting for USE THEIRS / KEEP MINE (or JOIN / NOT NOW)
   // Design together (below): on = in a session, inviting = waiting for an answer, last = the design both
@@ -5636,6 +5950,7 @@
       customText: typeof raw.customText === 'string' ? raw.customText.replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 40) : '',
       showDate: bool(raw.showDate, true),
       dateLabel: DATE_LABELS.indexOf(raw.dateLabel) !== -1 ? raw.dateLabel : 'date',
+      since: cleanSince(raw.since) || state.since,   // a design without one (older page) keeps yours
       animated: bool(raw.animated, true)
     };
   }
@@ -5754,12 +6069,27 @@
     });
     $('customText').value = state.customText;
     $('dateLabelSelect').value = state.dateLabel;
+    syncSinceRow();
     $('animToggle').checked = state.animated;
     $('showDateToggle').checked = state.showDate;
     $('titleToggle').checked = state.showTitle;
     $('popoutToggle').checked = state.popout;
     syncFrameSelection();
     syncColorUI();
+  }
+  // "Day N together": the date field shows only for that label
+  function syncSinceRow(){
+    var on = state.dateLabel === 'day';
+    $('sinceRow').hidden = !on;
+    if(!on) return;
+    $('sinceInput').max = todayIso();
+    if($('sinceInput').value !== state.since) $('sinceInput').value = state.since;
+    var n = dayNumber(state.since);
+    $('sinceHint').textContent = n ? 'Today is day ' + n.toLocaleString('en-US') + ' ♡ Saved on this device only.'
+                                   : 'Pick the day you got together ♡ Saved on this device only.';
+  }
+  function rememberSince(){
+    try{ if(state.since) localStorage.setItem('oob-since', state.since); else localStorage.removeItem('oob-since'); }catch(e){}
   }
   function applyDesign(d){
     var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -5768,6 +6098,7 @@
       state[k] = k === 'stickers' ? copyStickers(d.stickers) : d[k];
     });
     if(!state.colorId) state.colorId = templateById(state.templateId).color;
+    rememberSince();   // your love's "together since" (same couple, same day) — or your own, unchanged
     syncDesignControls();
     if(state.currentStep === 'customize'){ prepCustomizeDefaults(); showFrameTab(templateById(state.templateId).tab); renderPreview(); }
     else if(state.currentStep === 'result') renderResult();
@@ -6661,7 +6992,11 @@
   }
 
   function drawFooterDate(ctx, w, y, textColor, maxW){
-    var label = state.dateLabel && state.dateLabel !== 'date' ? state.dateLabel + ' — ' : '';
+    var label = '';
+    if(state.dateLabel === 'day'){
+      var n = dayNumber(state.since);   // no day picked yet: just the date
+      if(n) label = 'Day ' + n.toLocaleString('en-US') + ' together ♡ — ';
+    } else if(state.dateLabel && state.dateLabel !== 'date') label = state.dateLabel + ' — ';
     ctx.fillStyle = textColor;
     ctx.globalAlpha = 0.85;
     ctx.textAlign = 'center';
@@ -7023,6 +7358,143 @@
   $('holdDone').addEventListener('click', closeHoldSheet);
   $('holdX').addEventListener('click', closeHoldSheet);
   $('holdModal').addEventListener('click', function(e){ if(e.target === this) closeHoldSheet(); });
+
+  /* ---------------- save for printing ----------------
+     The still strip laid out on a sheet of photo paper at 300 dpi: 4R (10 x 15 cm) holds it twice, A4 four
+     times, with thin dashed lines to cut along. Tall strips stand side by side; squarer ones (grid) are
+     stacked — whichever makes them biggest. Saved as a JPEG that tells printers it's 300 dpi, so a print shop
+     or a home printer prints it at the real size. Like the photo, the file is made BEFORE you tap
+     (phones only open the share menu right after a tap). */
+  var PRINT_SIZES = {
+    '4r': {name:'4R', w:1200, h:1800, copies:2, margin:60, pad:30},
+    'a4': {name:'A4', w:2480, h:3508, copies:4, margin:118, pad:40}
+  };
+  var printSize = '4r';
+  var printJob = null;   // {base, size, promise, blob}
+  function printLayout(P, sw, sh){
+    var options = [[P.copies, 1], [1, P.copies]];
+    if(P.copies === 4) options.push([2, 2]);
+    var best = null;
+    options.forEach(function(o){
+      var cw = (P.w - 2*P.margin) / o[0], ch = (P.h - 2*P.margin) / o[1];
+      var k = Math.min((cw - 2*P.pad) / sw, (ch - 2*P.pad) / sh, 1.6);   // (a little bigger than the photo is fine)
+      if(!best || k > best.k) best = {cols:o[0], rows:o[1], cw:cw, ch:ch, k:k};
+    });
+    return best;
+  }
+  function drawPrintSheet(size){
+    var P = PRINT_SIZES[size];
+    var strip = document.createElement('canvas');
+    drawFrame(strip, 0);   // the "resting" pose, like the saved photo
+    var L = printLayout(P, strip.width, strip.height);
+    var sheet = document.createElement('canvas');
+    sheet.width = P.w; sheet.height = P.h;
+    var ctx = sheet.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, P.w, P.h);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    var dw = Math.round(strip.width * L.k), dh = Math.round(strip.height * L.k);
+    for(var r = 0; r < L.rows; r++){
+      for(var c = 0; c < L.cols; c++){
+        var x = P.margin + c*L.cw + (L.cw - dw)/2, y = P.margin + r*L.ch + (L.ch - dh)/2;
+        ctx.drawImage(strip, Math.round(x), Math.round(y), dw, dh);
+      }
+    }
+    // cut lines between the copies, edge to edge (they only cross the white space)
+    ctx.strokeStyle = '#BBBBBB';
+    ctx.lineWidth = Math.max(2, Math.round(P.w / 400));
+    ctx.setLineDash([P.w / 60, P.w / 80]);
+    ctx.beginPath();
+    for(var i = 1; i < L.cols; i++){ var lx = Math.round(P.margin + i*L.cw) + 0.5; ctx.moveTo(lx, 0); ctx.lineTo(lx, P.h); }
+    for(var j = 1; j < L.rows; j++){ var ly = Math.round(P.margin + j*L.ch) + 0.5; ctx.moveTo(0, ly); ctx.lineTo(P.w, ly); }
+    ctx.stroke();
+    strip.width = strip.height = 0;   // free the big picture right away
+    return sheet;
+  }
+  // canvas JPEGs say "72 dpi" (or nothing): write 300 dpi into the JFIF header so a 4R sheet prints as 10 x 15 cm
+  function setJpegDpi(blob, dpi){
+    if(!blob.arrayBuffer) return Promise.resolve(blob);   // very old browsers: the file just stays at "72 dpi"
+    return blob.slice(0, 20).arrayBuffer().then(function(buf){
+      var b = new Uint8Array(buf);
+      var jfif = b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF && b[3] === 0xE0 &&
+                 b[6] === 0x4A && b[7] === 0x46 && b[8] === 0x49 && b[9] === 0x46 && b[10] === 0;
+      if(!jfif) return blob;   // another header: leave the file as it is
+      var head = new Uint8Array(buf.slice(0, 18));
+      head[13] = 1;   // units: dots per inch
+      head[14] = dpi >> 8; head[15] = dpi & 255;
+      head[16] = dpi >> 8; head[17] = dpi & 255;
+      return new Blob([head, blob.slice(18)], {type:'image/jpeg'});
+    }).catch(function(){ return blob; });
+  }
+  function printName(size){ return 'our-little-photo-booth-' + PRINT_SIZES[size].name + '.jpg'; }
+  function makePrint(size){
+    if(printJob && printJob.base === base && printJob.size === size) return printJob.promise;
+    var job = {base:base, size:size, blob:null};
+    job.promise = new Promise(function(resolve, reject){
+      var sheet = drawPrintSheet(size);
+      drawPrintPreview(sheet);
+      sheet.toBlob(function(blob){
+        sheet.width = sheet.height = 0;
+        blob ? resolve(blob) : reject(new Error('blob'));
+      }, 'image/jpeg', 0.95);
+    }).then(function(blob){ return setJpegDpi(blob, 300); });
+    job.promise.then(function(blob){ job.blob = blob; syncPrintButton(); },
+                     function(){ if(printJob === job) printJob = null; syncPrintButton(); });
+    printJob = job;
+    syncPrintButton();
+    return job.promise;
+  }
+  function readyPrint(){ return printJob && printJob.base === base && printJob.size === printSize ? printJob.blob : null; }
+  function drawPrintPreview(sheet){
+    var c = $('printCanvas'), k = Math.min(1, 520 / sheet.height);
+    c.width = Math.round(sheet.width * k); c.height = Math.round(sheet.height * k);
+    var ctx = c.getContext('2d');
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(sheet, 0, 0, c.width, c.height);
+  }
+  function syncPrintButton(){
+    var making = !readyPrint();
+    $('printGo').disabled = making;
+    $('printGo').textContent = making ? 'MAKING YOUR PRINT… ♡' : (SAVE_VIA_SHARE ? 'SAVE PRINT TO PHOTOS ♡' : 'DOWNLOAD FOR PRINT ♡');
+    Array.prototype.forEach.call(document.querySelectorAll('.print-sizes .save-opt'), function(b){
+      var on = b.dataset.size === printSize;
+      b.classList.toggle('selected', on);
+      b.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+  }
+  function openPrintSheet(){
+    $('printModal').hidden = false;
+    $('printModal').scrollTop = 0;
+    syncPrintButton();
+    // (a moment later, so the pop-up shows before the phone gets busy making the sheet)
+    setTimeout(function(){
+      if($('printModal').hidden) return;
+      makePrint(printSize).catch(function(){ showToast("Couldn't make the print file. Please try again ♡"); });
+    }, 60);
+    setTimeout(function(){ $('printX').focus(); }, 30);
+  }
+  function closePrintSheet(){
+    if($('printModal').hidden) return;
+    $('printModal').hidden = true;
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.print-sizes .save-opt'), function(b){
+    b.addEventListener('click', function(){
+      if(printSize === b.dataset.size) return;
+      printSize = b.dataset.size;
+      syncPrintButton();
+      makePrint(printSize).catch(function(){ showToast("Couldn't make the print file. Please try again ♡"); });
+    });
+  });
+  $('printBtn').addEventListener('click', openPrintSheet);
+  $('printX').addEventListener('click', closePrintSheet);
+  $('printModal').addEventListener('click', function(e){ if(e.target === this) closePrintSheet(); });
+  $('printGo').addEventListener('click', function(){
+    var blob = readyPrint();
+    if(!blob) return;   // (the button waits until it's ready)
+    closePrintSheet();
+    deliver(blob, printName(printSize), SAVE_VIA_SHARE ? 'save' : 'download', false);
+  });
 
   /* init */
   goToStep('count');   // (on the home page this adds no history entry)
