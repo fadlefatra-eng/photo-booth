@@ -705,6 +705,20 @@
     font-size:.74rem; line-height:1.35; text-align:center; pointer-events:none;
   }
   .duo-pose b{display:block; color:var(--rose-600); font-size:.86rem;}
+  /* different versions on the two phones (v4.11): a card over the camera, so the heart never moves */
+  .live-ver{
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:5; width:88%; max-width:320px;
+    padding:10px 12px; border-radius:14px; background:rgba(255,255,255,.96); color:var(--plum-900);
+    font-size:.76rem; line-height:1.4; text-align:center; box-shadow:var(--shadow-soft);
+  }
+  .live-ver b{display:block; color:var(--rose-600); font-size:.84rem; margin-bottom:2px;}
+  .live-ver span{display:block;}
+  .live-tiles.ver-gap .duo-side{visibility:hidden;}
+  .live-ver .btn{display:block; margin:8px auto 0; min-height:44px; padding:10px 16px; font-size:.8rem;}
+  .live-newer{margin-top:16px; padding:14px; border-radius:14px; background:var(--white); box-shadow:var(--shadow-soft);
+    text-align:center; font-size:.85rem; line-height:1.5; color:var(--plum-900);}
+  .live-newer p{margin:0 0 10px;}
+  .live-newer .live-newer-title{font-weight:600; color:var(--rose-600); margin-bottom:4px;}
   /* Together: "1 2 3 4 shots · Poses" fits one row on a 360px phone, so the heart stays on screen */
   .live-rounds.duo-row{gap:4px;}
   .live-rounds .chip-label{align-self:center; font-size:.8rem; font-weight:600; color:var(--rose-800); margin:0 4px 0 2px;}
@@ -965,7 +979,7 @@
       <div class="cf-section">
         <h4>Your images <small>— saved only on this device</small></h4>
         <div class="cf-images" id="cfImages"></div>
-        <p class="cf-tip">Tip: PNG images with a see-through background look best. Images stay near the edges, so faces are never covered.</p>
+        <p class="cf-tip">Tip: PNG images with a see-through background look best. They sit at the edges — make one big (above 60%) and it stands right next to you in the photo.</p>
         <p class="cf-tip ios-only">On iPhone, Safari clears saved frames if this site isn't opened for 7 days. To keep them, tap Share → <b>Add to Home Screen</b> and open the booth from there.</p>
         <input type="file" id="cfFile" accept="image/*" class="sr-only" tabindex="-1" aria-hidden="true">
       </div>
@@ -974,7 +988,7 @@
         <div class="chip-row" id="cfPositions"></div>
         <h4>Size <small id="cfSizeValue">70%</small></h4>
         <input type="range" id="cfSize" min="1" max="100" step="1" aria-label="Image size">
-        <p class="cf-tip">1% = small, 100% = the biggest this spot allows. Up to 80% the frame keeps its size; your photos always stay clear.</p>
+        <p class="cf-tip">1% = small, 100% = the biggest. Up to 60% your photos stay clear; above that your image steps into the photo.</p>
         <p class="cf-tip" id="cfMaxNote" hidden></p>
         <button type="button" class="btn-text cf-danger" id="cfRemoveImg">Remove this image</button>
       </div>
@@ -1116,7 +1130,7 @@
       </details>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.10.1</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.11</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -1257,6 +1271,13 @@
 
         <p class="live-error" id="liveError" role="alert" hidden></p>
 
+        <!-- making / joining a room found a newer page on the site: refresh first -->
+        <div class="live-newer" id="liveNewer" role="alert" hidden>
+          <p class="live-newer-title">A new version is here ♡</p>
+          <p>Refresh first, so you and your love have the same page. Your photos stay.</p>
+          <button class="btn btn-primary btn-block" id="liveNewerGo">REFRESH NOW ♡</button>
+        </div>
+
         <!-- c) together -->
         <div id="liveStage" hidden>
           <!-- Together = both of you in one photo, side by side (always the start of a new room)
@@ -1277,6 +1298,9 @@
             <canvas class="duo-overlay" id="liveDuoOverlay" aria-hidden="true"></canvas>
             <p class="duo-side" id="duoSide"></p>
             <div class="duo-pose" id="duoPose" aria-live="polite" hidden></div>
+            <!-- two different versions: the heart stays locked, the older page refreshes (see syncVersionUI) -->
+            <div class="live-ver" id="liveVer" role="alert" hidden><b id="liveVerTitle"></b><span id="liveVerText"></span>
+              <button class="btn btn-primary" id="liveVerGo" hidden>REFRESH NOW ♡</button></div>
             <div class="countdown" id="liveCountdown" aria-live="polite"></div>
             <div class="flash" id="liveFlash" aria-hidden="true"></div>
           </div>
@@ -1605,28 +1629,35 @@
   var update = {found:'', dismissed:'', last:0, busy:false};
   var UPDATE_EVERY = 30*60*1000;
   try{ update.dismissed = sessionStorage.getItem('oob-update-dismissed') || ''; }catch(e){}
+  // the version label of the page on the site right now ('' when offline or not opened from a website).
+  // A new address each time skips every cache on the way (like opening the site with ?v=…)
+  function fetchLatestVersion(){
+    if(!window.fetch || !/^https?:$/.test(location.protocol)) return Promise.resolve('');
+    return fetch(location.pathname + '?vcheck=' + Date.now(), {cache:'no-store'}).then(function(r){
+      return r.ok ? r.text() : '';
+    }).then(function(html){
+      var m = /class="app-version"[^>]*>\s*(v[0-9][0-9.]*)\s*</.exec(html);
+      return m ? m[1] : '';
+    }).catch(function(){ return ''; });
+  }
   function checkForUpdate(){
     if(update.busy || document.hidden || !window.fetch || !/^https?:$/.test(location.protocol)) return;
     if(navigator.connection && navigator.connection.saveData) return;   // the phone asked to save data
     if(Date.now() - update.last < UPDATE_EVERY) return;
     update.busy = true;
     update.last = Date.now();
-    // a new address each time skips every cache on the way (like opening the site with ?v=…)
-    fetch(location.pathname + '?vcheck=' + Date.now(), {cache:'no-store'}).then(function(r){
-      return r.ok ? r.text() : '';
-    }).then(function(html){
-      var m = /class="app-version"[^>]*>\s*(v[0-9][0-9.]*)\s*</.exec(html);
-      if(m && verCmp(m[1], APP_VERSION) > 0){ update.found = m[1]; syncUpdateBar(); }
-    }).catch(function(){ /* offline: try again later */ }).then(function(){ update.busy = false; });
+    fetchLatestVersion().then(function(v){
+      if(v && verCmp(v, APP_VERSION) > 0){ update.found = v; syncUpdateBar(); }
+    }).then(function(){ update.busy = false; });   // (offline: try again later)
   }
   function syncUpdateBar(){
     var show = !!update.found && update.dismissed !== update.found;
     $('updateBar').hidden = !show;
     if(!show) return;
-    var inRoom = !!(live && live.peer);
-    $('updateText').textContent = inRoom ? 'New version ♡ refresh after your live photos — it leaves the room'
+    var here = !!(live && (live.peer || live.rejoin));   // in a live room
+    $('updateText').textContent = here ? 'New version ♡ refresh after your live photos — it leaves the room'
                                          : 'A new version is here ♡';
-    $('updateGo').hidden = inRoom;
+    $('updateGo').hidden = here;
   }
   $('updateGo').addEventListener('click', function(){
     // ?v=… fetches the new page past every cache; "leaving" skips the "Leave site?" box
@@ -2222,7 +2253,7 @@
     function stay(){ if(popped) history.pushState(appEntry(), ''); }
     var step = state.currentStep;
     if(step === 'result'){ stay(); openBackChooser(); return; }
-    if(step === 'customize'){ stay(); goToStep(state.captureStep === 'live' && live.peer ? 'live' : 'camera'); return; }
+    if(step === 'customize'){ stay(); goToStep(state.captureStep === 'live' && inRoom() ? 'live' : 'camera'); return; }
     if(step === 'camera'){ stay(); goToStep('frame'); return; }
     if(step === 'frame'){ stay(); goToStep('count'); return; }
     if(step === 'live'){
@@ -2239,7 +2270,7 @@
   }
   // still in a live room? ask before closing it
   function confirmLeaveRoom(){
-    if(!live.peer) return Promise.resolve(true);
+    if(!inRoom()) return Promise.resolve(true);
     return confirmBox({
       title: 'Leave the live room?',
       text: live.connected ? 'Going back closes the room — your love will see that you left.' : 'Going back closes your room, so the code stops working.',
@@ -2414,19 +2445,19 @@
   $('skipFrameBtn').addEventListener('click', function(){ $('toCameraBtn').click(); });
   // start over with new photos. In a live room nothing is lost yet: the heart asks before replacing
   function takeNewPhotos(){
-    if(live.peer){ goToStep('live'); return; }
+    if(inRoom()){ goToStep('live'); return; }
     state.shots = [];
     clearSession();   // taking new photos: last time's are no longer offered
     goToStep('camera');
   }
   $('retakeBtn').addEventListener('click', function(){
-    if(live.peer){ takeNewPhotos(); return; }
+    if(inRoom()){ takeNewPhotos(); return; }
     confirmReplace(false).then(function(yes){ if(yes) takeNewPhotos(); });
   });
 
   /* ---- "Where to next?" — ← on the result page ---- */
   function openBackChooser(){
-    $('backHint').hidden = !live.peer;
+    $('backHint').hidden = !inRoom();
     $('backModal').hidden = false;
     setTimeout(function(){ $('backEdit').focus(); }, 30);
   }
@@ -3274,8 +3305,31 @@
     poseMode:'surprise', posePick:[], autoTemplate:false,
     // timer before the first photo: the same on both phones (every room starts at 3). Only offered when your
     // love's page knows it too (partnerTimer, from "hello") — an older page would count 3 and click early
-    timer:3, partnerTimer:false
+    timer:3, partnerTimer:false,
+    // (v4.11) same version on both phones: helloSeen = we know your love's version (see versionGap)
+    helloSeen:false,
+    // (v4.11) coming back after a lost line or a refresh: rejoin = {until, why:'lost'|'refresh'|'reload'}
+    // while the joiner keeps knocking; pastIds = the joiner's earlier ids (the room maker then knows it's
+    // the same phone); partnerBye = what your love said when leaving ('leave' / 'refresh', '' = nothing:
+    // the line was lost); hostNote = the room maker's waiting text ('lost' / 'refresh')
+    rejoin:null, rejoinTimer:0, pastIds:[], partnerBye:'', hostNote:'', refreshing:false
   };
+  var REJOIN_LOST = 30000;      // the joiner tries to come back this long after the line was lost…
+  var REJOIN_REFRESH = 45000;   // …or after a refresh (the page loads, the camera starts again)
+  var REJOIN_ATTEMPT = 12000;   // one try that hangs gives up after this
+  var ICE_GRACE = 8000;         // a line "disconnected" this long (it often heals by itself) counts as lost
+  var REJOIN_KEY = 'oob-rejoin';   // sessionStorage: the room to go back to after a refresh
+  // after a refresh for a new version (this tab, a moment ago): which room to go back to
+  var rejoinInfo = (function(){
+    var r = null;
+    try{ r = JSON.parse(sessionStorage.getItem(REJOIN_KEY) || 'null'); sessionStorage.removeItem(REJOIN_KEY); }catch(e){}
+    if(!r || typeof r !== 'object' || typeof r.at !== 'number' || !(Date.now() - r.at < 3*60*1000)) return null;
+    if(r.role !== 'host' && r.role !== 'guest') return null;
+    var code = cleanCode(r.code);
+    if(r.role === 'guest' && code.length !== 6) return null;
+    var was = Array.isArray(r.was) ? r.was.filter(function(x){ return typeof x === 'string' && x.length < 80; }).slice(-8) : [];
+    return {role:r.role, code:code.length === 6 ? code : '', was:was, at:r.at};
+  })();
   function liveTimer(){ return live.partnerTimer ? live.timer : 3; }
   function syncLiveTimer(){
     var row = $('liveTimerRow');
@@ -3315,32 +3369,117 @@
   /* ---- panels ---- */
   function setLiveError(msg){ $('liveError').textContent = msg || ''; $('liveError').hidden = !msg; }
   function setLiveStatus(msg){ $('liveStatus').textContent = msg || ''; }
+  function inRoom(){ return !!(live.peer || live.rejoin); }   // (between two tries to come back, peer is null)
   function updateLivePanels(){
-    var mode = !live.peer ? 'pick' : (live.connected ? 'stage' : 'waiting');
+    var mode = !inRoom() ? 'pick' : (live.connected ? 'stage' : 'waiting');
     $('livePick').hidden = mode !== 'pick';
     $('liveWaiting').hidden = mode !== 'waiting';
     $('liveStage').hidden = mode !== 'stage';
     $('liveLeaveBtn').hidden = mode === 'pick';
     $('liveHostInfo').hidden = live.role !== 'host';
+    if(mode !== 'pick') $('liveNewer').hidden = true;
     if(mode === 'waiting'){
+      var why = live.rejoin ? live.rejoin.why : '';
       $('liveWaitStatus').textContent = live.role === 'host'
-        ? (live.conn ? 'Your love is joining… ♡' : 'Waiting for your love to join…')
+        ? (live.conn ? 'Your love is joining… ♡'
+          : live.hostNote === 'refresh' ? "Your love is refreshing their page — they'll be back in a moment ♡"
+          : live.hostNote === 'lost' ? 'The connection was lost — waiting for your love to come back… ♡'
+          : 'Waiting for your love to join…')
+        : why === 'refresh' ? "Your love is refreshing their page — you'll be back together in a moment ♡"
+        : why === 'reload' ? 'Coming back to room ' + live.code + '… ♡'
+        : why === 'lost' ? 'The connection was lost — reconnecting… ♡ Stay on this screen.'
         : (live.slow ? 'Still connecting… far apart or on mobile data this can take up to half a minute ♡'
                      : 'Joining room ' + live.code + '…');
     }
+    syncVersionUI();
     syncLiveDesign();
     syncLiveModeUI();
     updateShutter();
     syncUpdateBar();   // in a room the "new version" bar says "after your photos" instead
   }
   function updateShutter(){
-    var canShoot = live.connected && live.partnerReady && !live.running;
+    var gap = versionGap();
+    var canShoot = live.connected && live.partnerReady && !live.running && !gap;
     $('liveShutter').disabled = !canShoot;
     syncLiveTimer();
     if(!live.connected || live.running) return;
-    setLiveStatus(live.partnerReady
-      ? 'Both here ♡ either one can press the heart'
+    setLiveStatus(gap ? 'Photos together need the same version ♡'
+      : live.partnerReady ? 'Both here ♡ either one can press the heart'
       : 'Waiting for your love at the camera…');   // short: one line, so the heart stays on screen
+  }
+
+  /* ---- the same version on both phones (v4.11) ----
+     Two different versions could disagree about frames, photo styles or sizes, so photos together need
+     the SAME version. Before a room: making or joining one first checks the site for a newer page
+     (at the same time as the camera starts) and offers a refresh. In a room: "hello" carries each page's
+     version; if they differ, the heart stays locked on both phones — the older one gets REFRESH NOW,
+     which comes straight back to this room (and the photos you had), the newer one waits.
+     Pages before v4.11 don't know this rule: we then send "not ready" so their heart stays locked too. */
+  var LOCK_SINCE = 'v4.11';   // pages from here on refresh with one tap and come back by themselves
+  // 0 = same version (or not known yet); -1 = your love's page is older; 1 = newer
+  // (known from your love's "hello" on — which can arrive a moment before their video)
+  function versionGap(){ return live.helloSeen ? verCmp(live.partnerVer, APP_VERSION) : 0; }
+  function refreshedFor(){ try{ return sessionStorage.getItem('oob-refreshed-for') || ''; }catch(e){ return ''; } }
+  function syncVersionUI(){
+    var gap = versionGap();
+    $('liveVer').hidden = !gap;
+    $('liveTiles').classList.toggle('ver-gap', !!gap);   // (the "You're on the left" pill steps aside)
+    if(!gap) return;
+    var theirs = live.partnerVer;
+    if(gap < 0){
+      $('liveVerTitle').textContent = "Your love's page is older" + (theirs ? ' (' + theirs + ')' : '');
+      $('liveVerText').textContent = theirs && verCmp(theirs, LOCK_SINCE) >= 0
+        ? "Ask them to tap REFRESH NOW — you'll be back together here by yourselves ♡"
+        : 'Ask them to refresh their page (pull down or tap reload), then join you again ♡';
+      $('liveVerGo').hidden = true;
+    } else {
+      $('liveVerTitle').textContent = 'Your love has a newer version (' + theirs + ')';
+      $('liveVerText').textContent = refreshedFor() === theirs
+        ? "Still the older page after refreshing — are you both on the same link? Open the one your love sent ♡"
+        : "Refresh to take photos together — you'll come straight back to this room ♡";
+      $('liveVerGo').hidden = false;
+    }
+  }
+  // "ready at the camera": never while the versions differ (that also locks an older page's heart)
+  function sendReady(){ sendLive({type:'ready', ready: state.currentStep === 'live' && !versionGap()}); }
+  // a quick look at the site's newest version: started when you open the live page, reused for a minute
+  var latest = {p:null, at:0};
+  function latestVersion(){
+    if(!latest.p || Date.now() - latest.at > 60000){ latest.at = Date.now(); latest.p = fetchLatestVersion(); }
+    return latest.p;
+  }
+  // the newer version to refresh to before a room ('' = this page is the newest, or we can't tell in 3 s,
+  // or we already refreshed for it and still got this page — then we don't ask again)
+  function newerVersion(){
+    var slow = new Promise(function(resolve){ setTimeout(function(){ resolve(''); }, 3000); });
+    return Promise.race([latestVersion(), slow]).then(function(v){
+      return v && verCmp(v, APP_VERSION) > 0 && refreshedFor() !== v ? v : '';
+    });
+  }
+  // load the newest page (past every cache) and come back: to the room (room = {role, code, was}) and
+  // to your photos. Your love is told first, so they wait for you instead of leaving.
+  function refreshToVersion(ver, room){
+    try{
+      sessionStorage.setItem('oob-refreshed-for', ver);
+      sessionStorage.setItem('oob-welcomed', '1');
+      if(room) sessionStorage.setItem(REJOIN_KEY, JSON.stringify({role:room.role, code:room.code || '', was:room.was || [], at:Date.now()}));
+    }catch(e){}
+    live.refreshing = true;
+    sendLive({type:'bye', refresh:true});
+    showToast('Refreshing… ♡');
+    function go(){ leaving = true; location.replace(location.pathname + '?v=' + (String(ver).replace(/[^0-9]/g, '') || Date.now())); }
+    var save = state.shots.length && !session.pending ? saveSession() : Promise.resolve();
+    save.then(function(){ setTimeout(go, 300); }, go);   // (a moment for the "bye" to reach your love)
+  }
+  $('liveVerGo').addEventListener('click', function(){
+    if(versionGap() <= 0) return;
+    var was = live.pastIds.concat(live.peer && live.peer.id ? [live.peer.id] : []).slice(-8);
+    refreshToVersion(live.partnerVer, {role:live.role, code:live.code, was:was});
+  });
+  // making / joining a room found a newer page on the site: refresh first (then the room is made / joined)
+  function showNewer(ver, role, code){
+    $('liveNewer').hidden = false;
+    $('liveNewerGo').onclick = function(){ refreshToVersion(ver, {role:role, code:code || '', was:[]}); };
   }
 
   /* ---- camera + mic ---- */
@@ -3434,8 +3573,10 @@
   }
 
   /* ---- create / join ---- */
+  // role 'host' (code: only when coming back to your room after a refresh) or 'guest' (the room's code)
   function startLive(role, code){
     setLiveError('');
+    $('liveNewer').hidden = true;
     // every new room starts side by side ("Together"): a Stacked choice from an earlier room must not
     // carry over (the room maker's style is copied to the other phone when you connect)
     live.mode = 'duo';
@@ -3446,10 +3587,11 @@
       return;
     }
     $('liveCreateBtn').disabled = true; $('liveJoinBtn').disabled = true;
-    // (the relay logins are fetched at the same time as the camera starts, so this adds no waiting)
-    Promise.all([loadPeerJs(), getLiveStream(), getIceServers()]).then(function(res){
+    // (the relay logins and the site's newest version are fetched while the camera starts: no waiting)
+    Promise.all([loadPeerJs(), getLiveStream(), getIceServers(), newerVersion()]).then(function(res){
       live.ice = res[2];
-      if(role === 'host') openHostPeer(makeRoomCode(), 0);
+      if(res[3]){ destroyLive(); showNewer(res[3], role, code); return; }   // refresh first, then the room
+      if(role === 'host') openHostPeer(code || makeRoomCode(), 0, !!code);
       else openGuestPeer(code);
     }).catch(function(err){
       destroyLive();
@@ -3468,18 +3610,22 @@
       if(live.peer === peer && !peer.open && !peer.destroyed) failLive("Can't reach the room server. Check your internet and try again ♡");
     }, SIGNAL_TIMEOUT);
   }
-  function openHostPeer(code, attempt){
+  // keep: coming back to YOUR room after a refresh — the room server may need a moment to free its code,
+  // so we try the same code a few times before making a new one
+  function openHostPeer(code, attempt, keep){
     var peer = new Peer(ROOM_PREFIX + code.toLowerCase(), {config:{iceServers:live.ice || ICE_SERVERS}, debug:1});
     live.peer = peer; live.role = 'host'; live.code = code;
     watchSignal(peer);
     peer.on('open', function(){
+      if(live.peer !== peer) return;
       clearTimeout(live.signalTimer);
       $('liveCode').textContent = code;
       updateLivePanels();
     });
     peer.on('connection', function(conn){
+      if(live.peer !== peer) return;
       // a room is for two — politely turn away a third phone
-      if(live.conn && live.conn.open){
+      if(!admits(conn)){
         conn.on('open', function(){ conn.send({type:'full'}); setTimeout(function(){ conn.close(); }, 500); });
         return;
       }
@@ -3488,19 +3634,46 @@
       updateLivePanels();   // "Your love is joining…"
     });
     peer.on('call', function(call){
-      if(live.call && live.call.open){ call.close(); return; }
+      if(live.peer !== peer) return;
+      if(!admits(call)){ call.close(); return; }
       call.answer(live.localStream);
       bindCall(call);
     });
     peer.on('error', function(err){
-      if(err.type === 'unavailable-id' && attempt < 3 && live.peer === peer){   // code already taken: roll a new one
-        peer.destroy();
-        openHostPeer(makeRoomCode(), attempt + 1);
-        return;
+      if(live.peer !== peer) return;   // (an earlier try's leftovers)
+      if(err.type === 'unavailable-id'){
+        if(keep && attempt < 8){
+          peer.destroy();
+          setTimeout(function(){ if(live.peer === peer) openHostPeer(code, attempt + 1, true); }, 1500);
+          return;
+        }
+        if(keep || attempt < 3){   // code already taken: roll a new one
+          peer.destroy();
+          if(keep) showToast('Your room has a new code — send your love the new invite ♡');
+          openHostPeer(makeRoomCode(), keep ? 0 : attempt + 1);
+          return;
+        }
       }
       peerError(err);
     });
     peer.on('disconnected', function(){ if(live.peer === peer && !peer.destroyed) peer.reconnect(); });
+  }
+  // A phone knocks while the room already has someone: the same phone coming back (after a lost line
+  // or a refresh — it names its earlier ids, "was") takes the place of its old self, and so does anyone
+  // when the old line is broken anyway. A third phone is turned away.
+  function admits(incoming){
+    var cur = (live.conn && live.conn.peer) || (live.call && live.call.peer) || '';
+    if(!cur || incoming.peer === cur) return true;
+    var was = incoming.metadata && Array.isArray(incoming.metadata.was) ? incoming.metadata.was : [];
+    if(was.indexOf(cur) === -1 && !linkLost()) return false;
+    dropPartner();
+    return true;
+  }
+  function linkLost(){
+    return [live.conn, live.call].some(function(c){
+      var pc = c && c.peerConnection;
+      return pc && /disconnected|failed|closed/.test(pc.iceConnectionState);
+    });
   }
   function openGuestPeer(code){
     var peer = new Peer({config:{iceServers:live.ice || ICE_SERVERS}, debug:1});
@@ -3513,13 +3686,18 @@
     }, 8000);
     updateLivePanels();
     peer.on('open', function(){
+      if(live.peer !== peer) return;
       clearTimeout(live.signalTimer);
       var hostId = ROOM_PREFIX + code.toLowerCase();
-      bindConn(peer.connect(hostId, {reliable:true}));
-      bindCall(peer.call(hostId, live.localStream));
+      // coming back: tell the room maker which phone we were, so it lets us in again
+      var meta = {was:live.pastIds.slice(-8)};
+      live.pastIds = live.pastIds.concat(peer.id).slice(-8);
+      bindConn(peer.connect(hostId, {reliable:true, metadata:meta}));
+      bindCall(peer.call(hostId, live.localStream, {metadata:meta}));
       startConnectTimer();
     });
     peer.on('error', function(err){
+      if(live.peer !== peer) return;   // (an earlier try's leftovers)
       if(err.type === 'peer-unavailable'){
         failLive("Room " + code + " wasn't found. Check the code, or ask your love to open the room again ♡");
         return;
@@ -3537,51 +3715,112 @@
     else failLive('Something went wrong with the room. Please try again ♡');
   }
   function failLive(msg){
+    if(live.rejoin){   // coming back: keep knocking until the time is up
+      if(Date.now() < live.rejoin.until){ retryRejoin(2000); return; }
+      msg = "We lost the connection to your love ♡ Check your internet, then join room " + live.code + " again.";
+      var code = live.code;
+      destroyLive();
+      $('liveCodeInput').value = code;   // one tap on JOIN to try again
+      setLiveError(msg);
+      if(state.currentStep !== 'live') showToast('Lost the connection to your love ♡');
+      return;
+    }
     destroyLive();
     setLiveError(msg);
+  }
+
+  /* ---- coming back to the room (v4.11) ----
+     Phones lose their line now and then: a weak signal, a lift, WiFi ↔ mobile data. Then the one who
+     joined knocks again by itself for up to half a minute (and after a refresh for a new version), while
+     the room maker keeps the room open and lets the same phone back in (see admits). Only "leave room"
+     (a "bye" message) really ends it. Your camera stays on the whole time. */
+  function startRejoin(ms, why){
+    if(!live.rejoin) live.rejoin = {until: Date.now() + ms, why: why};
+    else if(why === 'refresh'){ live.rejoin.until = Math.max(live.rejoin.until, Date.now() + ms); live.rejoin.why = why; }
+    retryRejoin(600);
+  }
+  function retryRejoin(delay){
+    var code = live.code, peer = live.peer;
+    dropPartner();
+    clearTimeout(live.signalTimer); clearTimeout(live.slowTimer); clearTimeout(live.rejoinTimer);
+    live.slow = false;
+    live.peer = null;   // (its late events see that they're no longer the room's)
+    if(peer && !peer.destroyed){ try{ peer.destroy(); }catch(e){} }
+    updateLivePanels();
+    live.rejoinTimer = setTimeout(function(){
+      if(!live.rejoin || live.peer) return;
+      if(Date.now() >= live.rejoin.until){ failLive(''); return; }
+      openGuestPeer(code);
+    }, delay);
+  }
+  // the line broke while you were together
+  function connectionLost(){
+    if(live.role === 'guest'){ startRejoin(REJOIN_LOST, 'lost'); return; }
+    dropPartner();
+    live.hostNote = 'lost';   // the room stays open: your love comes back by themselves
+    updateLivePanels();
+  }
+  // "disconnected" often heals by itself within seconds; if it doesn't (ICE_GRACE), or the line "failed",
+  // the connection is lost — before you were together that's a join that didn't work (networkFail)
+  function watchLine(pc, current){
+    if(!pc) return;
+    var timer = 0;
+    pc.addEventListener('iceconnectionstatechange', function(){
+      if(!current()) return;
+      var s = pc.iceConnectionState;
+      clearTimeout(timer);
+      if(s === 'failed'){ if(live.connected) connectionLost(); else networkFail(); return; }
+      if(s === 'disconnected' && live.connected){
+        timer = setTimeout(function(){
+          if(current() && live.connected && /disconnected|failed/.test(pc.iceConnectionState)) connectionLost();
+        }, ICE_GRACE);
+      }
+    });
   }
 
   /* ---- the two connections ---- */
   function bindConn(conn){
     live.conn = conn;
     conn.on('open', function(){
+      if(live.conn !== conn) return;
       // duo: this page can do "Together" · ver: its version, so both phones can tell if one is out of date
       sendLive({type:'hello', facing:state.facingMode, duo:true, ver:APP_VERSION, timer:true});
       if(live.role === 'host') sendLive({type:'mode', mode:live.mode});   // the room maker's style is the starting point
       sendLive({type:'ping', t:Date.now()});
-      sendLive({type:'ready', ready: state.currentStep === 'live'});
+      sendReady();
+      watchLine(conn.peerConnection, function(){ return live.conn === conn; });
       checkConnected();
     });
-    conn.on('data', onLiveData);
+    conn.on('data', function(msg){ if(live.conn === conn) onLiveData(msg); });
     conn.on('close', function(){ if(live.conn === conn) partnerLeft(); });
     conn.on('error', function(){ /* 'close' follows */ });
   }
   function bindCall(call){
     live.call = call;
     call.on('stream', function(stream){
+      if(live.call !== call) return;
       showRemote(stream);
       checkConnected();
     });
     call.on('close', function(){ if(live.call === call) partnerLeft(); });
     call.on('error', function(){ /* 'close' follows */ });
-    var pc = call.peerConnection;
-    if(pc) pc.addEventListener('iceconnectionstatechange', function(){
-      if(live.call === call && pc.iceConnectionState === 'failed') networkFail();
-    });
+    watchLine(call.peerConnection, function(){ return live.call === call; });
   }
   function checkConnected(){
     if(live.connected || !live.conn || !live.conn.open || !live.remoteStream) return;
+    var back = !!(live.rejoin || live.hostNote);
     live.connected = true;
+    live.rejoin = null; clearTimeout(live.rejoinTimer); live.hostNote = '';
     clearTimeout(live.connectTimer);
     clearTimeout(live.slowTimer); live.slow = false;
     setLocalVideoEnabled(state.currentStep === 'live');
     setLiveError('');
     updateLivePanels();
-    showToast("You're together now ♡");
+    showToast(back ? 'Back together ♡' : "You're together now ♡");
   }
   function startConnectTimer(){
     clearTimeout(live.connectTimer);
-    live.connectTimer = setTimeout(function(){ if(!live.connected) networkFail(); }, CONNECT_TIMEOUT);
+    live.connectTimer = setTimeout(function(){ if(!live.connected) networkFail(); }, live.rejoin ? REJOIN_ATTEMPT : CONNECT_TIMEOUT);
   }
   // the phones found each other but couldn't open a line — not even through the relay
   function networkFail(){
@@ -3589,7 +3828,7 @@
     if(live.role === 'host' && live.peer){
       dropPartner();
       updateLivePanels();
-      setLiveError(msg);
+      if(!live.hostNote) setLiveError(msg);   // (your love coming back: they keep trying by themselves)
     } else {
       failLive(msg);
     }
@@ -3600,25 +3839,38 @@
     var conn = live.conn, call = live.call;
     live.conn = null; live.call = null; live.remoteStream = null;
     live.connected = false; live.partnerReady = false; live.partnerDuo = false; live.partnerVer = '';
-    live.partnerTimer = false;
+    live.partnerTimer = false; live.helloSeen = false; live.partnerBye = '';
     syncLiveTimer();
     endShotUI();   // your love left mid-count: the numbers stop, the face guides come back
     endTogether();   // designing together needs both of you (your design stays as it is)
     $('liveRemote').srcObject = null;
     $('liveUnmute').hidden = true;
+    $('liveVer').hidden = true;
     try{ if(conn) conn.close(); }catch(e){}
     try{ if(call) call.close(); }catch(e){}
   }
+  // the connection closed: your love said "bye" (left, or is refreshing), or the line was lost
   function partnerLeft(){
-    var wasConnected = live.connected;
+    var wasConnected = live.connected, bye = live.partnerBye;
+    if(live.role === 'guest' && bye !== 'leave' && (wasConnected || live.rejoin)){
+      startRejoin(bye === 'refresh' ? REJOIN_REFRESH : REJOIN_LOST, bye === 'refresh' ? 'refresh' : 'lost');
+      return;
+    }
     dropPartner();
-    if(live.role === 'host'){ updateLivePanels(); }   // keep the room open so they can come back
+    if(live.role === 'host'){   // keep the room open so they can come back
+      live.hostNote = bye === 'refresh' ? 'refresh' : (wasConnected && bye !== 'leave' ? 'lost' : '');
+      updateLivePanels();
+    }
     else { destroyLive(); setLiveError('Your love left the room ♡'); }
-    if(wasConnected) showToast('Your love left the room ♡');
+    if(wasConnected && (bye === 'leave' || live.role !== 'host')) showToast('Your love left the room ♡');
   }
   function destroyLive(){
     var peer = live.peer;
+    // your love's page stops waiting for you (a refresh for a new version: they wait for you to come back)
+    sendLive({type:'bye', refresh:live.refreshing});
     live.autoTemplate = false;   // the room is over: the frame is yours again (solo photos keep it)
+    live.rejoin = null; clearTimeout(live.rejoinTimer); live.hostNote = '';
+    live.pastIds = [];
     dropPartner();
     clearTimeout(live.signalTimer); clearTimeout(live.slowTimer); live.slow = false;
     live.peer = null; live.role = null; live.code = '';
@@ -3643,10 +3895,15 @@
         live.partnerDuo = msg.duo === true;   // an older page can't do "Together": then it's Separate for both
         live.partnerVer = typeof msg.ver === 'string' ? msg.ver.slice(0, 16) : '';   // pages before v4.9.2 send none
         live.partnerTimer = msg.timer === true;   // pages before v4.10 have no timer
+        live.helloSeen = true;
         if(live.partnerTimer && live.role === 'host') sendLive({type:'timer', s:live.timer});   // the room maker's is the start
+        if(versionGap()) sendReady();   // different versions: "not ready" (locks an older page's heart too)
         syncLiveTimer();
-        syncLiveModeUI();
+        updateLivePanels();   // (the version card, the heart, the style switch)
         if(state.currentStep === 'live') startLiveOverlay();
+        break;
+      case 'bye':   // your love leaves the room — or refreshes for a new version and comes back
+        live.partnerBye = msg.refresh === true ? 'refresh' : 'leave';
         break;
       case 'mode':   // your love switched Together / Separate
         if(!live.running && (msg.mode === 'duo' || msg.mode === 'separate') && msg.mode !== live.mode){
@@ -3676,7 +3933,7 @@
         updateShutter();
         break;
       case 'start':
-        if(state.currentStep === 'live' && live.connected && !live.running){
+        if(state.currentStep === 'live' && live.connected && !live.running && !versionGap()){
           // whoever pressed the heart decides the style, the number of shots and the poses
           var sid = typeof msg.sid === 'string' ? msg.sid.slice(0, 16) : null;   // (older pages send none)
           var secs = TIMERS.indexOf(msg.timer) !== -1 ? msg.timer : 3;          // (and no timer: 3)
@@ -3689,12 +3946,16 @@
         }
         break;
       case 'photo': receivePhoto(msg); break;
-      case 'design': receiveDesign(msg); break;
+      case 'design':
+        if(versionGap()){ showToast('Your love sent a design — refresh to the same version first ♡'); break; }
+        receiveDesign(msg);
+        break;
       case 'design-reply':
         showToast(msg.used === true ? 'Your love is using your design ♡' : 'Your love kept their own design ♡');
         break;
       case 'together-invite':
         if(together.on) break;
+        if(versionGap()){ sendLive({type:'together-reply', join:false}); break; }   // not across two versions
         if(together.inviting){
           // you both tapped "Design together" at once: the room's host keeps theirs, the guest joins it
           if(live.role === 'host') break;
@@ -3892,7 +4153,8 @@
     // always turn the picture back on — even if your love isn't connected (yet), they'll need it when they join
     setLocalVideoEnabled(true);
     wakeLiveVideos();
-    if(live.connected) sendLive({type:'ready', ready:true});
+    if(live.connected) sendReady();
+    if(!inRoom()) latestVersion();   // (looks for a newer page now, so making / joining a room won't wait)
     live.roundIdx = 0;
     startLiveOverlay();
   }
@@ -4021,13 +4283,11 @@
     $('duoHelpBtn').hidden = !live.partnerDuo;
     // a note above the camera: Stacked chosen (so the result is no surprise), or different versions on
     // the two phones — who should refresh (after the photos: refreshing leaves the room)
+    // (different versions: the card on the camera says it all — see syncVersionUI)
     var note = '';
-    if(live.connected){
-      var cmp = verCmp(live.partnerVer, APP_VERSION);
+    if(live.connected && !versionGap()){
       if(!live.partnerDuo) note = "Your love's page is older — they can reload it to use Together ♡";
       else if(live.mode === 'separate') note = 'Stacked: your photos go one below the other — Together ♡ puts you side by side';
-      else if(!live.partnerVer || cmp < 0) note = "Your love's page is older — they can refresh it after your photos ♡";
-      else if(cmp > 0) note = "Your love has a newer version — refresh yours after your photos ♡";
     }
     $('liveModeNote').textContent = note;
     $('liveModeNote').hidden = !note;
@@ -5368,28 +5628,51 @@
     });
   }
 
-  /* ---- placing images: always at the edges, never over a photo's middle ----
-     (v4.10.1) The IMAGE follows the frame. Every spot has the frame's normal custom room: 160 above the
-     photos for top corners, 190 below for bottom corners, 110 at the sides. The size slider runs from 1%
-     (a quarter of the biggest — small, but never gone) to 100% (the biggest). Up to 80% the image grows
-     inside that room and the frame keeps its size; from 81% the frame may grow a little (at most
-     CUSTOM_GROW_H taller and CUSTOM_GROW_SIDE wider per side — the photos look at most ~5% smaller).
-     An image reaches at most 5% into a photo's edge, its gentle wiggle included, so photos and faces stay
-     clear; a row with corner images keeps LANE_MIN free in the middle for the title / your text and date.
-     Frames saved before v4.9 (items without v:2) are turned into this scale when they're loaded. */
+  /* ---- placing images: at the edges — and, if you like, stepping into the photos ----
+     (v4.11) The IMAGE follows the frame, and the size slider has two parts:
+     · 1–60% (CUSTOM_CLEAR): exactly the v4.10.1 scale (its 1–100% squeezed into 1–60%). Every spot has
+       the frame's normal custom room: 160 above the photos for top corners, 190 below for bottom corners,
+       110 at the sides. 1% is a quarter of 60% (small, but never gone). Up to ~48% the image grows inside
+       that room and the frame keeps its size; then the frame may grow a little (at most CUSTOM_GROW_H
+       taller and CUSTOM_GROW_SIDE wider per side — the photos look at most ~5% smaller). The image
+       reaches at most 5% into a photo's edge, its gentle wiggle included, so the photos stay clear.
+     · 61–100%: the frame keeps its size and the image steps INTO the photo, at 100% up to a third of
+       it (DEEP_REACH, wiggle included). At the sides that's as tall as a photo — someone standing next
+       to you; corners grow down into the top photo / up into the bottom one. Faces may get covered
+       (for your own images that's your choice — the owner wanted it); "Let decorations peek over
+       photos" off keeps the photos clear. Built-in frames still never cover faces.
+     A row with corner images always keeps LANE_MIN free in the middle for the title / your text and date.
+     Frames from before (no v: before v4.9, v:2: v4.9–v4.10.1) are turned into this scale (v:3) when
+     they're loaded, so they look exactly as before. */
   var ROOM_TOP = 160, ROOM_BOTTOM = 190, ROOM_SIDE = 110;   // the frame's normal room for images
-  var CUSTOM_GROW_FROM = 80;                         // slider % where the frame starts to grow…
+  var CUSTOM_CLEAR = 60;                             // slider % up to which the photos stay clear
+  var CUSTOM_GROW_FROM = 80;                         // (v4.10.1 scale) where the frame starts to grow…
   var CUSTOM_GROW_H = 32, CUSTOM_GROW_SIDE = 18;     // …by at most this much (height in total / each side):
                                                      // ≤ 5% even of the smallest frames (1 photo, grid of 2)
-  var CUSTOM_MIN = 0.25;                             // 1% = a quarter of 100%
+  var CUSTOM_MIN = 0.25;                             // 1% = a quarter of 60%
   var PHOTO_REACH = 0.05, WIGGLE_ROOM = 13;          // ≤ 5% into a photo; the wiggle moves an image ≤ 13
+  var DEEP_REACH = 1/3;                              // at 100%: up to a third into a photo
   var EDGE_GAP = 13;    // from the strip's edge: even mid-wiggle an image never leaves the strip
   var LANE_MIN = 220;   // free width kept between corner images for text
-  function customIsNew(rec){ return rec.items.every(function(it){ return it.v === 2; }); }
+  function customIsNew(rec){ return rec.items.every(function(it){ return it.v === 3; }); }
+  // the slider % of an image (v:3); a v:2 image's size moves into 1–60% (null: a frame from before v4.9)
+  function sliderOf(it){ return it.v === 3 ? clamp(it.size, 1, 100) : it.v === 2 ? toNewScale(it.size) : null; }
+  function toNewScale(old){ return 1 + (clamp(old, 1, 100) - 1) * (CUSTOM_CLEAR - 1) / 99; }
+  // an image that arrived (from your love or a backup file): its scale and size, checked
+  // (v:3 sizes keep 2 decimals — a converted older frame then looks exactly the same)
+  function cleanCustomV(it){ return it.v === 3 ? 3 : it.v === 2 ? 2 : undefined; }
+  function cleanCustomSize(it){ return clamp(it.v === 3 ? Math.round(it.size * 100) / 100 : Math.round(it.size), 1, 100); }
+  // the part up to CUSTOM_CLEAR on the v4.10.1 scale (1–100), which sizes images inside the frame's room
+  function clearScale(size){ return 1 + (clamp(size, 1, CUSTOM_CLEAR) - 1) * 99 / (CUSTOM_CLEAR - 1); }
   // how far a still image may overlap a photo's edge (so that with its wiggle it stays within 5%)
   function customReach(e){ return Math.max(0, e.rects[0].w * PHOTO_REACH - WIGGLE_ROOM); }
-  // 0 up to 80%, then up to 1 at 100%: how much of the growth this image uses
-  function growFrac(it){ return clamp((clamp(it.size, 1, 100) - CUSTOM_GROW_FROM) / (100 - CUSTOM_GROW_FROM), 0, 1); }
+  // …and at 100% (a third, wiggle included)
+  function deepReach(e){ return Math.max(0, e.rects[0].w * DEEP_REACH - WIGGLE_ROOM); }
+  // 0 up to ~48%, then up to 1 at 60%: how much of the growth this image uses
+  function growFrac(it){
+    var s = sliderOf(it);
+    return s === null ? 0 : clamp((clearScale(s) - CUSTOM_GROW_FROM) / (100 - CUSTOM_GROW_FROM), 0, 1);
+  }
   // how much the frame grows beyond its normal size: on each edge, as much as its biggest image needs
   function customGrowth(rec){
     var top = false, bottom = false;
@@ -5416,9 +5699,10 @@
   }
   // the widest an image may be in its spot when it uses `frac` (0..1) of the growth: the spot's normal
   // room (what the frame has without growing) + that share. Each image counts only its OWN share, so
-  // changing one image never changes the size of another. rec: the frame the image belongs to
-  function customMaxW(it, img, e, rec, frac){
-    var B = photoBounds(e.rects), reach = customReach(e), aspect = img.height / img.width;
+  // changing one image never changes the size of another. rec: the frame the image belongs to.
+  // deep: the size at 100% — reaching a third into the photo (at the sides up to a photo's height)
+  function customMaxW(it, img, e, rec, frac, deep){
+    var B = photoBounds(e.rects), reach = deep ? deepReach(e) : customReach(e), aspect = img.height / img.width;
     var G = customGrowth(rec || {items:[]}), ownSide = frac * CUSTOM_GROW_SIDE, maxW;
     if(it.pos.length === 2){
       var roomH = it.pos.charAt(0) === 'b'
@@ -5428,28 +5712,35 @@
       maxW = Math.min(laneW, (roomH + reach - EDGE_GAP) / aspect);
     } else {
       var roomW = (it.pos === 'left' ? B.left : e.w - B.right) - G.side + ownSide + reach - EDGE_GAP;
-      maxW = Math.min(roomW, e.rects[0].h * 0.9 / aspect);
+      maxW = Math.min(roomW, e.rects[0].h * (deep ? 1 : 0.9) / aspect);
     }
     return Math.max(16, maxW);
   }
-  // 1% = a quarter of 100%; up to 80% the image stays inside the normal room, then it uses its growth
+  // 1% = a quarter of 60%; up to ~48% the image stays inside the normal room, then it uses its growth
+  // (60% = the biggest with clear photos); from there to 100% it steps into the photo
   function customPlacement(it, img, e, rec){
-    if(it.v !== 2) return legacyPlacement(it, img, e);
-    var s01 = (clamp(it.size, 1, 100) - 1) / 99;
+    var s = sliderOf(it);
+    if(s === null) return legacyPlacement(it, img, e);
+    var s01 = (clearScale(s) - 1) / 99;
     var full = customMaxW(it, img, e, rec, 1), here = customMaxW(it, img, e, rec, growFrac(it));
     var small = CUSTOM_MIN * full;
-    var w = small + (Math.max(small, here) - small) * s01, h = w * img.height / img.width;
-    var B = photoBounds(e.rects);
-    return customPosition(it, w, h, e, B.top, B.bottom, B.left, B.right, customReach(e));
+    var w = small + (Math.max(small, here) - small) * s01;
+    if(s > CUSTOM_CLEAR){   // (w = full here: the frame has all of its growth)
+      var deep = Math.max(w, customMaxW(it, img, e, rec, 1, true));
+      w += (deep - w) * (s - CUSTOM_CLEAR) / (100 - CUSTOM_CLEAR);
+    }
+    return customPosition(it, w, w * img.height / img.width, e, photoBounds(e.rects), customReach(e));
   }
-  function customPosition(it, w, h, e, top, bottom, left, right, band){
+  // B: the photos' outer edges. An image overlaps a photo's edge by `band` and reaches out to the strip's
+  // edge; a bigger one (above CUSTOM_CLEAR) stays at the strip's edge and reaches further into the photo
+  function customPosition(it, w, h, e, B, band){
     var cx, cy;
     if(it.pos === 'tl' || it.pos === 'bl') cx = EDGE_GAP + w/2;
     if(it.pos === 'tr' || it.pos === 'br') cx = e.w - EDGE_GAP - w/2;
-    if(it.pos === 'tl' || it.pos === 'tr') cy = top + Math.min(h, band) - h/2;
-    if(it.pos === 'bl' || it.pos === 'br') cy = bottom - Math.min(h, band) + h/2;
-    if(it.pos === 'left'){ cx = left + Math.min(w, band) - w/2; cy = e.rects[0].cy; }
-    if(it.pos === 'right'){ cx = right - Math.min(w, band) + w/2; cy = e.rects[e.rects.length - 1].cy; }
+    if(it.pos === 'tl' || it.pos === 'tr') cy = Math.max(B.top + Math.min(h, band), EDGE_GAP + h) - h/2;
+    if(it.pos === 'bl' || it.pos === 'br') cy = Math.min(B.bottom - Math.min(h, band), e.h - EDGE_GAP - h) + h/2;
+    if(it.pos === 'left'){ cx = Math.max(B.left + Math.min(w, band), EDGE_GAP + w) - w/2; cy = e.rects[0].cy; }
+    if(it.pos === 'right'){ cx = Math.min(B.right - Math.min(w, band), e.w - EDGE_GAP - w) + w/2; cy = e.rects[e.rects.length - 1].cy; }
     return {cx:cx, cy:cy, w:w, h:h};
   }
   // the room a frame needs around the photos for its images: the normal room + the (small) growth
@@ -5469,22 +5760,26 @@
       pad: used.side || side ? basePad + side : 0
     };
   }
-  // frames saved before v4.9 kept sizes as % of the strip width. They're turned into this scale when
-  // loaded (in memory; saved that way when you edit + SAVE), each image about as big as it was — the old
-  // frames had exactly the normal room, so only images that reached far into a photo get a bit smaller
+  // older frames are turned into today's scale when loaded (in memory; saved that way when you edit + SAVE):
+  // · before v4.9 sizes were % of the strip width: each image becomes about as big as it was — the old
+  //   frames had exactly the normal room, so only images that reached far into a photo get a bit smaller
+  // · v4.9–v4.10.1 (v:2): the same size, its % moved into 1–60% (not rounded, so it looks exactly the same)
   function upgradeLegacy(rec){
     if(customIsNew(rec)) return;
-    var old = makeBase(buildCustomTemplate(rec), null, 1, 2), e = {w:old.w, h:old.h, rects:old.rects};
-    var sizes = rec.items.map(function(it){
-      var img = customImages[it.id];
-      if(!img || it.v === 2) return it.size;
-      var was = legacyPlacement(it, img, e).w;
-      var spot = {pos:it.pos, size:1, v:2};
-      var small = CUSTOM_MIN * customMaxW(spot, img, e, rec, 1), normal = customMaxW(spot, img, e, rec, 0);
-      if(was <= normal) return clamp(Math.round(1 + 99 * (was - small) / Math.max(1, normal - small)), 1, 80);
-      return 100;   // (it was bigger than the normal room allows: the biggest there is now)
-    });
-    rec.items.forEach(function(it, i){ it.size = sizes[i]; it.v = 2; });
+    if(!rec.items.every(function(it){ return it.v === 2 || it.v === 3; })){
+      var old = makeBase(buildCustomTemplate(rec), null, 1, 2), e = {w:old.w, h:old.h, rects:old.rects};
+      var sizes = rec.items.map(function(it){
+        var img = customImages[it.id];
+        if(!img || it.v === 2 || it.v === 3) return it.size;
+        var was = legacyPlacement(it, img, e).w;
+        var spot = {pos:it.pos, size:1, v:2};
+        var small = CUSTOM_MIN * customMaxW(spot, img, e, rec, 1), normal = customMaxW(spot, img, e, rec, 0);
+        if(was <= normal) return clamp(Math.round(1 + 99 * (was - small) / Math.max(1, normal - small)), 1, 80);
+        return 100;   // (it was bigger than the normal room allows: the biggest there is now)
+      });
+      rec.items.forEach(function(it, i){ if(it.v !== 2 && it.v !== 3){ it.size = sizes[i]; it.v = 2; } });
+    }
+    rec.items.forEach(function(it){ if(it.v === 2){ it.size = toNewScale(it.size); it.v = 3; } });
   }
   // the free width in the middle of a row ('t' top / 'b' bottom) with corner images; 0 = no images there
   function customLane(t, e, row){
@@ -5538,7 +5833,9 @@
       ctx.translate(p.cx, p.cy);
       if(rec.wiggle){   // a gentle bob + tilt, small enough to stay inside the edge band
         ctx.translate(sway(e, 1, i*1.7, 3), sway(e, 2, i, 3));
-        ctx.rotate(sway(e, 1, i*1.3, 0.03));
+        // (a big image tilts a little less: its corners never swing more than 7px — with the bob
+        // that stays within WIGGLE_ROOM / EDGE_GAP)
+        ctx.rotate(sway(e, 1, i*1.3, Math.min(0.03, 14 / Math.max(p.w, p.h))));
       }
       ctx.drawImage(img, -p.w/2, -p.h/2, p.w, p.h);
       ctx.restore();
@@ -5563,9 +5860,9 @@
       // room above / below the photos and wider sides where your images sit (0 = the layout's usual)
       headerH: roomy.headerH, footerH: roomy.footerH, footerTrim: roomy.footerTrim, pad: roomy.pad,
       decor: function(ctx, e){
-        if(baseT.decor) baseT.decor(ctx, e);
-        drawCustomItems(ctx, e, rec);
-      }
+        if(baseT.decor) baseT.decor(ctx, e);   // the base theme's drawings: never over a photo's middle
+      },
+      overDecor: function(ctx, e){ drawCustomItems(ctx, e, rec); }   // yours: may step into the photos
     };
   }
   // add (or replace) a custom frame everywhere frames are listed
@@ -5644,12 +5941,15 @@
     var cv = $('cfCanvas');
     cv.width = b.canvas.width; cv.height = b.canvas.height;
     cv.getContext('2d').drawImage(b.canvas, 0, 0);
-    // above 80% the frame grows a little: say so (and at 100%, that this is the biggest for the spot)
-    var selIt = d.items[cf.sel], size = selIt ? clamp(selIt.size, 1, 100) : 0;
-    $('cfMaxNote').hidden = size <= CUSTOM_GROW_FROM;
+    // from ~49% the frame grows a little, above 60% the image steps into the photo: say so
+    var selIt = d.items[cf.sel], size = selIt ? Math.round(clamp(selIt.size, 1, 100)) : 0;
+    var growing = selIt && growFrac(selIt) > 0;
+    $('cfMaxNote').hidden = !growing;
     $('cfMaxNote').textContent = size >= 100
-      ? 'The biggest for this spot ♡ Your photos stay clear — try another corner or a side for more images.'
-      : 'From here the frame grows a little to make room — your photos stay clear ♡';
+      ? 'The biggest ♡ Your image covers up to a third of the photo — at the sides as tall as a photo.'
+      : size > CUSTOM_CLEAR
+        ? 'Now your image steps into the photo ♡ Great for someone standing next to you. Want clear photos? Turn off "Let decorations peek over photos" in the editor.'
+        : 'From here the frame grows a little to make room — your photos stay clear ♡';
     if(selIt) $('cfSizeValue').textContent = size + '%';
     // image buttons
     var box = $('cfImages');
@@ -5727,7 +6027,7 @@
     this.value = '';
     if(!file) return;
     prepareImage(file).then(function(blob){
-      var it = {id:cfUid(), pos:cf.pending.shift() || 'br', size:70, v:2, blob:blob};   // v:2 = size is % of the biggest
+      var it = {id:cfUid(), pos:cf.pending.shift() || 'br', size:42, v:3, blob:blob};   // v:3 = today's scale (42% = 70% before v4.11)
       return loadImage(blob).then(function(img){
         customImages[it.id] = img;
         cf.draft.items.push(it);
@@ -5757,7 +6057,7 @@
     d.name = (d.name || '').trim() || 'My frame';
     var rec = {id:d.id, name:d.name, baseId:d.baseId, colorId:d.colorId, wiggle:d.wiggle, created:d.created,
                srcId:d.srcId,   // set on a frame your love sent you, so a newer version replaces this copy
-               items:d.items.map(function(it){ return {id:it.id, pos:it.pos, size:it.size, v:2, blob:it.blob}; })};
+               items:d.items.map(function(it){ return {id:it.id, pos:it.pos, size:it.size, v:3, blob:it.blob}; })};
     var old = TEMPLATES.filter(function(t){ return t.id === 'custom-' + rec.id; })[0];
     if(old) old.rec.items.forEach(function(it){   // forget images this edit removed
       if(!rec.items.some(function(x){ return x.id === it.id; })) delete customImages[it.id];
@@ -5880,7 +6180,7 @@
     return f.items.reduce(function(chain, it, i){
       return chain.then(function(){
         return prepareImage(new Blob([bytes[i]])).then(function(blob){
-          var item = {id:cfUid(), pos:it.pos, size:clamp(Math.round(it.size), 1, 100), v:it.v === 2 ? 2 : undefined, blob:blob};
+          var item = {id:cfUid(), pos:it.pos, size:cleanCustomSize(it), v:cleanCustomV(it), blob:blob};
           return loadImage(blob).then(function(img){ customImages[item.id] = img; items.push(item); });
         });
       });
@@ -5989,7 +6289,7 @@
     });
   });
   function syncLiveDesign(){
-    $('liveDesign').hidden = !live.connected;
+    $('liveDesign').hidden = !live.connected || !!versionGap();   // (not across two versions)
     $('togetherOff').hidden = together.on;
     $('togetherOn').hidden = !together.on;
     $('togetherBtn').disabled = together.inviting;
@@ -6044,8 +6344,8 @@
     // every image is decoded and re-drawn by us (prepareImage), so what we keep is always a clean PNG
     return Promise.all(f.items.map(function(it){
       return prepareImage(new Blob([binaryOf(it.buf)])).then(function(blob){
-        // v:2 = new size scale (% of the biggest); frames from older pages keep their old sizes
-        var item = {id:cfUid(), pos:it.pos, size:clamp(Math.round(it.size), 1, 100), v:it.v === 2 ? 2 : undefined, blob:blob};
+        // v:3 = today's size scale; frames from older pages keep their old sizes (turned into v:3 when used)
+        var item = {id:cfUid(), pos:it.pos, size:cleanCustomSize(it), v:cleanCustomV(it), blob:blob};
         return loadImage(blob).then(function(img){ customImages[item.id] = img; return item; });
       });
     })).then(function(items){ rec.items = items; return rec; });
@@ -6548,8 +6848,9 @@
   var resumeCheck = Promise.all([loadSession(), customFramesReady, fontsReadyForResume]).then(function(res){
     var rec = res[0];
     if(session.offer) return true;   // START was tapped meanwhile and already offered it
-    // opened from a live-room invite, or already busy in the app: don't interrupt
-    if(!rec || pendingRoom || state.shots.length || $('app').dataset.view === 'app'){ session.pending = false; return false; }
+    // opened from a live-room invite, coming back to a room after a refresh, or already busy in the app:
+    // don't interrupt
+    if(!rec || pendingRoom || rejoinInfo || state.shots.length || $('app').dataset.view === 'app'){ session.pending = false; return false; }
     return sessionCanvases(rec).then(function(canvases){
       if(session.offer) return true;
       if(state.shots.length || $('app').dataset.view === 'app'){ session.pending = false; return false; }
@@ -6558,6 +6859,30 @@
       return true;
     });
   }).catch(function(){ session.pending = false; return false; });
+  // refreshed for a new version (REFRESH NOW): the photos saved a moment before come straight back,
+  // then the room — the one who joined knocks again, the room maker opens the same code again
+  if(rejoinInfo) resumeCheck.then(function(){
+    return loadSession().then(function(rec){
+      if(!rec || rec.saved < rejoinInfo.at - 15000 || state.shots.length) return;   // (only what the refresh saved)
+      return sessionCanvases(rec).then(function(canvases){
+        session.savedThisPage = true;
+        state.shots = canvases;
+        state.shotCount = clamp(rec.shotCount || canvases.length, canvases.length, MAX_SHOTS);
+        applyDesign(sessionDesign(rec));
+      });
+    }).catch(function(){});
+  }).then(function(){
+    if(inRoom() || $('app').dataset.view === 'app') return;   // (you already started something else)
+    session.pending = false;
+    if(rejoinInfo.role === 'guest'){
+      live.pastIds = rejoinInfo.was.slice();
+      live.rejoin = {until: Date.now() + REJOIN_REFRESH, why:'reload'};
+      enterLive(rejoinInfo.code);
+    } else {
+      enterLive();
+      startLive('host', rejoinInfo.code);
+    }
+  });
   // A page left open for days (phones keep tabs) deletes the kept photos when they turn 24 hours old,
   // instead of waiting for the next visit: checked every 10 minutes while the page is shown and when you
   // come back to it. Photos you're working on stay on screen (and are saved again at your next change).
@@ -6714,13 +7039,29 @@
   }
   /* Decorations are drawn through a stencil: the whole strip minus the "no-go" areas.
      Pop-out on  → only the middle of each photo is off limits (faces stay clear).
-     Pop-out off → whole photos are off limits, so decorations stay around them. */
+     Pop-out off → whole photos are off limits, so decorations stay around them.
+     (v4.11) Your own images on a custom frame (overDecor) skip the middle rule — their size decides. */
   function drawDecorLayer(ctx, b, t, moving){
     if(!b.t.decor) return;
+    var e = {w:b.w, h:b.h, rects:b.rects, t:t, moving:moving, accent:b.accent,
+             textColor:b.textColor, hex:b.hex, dark:b.dark, popout:state.popout};
     ctx.save();
+    clipOutPhotos(ctx, b, state.popout ? SAFE_INSET : 0);
+    b.t.decor(ctx, e);
+    ctx.restore();
+    // your own images on a custom frame (v4.11): they may step into the photos, faces too — you pick
+    // their size. With "Let decorations peek over photos" off, the photos stay completely clear.
+    if(b.t.overDecor){
+      ctx.save();
+      if(!state.popout) clipOutPhotos(ctx, b, 0);
+      b.t.overDecor(ctx, e);
+      ctx.restore();
+    }
+  }
+  // a stencil: the whole strip minus the middle of every photo (inset 0 = the whole photo)
+  function clipOutPhotos(ctx, b, inset){
     ctx.beginPath();
     ctx.rect(0, 0, b.w, b.h);
-    var inset = state.popout ? SAFE_INSET : 0;
     b.rects.forEach(function(r){
       var pts = rectCorners(r, inset);
       ctx.moveTo(pts[0][0], pts[0][1]);
@@ -6728,9 +7069,6 @@
       ctx.closePath();
     });
     ctx.clip('evenodd');   // "evenodd" turns each inner rectangle into a hole in the stencil
-    b.t.decor(ctx, {w:b.w, h:b.h, rects:b.rects, t:t, moving:moving, accent:b.accent,
-                    textColor:b.textColor, hex:b.hex, dark:b.dark, popout:state.popout});
-    ctx.restore();
   }
   // "me ♡ / you ♡" pills; each frame can move them to a corner its characters leave free (labelAt)
   // Together photos get two pills side by side at the MIDDLE LINE ("me ♡ | you ♡"): the frames' characters
