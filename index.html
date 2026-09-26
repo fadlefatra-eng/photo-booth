@@ -974,8 +974,8 @@
         <div class="chip-row" id="cfPositions"></div>
         <h4>Size <small id="cfSizeValue">70%</small></h4>
         <input type="range" id="cfSize" min="1" max="100" step="1" aria-label="Image size">
-        <p class="cf-tip">100% = the biggest this spot allows. The frame makes room by itself, and faces always stay clear.</p>
-        <p class="cf-tip" id="cfMaxNote" hidden>This is as big as it can be here — it keeps the middle free for your text. Try a side or the other corners for more.</p>
+        <p class="cf-tip">1% = small, 100% = the biggest this spot allows. Up to 80% the frame keeps its size; your photos always stay clear.</p>
+        <p class="cf-tip" id="cfMaxNote" hidden></p>
         <button type="button" class="btn-text cf-danger" id="cfRemoveImg">Remove this image</button>
       </div>
       <div class="cf-section">
@@ -1116,7 +1116,7 @@
       </details>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.10</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.10.1</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -5368,80 +5368,123 @@
     });
   }
 
-  /* ---- placing images: always near the edges, never over a photo's middle ----
-     Size is a percentage of the BIGGEST the image may be in its spot (100% = biggest), so every step of
-     the slider does something. Corner images fit a 360 x 360 box, side images 260 wide (and 90% of a
-     photo high). The frame grows to make room (customRoom): taller above/below, wider sides — and the
-     middle of a row with corner images always keeps LANE_MIN free for the title / your text and date.
-     Frames saved before this (items without v:2) keep the old rules (legacyPlacement) until you edit
-     them, so they look exactly as before. */
-  var CUSTOM_CORNER_MAX = 360, CUSTOM_SIDE_MAX = 260;
+  /* ---- placing images: always at the edges, never over a photo's middle ----
+     (v4.10.1) The IMAGE follows the frame. Every spot has the frame's normal custom room: 160 above the
+     photos for top corners, 190 below for bottom corners, 110 at the sides. The size slider runs from 1%
+     (a quarter of the biggest — small, but never gone) to 100% (the biggest). Up to 80% the image grows
+     inside that room and the frame keeps its size; from 81% the frame may grow a little (at most
+     CUSTOM_GROW_H taller and CUSTOM_GROW_SIDE wider per side — the photos look at most ~5% smaller).
+     An image reaches at most 5% into a photo's edge, its gentle wiggle included, so photos and faces stay
+     clear; a row with corner images keeps LANE_MIN free in the middle for the title / your text and date.
+     Frames saved before v4.9 (items without v:2) are turned into this scale when they're loaded. */
+  var ROOM_TOP = 160, ROOM_BOTTOM = 190, ROOM_SIDE = 110;   // the frame's normal room for images
+  var CUSTOM_GROW_FROM = 80;                         // slider % where the frame starts to grow…
+  var CUSTOM_GROW_H = 32, CUSTOM_GROW_SIDE = 18;     // …by at most this much (height in total / each side):
+                                                     // ≤ 5% even of the smallest frames (1 photo, grid of 2)
+  var CUSTOM_MIN = 0.25;                             // 1% = a quarter of 100%
+  var PHOTO_REACH = 0.05, WIGGLE_ROOM = 13;          // ≤ 5% into a photo; the wiggle moves an image ≤ 13
+  var EDGE_GAP = 13;    // from the strip's edge: even mid-wiggle an image never leaves the strip
   var LANE_MIN = 220;   // free width kept between corner images for text
-  var BAND_MIN = 40;    // the smallest "photo edge" an image may overlap (grid photos) — rooms are sized for it
   function customIsNew(rec){ return rec.items.every(function(it){ return it.v === 2; }); }
-  // the width at 100% for this image in this spot (keeps the image's shape)
-  function customFullW(it, img, photoH){
-    var aspect = img.height / img.width, corner = it.pos.length === 2;
-    return corner ? Math.min(CUSTOM_CORNER_MAX, CUSTOM_CORNER_MAX / aspect)
-                  : Math.min(CUSTOM_SIDE_MAX, (photoH || 640) * 0.9 / aspect);
-  }
-  // the size you asked for (before the frame's limits)
-  function customWantedW(it, img, photoH){ return Math.max(8, customFullW(it, img, photoH) * clamp(it.size, 1, 100) / 100); }
-  function customPlacement(it, img, e){
-    if(it.v !== 2) return legacyPlacement(it, img, e);
-    var rs = e.rects;
-    var top = Infinity, bottom = -Infinity, left = Infinity, right = -Infinity;
-    rs.forEach(function(r){
-      top = Math.min(top, r.cy - r.h/2); bottom = Math.max(bottom, r.cy + r.h/2);
-      left = Math.min(left, r.cx - r.w/2); right = Math.max(right, r.cx + r.w/2);
+  // how far a still image may overlap a photo's edge (so that with its wiggle it stays within 5%)
+  function customReach(e){ return Math.max(0, e.rects[0].w * PHOTO_REACH - WIGGLE_ROOM); }
+  // 0 up to 80%, then up to 1 at 100%: how much of the growth this image uses
+  function growFrac(it){ return clamp((clamp(it.size, 1, 100) - CUSTOM_GROW_FROM) / (100 - CUSTOM_GROW_FROM), 0, 1); }
+  // how much the frame grows beyond its normal size: on each edge, as much as its biggest image needs
+  function customGrowth(rec){
+    var top = false, bottom = false;
+    rec.items.forEach(function(it){
+      if(it.pos.length === 2 && customImages[it.id]){ if(it.pos.charAt(0) === 't') top = true; else bottom = true; }
     });
-    var band = rs[0].w * SAFE_INSET * 0.85;   // how far into a photo an image may reach (with room to wiggle)
-    var aspect = img.height / img.width;
-    var w = customWantedW(it, img, rs[0].h), h = w * aspect;
-    // never more than the frame has room for (it grows to make room, see customRoom)
+    var g = {top:0, bottom:0, side:0, hBudget: top && bottom ? CUSTOM_GROW_H / 2 : CUSTOM_GROW_H};
+    rec.items.forEach(function(it){
+      if(!customImages[it.id]) return;
+      var f = growFrac(it);
+      if(it.pos.length === 2){ var k = it.pos.charAt(0) === 't' ? 'top' : 'bottom'; g[k] = Math.max(g[k], f * g.hBudget); }
+      g.side = Math.max(g.side, f * CUSTOM_GROW_SIDE);   // (a little wider also gives big corner images more room)
+    });
+    return g;
+  }
+  // the photos' outer edges (where the edge room around them starts)
+  function photoBounds(rs){
+    var b = {top:Infinity, bottom:-Infinity, left:Infinity, right:-Infinity};
+    rs.forEach(function(r){
+      b.top = Math.min(b.top, r.cy - r.h/2); b.bottom = Math.max(b.bottom, r.cy + r.h/2);
+      b.left = Math.min(b.left, r.cx - r.w/2); b.right = Math.max(b.right, r.cx + r.w/2);
+    });
+    return b;
+  }
+  // the widest an image may be in its spot when it uses `frac` (0..1) of the growth: the spot's normal
+  // room (what the frame has without growing) + that share. Each image counts only its OWN share, so
+  // changing one image never changes the size of another. rec: the frame the image belongs to
+  function customMaxW(it, img, e, rec, frac){
+    var B = photoBounds(e.rects), reach = customReach(e), aspect = img.height / img.width;
+    var G = customGrowth(rec || {items:[]}), ownSide = frac * CUSTOM_GROW_SIDE, maxW;
     if(it.pos.length === 2){
-      var room = it.pos.charAt(0) === 'b' ? (e.h - bottom) + band - 8 : top + band - 8;
-      if(h > room){ h = room; w = h / aspect; }
-      var laneCap = (e.w - LANE_MIN) / 2 - 8;   // keep the middle free for the title / text and date
-      if(w > laneCap){ w = laneCap; h = w * aspect; }
+      var roomH = it.pos.charAt(0) === 'b'
+        ? (e.h - B.bottom) - G.bottom + frac * G.hBudget   // (below: footer + bottom margin; see customRoom)
+        : B.top - G.top + frac * G.hBudget;
+      var laneW = (e.w - 2 * G.side - LANE_MIN) / 2 + ownSide - EDGE_GAP;   // keep the middle free for the title / text and date
+      maxW = Math.min(laneW, (roomH + reach - EDGE_GAP) / aspect);
     } else {
-      var roomW = (it.pos === 'left' ? left : e.w - right) + band - 6;
-      if(w > roomW){ w = roomW; h = w * aspect; }
-      if(h > rs[0].h * 0.9){ h = rs[0].h * 0.9; w = h / aspect; }
+      var roomW = (it.pos === 'left' ? B.left : e.w - B.right) - G.side + ownSide + reach - EDGE_GAP;
+      maxW = Math.min(roomW, e.rects[0].h * 0.9 / aspect);
     }
-    return customPosition(it, w, h, e, top, bottom, left, right, band);
+    return Math.max(16, maxW);
+  }
+  // 1% = a quarter of 100%; up to 80% the image stays inside the normal room, then it uses its growth
+  function customPlacement(it, img, e, rec){
+    if(it.v !== 2) return legacyPlacement(it, img, e);
+    var s01 = (clamp(it.size, 1, 100) - 1) / 99;
+    var full = customMaxW(it, img, e, rec, 1), here = customMaxW(it, img, e, rec, growFrac(it));
+    var small = CUSTOM_MIN * full;
+    var w = small + (Math.max(small, here) - small) * s01, h = w * img.height / img.width;
+    var B = photoBounds(e.rects);
+    return customPosition(it, w, h, e, B.top, B.bottom, B.left, B.right, customReach(e));
   }
   function customPosition(it, w, h, e, top, bottom, left, right, band){
     var cx, cy;
-    if(it.pos === 'tl' || it.pos === 'bl') cx = 8 + w/2;
-    if(it.pos === 'tr' || it.pos === 'br') cx = e.w - 8 - w/2;
+    if(it.pos === 'tl' || it.pos === 'bl') cx = EDGE_GAP + w/2;
+    if(it.pos === 'tr' || it.pos === 'br') cx = e.w - EDGE_GAP - w/2;
     if(it.pos === 'tl' || it.pos === 'tr') cy = top + Math.min(h, band) - h/2;
     if(it.pos === 'bl' || it.pos === 'br') cy = bottom - Math.min(h, band) + h/2;
     if(it.pos === 'left'){ cx = left + Math.min(w, band) - w/2; cy = e.rects[0].cy; }
     if(it.pos === 'right'){ cx = right - Math.min(w, band) + w/2; cy = e.rects[e.rects.length - 1].cy; }
     return {cx:cx, cy:cy, w:w, h:h};
   }
-  // how much room a (new-style) frame needs around the photos for its images
+  // the room a frame needs around the photos for its images: the normal room + the (small) growth
   function customRoom(rec, baseT){
-    var r = {top:0, bottom:0, side:0, rowT:0, rowB:0};
+    var used = {t:false, b:false, side:false};
     rec.items.forEach(function(it){
-      var img = customImages[it.id];
-      if(!img) return;
-      var w = customWantedW(it, img, 640), h = w * img.height / img.width;
-      if(it.pos.length !== 2){ r.side = Math.max(r.side, w); return; }
-      if(it.pos.charAt(0) === 't'){ r.top = Math.max(r.top, h); r.rowT = Math.max(r.rowT, w); }
-      else { r.bottom = Math.max(r.bottom, h); r.rowB = Math.max(r.rowB, w); }
+      if(it.pos.length !== 2) used.side = true; else used[it.pos.charAt(0)] = true;
     });
-    var cell = baseT.layout === 'grid' ? 700 : 640;
-    var laneNeed = Math.max(r.rowT, r.rowB) ? 2 * (8 + Math.max(r.rowT, r.rowB)) + LANE_MIN : 0;
-    var pad = Math.max(r.side ? Math.max(110, Math.ceil(r.side - BAND_MIN + 6)) : 0,
-                       laneNeed > cell + 80 ? Math.ceil((laneNeed - cell) / 2) : 0);
-    if(pad && baseT.layout === 'film') pad = Math.max(pad, 76);   // film keeps room for its sprocket holes
+    var G = customGrowth(rec);
+    var basePad = used.side ? ROOM_SIDE : (baseT.layout === 'film' ? 76 : 40);   // film keeps room for its sprocket holes
+    var side = Math.ceil(G.side);
     return {
-      headerH: r.top ? Math.max(160, Math.ceil(r.top - BAND_MIN + 8)) : 0,
-      footerH: r.bottom ? Math.max(190, Math.ceil(r.bottom - BAND_MIN + 8 - 40)) : 0,   // (40 = the strip's bottom margin)
-      pad: pad
+      headerH: used.t ? ROOM_TOP + Math.ceil(G.top) : 0,
+      // the side margin also runs along the bottom of the strip: a wider side must not make it taller too
+      footerH: used.b ? ROOM_BOTTOM + Math.ceil(G.bottom) - side : 0,
+      footerTrim: used.b ? 0 : side,   // (the same for the layout's usual footer)
+      pad: used.side || side ? basePad + side : 0
     };
+  }
+  // frames saved before v4.9 kept sizes as % of the strip width. They're turned into this scale when
+  // loaded (in memory; saved that way when you edit + SAVE), each image about as big as it was — the old
+  // frames had exactly the normal room, so only images that reached far into a photo get a bit smaller
+  function upgradeLegacy(rec){
+    if(customIsNew(rec)) return;
+    var old = makeBase(buildCustomTemplate(rec), null, 1, 2), e = {w:old.w, h:old.h, rects:old.rects};
+    var sizes = rec.items.map(function(it){
+      var img = customImages[it.id];
+      if(!img || it.v === 2) return it.size;
+      var was = legacyPlacement(it, img, e).w;
+      var spot = {pos:it.pos, size:1, v:2};
+      var small = CUSTOM_MIN * customMaxW(spot, img, e, rec, 1), normal = customMaxW(spot, img, e, rec, 0);
+      if(was <= normal) return clamp(Math.round(1 + 99 * (was - small) / Math.max(1, normal - small)), 1, 80);
+      return 100;   // (it was bigger than the normal room allows: the biggest there is now)
+    });
+    rec.items.forEach(function(it, i){ it.size = sizes[i]; it.v = 2; });
   }
   // the free width in the middle of a row ('t' top / 'b' bottom) with corner images; 0 = no images there
   function customLane(t, e, row){
@@ -5449,9 +5492,9 @@
     t.rec.items.forEach(function(it){
       var img = customImages[it.id];
       if(!img || it.pos.length !== 2 || it.pos.charAt(0) !== row) return;
-      var p = customPlacement(it, img, e);
+      var p = customPlacement(it, img, e, t.rec);
       var inner = it.pos.charAt(1) === 'l' ? p.cx + p.w/2 : e.w - (p.cx - p.w/2);   // strip edge → image's inner edge
-      lane = Math.min(lane, e.w - 2 * (inner + 12));   // 12: a little air, and room for the wiggle
+      lane = Math.min(lane, e.w - 2 * (inner + WIGGLE_ROOM));   // a little air: room for the wiggle
     });
     return lane === Infinity ? 0 : Math.max(60, lane);
   }
@@ -5490,7 +5533,7 @@
     rec.items.forEach(function(it, i){
       var img = customImages[it.id];
       if(!img) return;
-      var p = customPlacement(it, img, e);
+      var p = customPlacement(it, img, e, rec);
       ctx.save();
       ctx.translate(p.cx, p.cy);
       if(rec.wiggle){   // a gentle bob + tilt, small enough to stay inside the edge band
@@ -5503,9 +5546,13 @@
   }
   // turn a saved record into a template the rest of the app understands
   function customTemplate(rec){
+    upgradeLegacy(rec);   // (a frame from before v4.9: its sizes move to today's scale first)
+    return buildCustomTemplate(rec);
+  }
+  function buildCustomTemplate(rec){
     var baseT = templateById(rec.baseId);
     var used = rec.items.map(function(it){ return it.pos; });
-    var roomy = customIsNew(rec) ? customRoom(rec, baseT) : null;   // new frames make room for bigger images
+    var roomy = customRoom(rec, baseT);   // the normal room for images (+ a little growth near 100%)
     return {
       id: 'custom-' + rec.id, tab: 'custom', custom: true, rec: rec,
       name: rec.name || 'My frame',
@@ -5513,10 +5560,8 @@
       color: rec.colorId || baseT.color, colors: baseT.colors, title: baseT.title,
       animated: !!(baseT.animated || rec.wiggle),
       labelAt: ['tl','tr','bl','br'].filter(function(p){ return used.indexOf(p) === -1; })[0] || 'bl',
-      // extra room above / below the photos when your images sit there, so they can be bigger
-      headerH: roomy ? roomy.headerH : ((used.indexOf('tl') !== -1 || used.indexOf('tr') !== -1) ? 160 : 0),
-      footerH: roomy ? roomy.footerH : ((used.indexOf('bl') !== -1 || used.indexOf('br') !== -1) ? 190 : 0),
-      pad: roomy ? roomy.pad : ((used.indexOf('left') !== -1 || used.indexOf('right') !== -1) ? 110 : 0),   // wider sides
+      // room above / below the photos and wider sides where your images sit (0 = the layout's usual)
+      headerH: roomy.headerH, footerH: roomy.footerH, footerTrim: roomy.footerTrim, pad: roomy.pad,
       decor: function(ctx, e){
         if(baseT.decor) baseT.decor(ctx, e);
         drawCustomItems(ctx, e, rec);
@@ -5567,16 +5612,8 @@
     cf.draft = rec ? JSON.parse(JSON.stringify({id:rec.id, srcId:rec.srcId, name:rec.name, baseId:rec.baseId, colorId:rec.colorId, wiggle:rec.wiggle, created:rec.created}))
                    : {id:cfUid(), name:'', baseId:'classic', colorId:'pink', wiggle:true, created:Date.now()};
     cf.draft.items = rec ? rec.items.map(function(it){ return {id:it.id, pos:it.pos, size:it.size, v:it.v, blob:it.blob}; }) : [];
-    // a frame from before v4.9: turn its sizes into the new "% of the biggest" scale, keeping each
-    // image exactly as big as it was (it's saved that way when you tap SAVE)
-    if(rec && !customIsNew(cf.draft)){
-      var old = makeBase(customTemplate(cf.draft), null, 1, 2), e = {w:old.w, h:old.h, rects:old.rects};
-      cf.draft.items.forEach(function(it){
-        var img = customImages[it.id];
-        it.size = img ? clamp(Math.round(legacyPlacement(it, img, e).w / customFullW(it, img, old.rects[0].h) * 100), 1, 100) : 70;
-        it.v = 2;
-      });
-    }
+    // (a frame from before v4.9 was already turned into today's size scale when it was loaded — upgradeLegacy)
+    if(rec) upgradeLegacy(cf.draft);
     cf.isNew = !rec;
     cf.sel = cf.draft.items.length ? 0 : -1;
     cf.pending = [];
@@ -5607,15 +5644,13 @@
     var cv = $('cfCanvas');
     cv.width = b.canvas.width; cv.height = b.canvas.height;
     cv.getContext('2d').drawImage(b.canvas, 0, 0);
-    // tell the user when the size slider has hit the limit for this spot
-    var selIt = d.items[cf.sel], selImg = selIt && customImages[selIt.id];
-    var capped = false;
-    if(selImg){
-      var p = customPlacement(selIt, selImg, {w:b.w, h:b.h, rects:b.rects});
-      capped = p.w < customWantedW(selIt, selImg, b.rects[0].h) - 1;   // (rare now: the frame grows instead)
-    }
-    $('cfMaxNote').hidden = !capped;
-    if(selIt) $('cfSizeValue').textContent = clamp(selIt.size, 1, 100) + '%';
+    // above 80% the frame grows a little: say so (and at 100%, that this is the biggest for the spot)
+    var selIt = d.items[cf.sel], size = selIt ? clamp(selIt.size, 1, 100) : 0;
+    $('cfMaxNote').hidden = size <= CUSTOM_GROW_FROM;
+    $('cfMaxNote').textContent = size >= 100
+      ? 'The biggest for this spot ♡ Your photos stay clear — try another corner or a side for more images.'
+      : 'From here the frame grows a little to make room — your photos stay clear ♡';
+    if(selIt) $('cfSizeValue').textContent = size + '%';
     // image buttons
     var box = $('cfImages');
     box.innerHTML = '';
@@ -6830,7 +6865,8 @@
     var film = L.t.layout === 'film';
     var PAD = L.t.pad || (film ? 76 : 40), CELL = 640, GAP = film ? 20 : 26;   // pad: wider side margins on request
     var headerH = L.t.headerH || ((L.title || L.t.decor) ? 96 : 40);   // decorated frames keep room above the photos for their drawings
-    var footerH = L.t.footerH || ((state.showDate || state.customText || L.t.decor) ? 130 : 60);   // …and below
+    // …and below (footerTrim: a custom frame's wider sides — the same margin runs along the bottom)
+    var footerH = L.t.footerH || (((state.showDate || state.customText || L.t.decor) ? 130 : 60) - (L.t.footerTrim || 0));
     var W = CELL + PAD*2;
     var H = headerH + L.n*CELL + (L.n-1)*GAP + footerH + PAD;
     var ctx = prepCanvas(canvas, W, H, L.scale);
@@ -6858,7 +6894,7 @@
     var CELL = cols === 1 ? 700 : 340;
     var rows = Math.ceil(L.n / cols);
     var headerH = L.t.headerH || ((L.title || L.t.decor) ? 96 : 40);   // decorated frames keep room above the photos for their drawings
-    var footerH = L.t.footerH || ((state.showDate || state.customText || L.t.decor) ? 130 : 60);   // …and below
+    var footerH = L.t.footerH || (((state.showDate || state.customText || L.t.decor) ? 130 : 60) - (L.t.footerTrim || 0));   // …and below (see drawStripLayout)
     var W = PAD*2 + 700;
     var H = headerH + rows*CELL + (rows-1)*GAP + footerH + PAD;
     var ctx = prepCanvas(canvas, W, H, L.scale);
