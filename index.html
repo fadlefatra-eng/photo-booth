@@ -139,9 +139,10 @@
   .welcome-overlay{
     position:fixed; inset:0; z-index:80; display:flex; align-items:center; justify-content:center;
     background:radial-gradient(circle at 50% 20%, rgba(255,209,227,0.92), rgba(147,38,79,0.78));
-    padding:24px; opacity:0; pointer-events:none; transition:opacity .35s ease;
+    padding:24px; opacity:0; pointer-events:none; transition:opacity .35s ease, visibility 0s linear .35s;
+    visibility:hidden;   /* a closed card's buttons must not be reachable with Tab (or read out) — after the fade */
   }
-  .welcome-overlay.show{opacity:1; pointer-events:auto;}
+  .welcome-overlay.show{opacity:1; pointer-events:auto; visibility:visible; transition:opacity .35s ease;}
   .welcome-card{
     background:var(--white); border-radius:var(--radius-lg); padding:40px 32px; max-width:380px; width:100%;
     text-align:center; box-shadow:0 30px 70px -20px rgba(59,22,38,0.5);
@@ -223,10 +224,24 @@
     display:flex; align-items:center; gap:10px; justify-content:center; max-width:520px; margin:0 auto;
     padding:16px 20px; background:var(--blush-100); border-radius:999px; font-size:.85rem; color:var(--rose-800); text-align:center;
   }
+  .privacy-more{max-width:520px; margin:6px auto 0; text-align:center;}
+  /* inline-block, not flex: older iPhones ignore flex on <summary>; 12 + 20 + 12 = a 44px tap target */
+  .privacy-more summary{display:inline-block; padding:12px; line-height:20px; cursor:pointer;
+    list-style:none; font-size:.8rem; font-weight:600; color:var(--rose-800);}
+  .privacy-more summary span{text-decoration:underline; text-underline-offset:3px;}   /* the text only, not the arrow */
+  .privacy-more summary::-webkit-details-marker{display:none;}
+  .privacy-more summary::after{content:'▾'; display:inline-block; margin-left:4px; transition:transform .2s ease;}
+  .privacy-more[open] summary::after{transform:rotate(180deg);}
+  .privacy-more ul{margin:4px 0 0; padding:14px 18px 14px 34px; text-align:left; background:var(--white); border-radius:18px;
+    box-shadow:var(--shadow-soft); font-size:.82rem; line-height:1.5; color:var(--plum-900);}
+  .privacy-more li{margin-bottom:6px;}
+  .privacy-more li:last-child{margin-bottom:0;}
   footer.site-footer{text-align:center; padding:36px 20px 56px; font-size:.82rem; color:var(--rose-800); opacity:.85;}
 
   /* ================= APP FLOW ================= */
-  .view-app{display:block; min-height:100%; background:transparent;}
+  /* no "display" here: it used to say display:block, which beat ".view{display:none}" — so the app (its top
+     bar and the last step you used) also showed below the home page's footer. Shown only in the app view (line ~82) */
+  .view-app{min-height:100%; background:transparent;}
   .app-topbar{display:flex; align-items:center; justify-content:space-between; padding:16px 18px; gap:12px;}
   .progress-dots{display:flex; gap:8px;}
   .progress-dots span{width:8px; height:8px; border-radius:50%; background:var(--pink-200); transition:background .2s, width .2s;}
@@ -278,6 +293,13 @@
     position:relative; width:min(100%, 58vh); margin:0 auto; aspect-ratio:1/1; border-radius:var(--radius-lg);
     overflow:hidden; background:var(--plum-900); box-shadow:var(--shadow-pink);
   }
+  /* wide screens that aren't very tall (a 1366x768 laptop leaves ~657px for the page): the square shrinks
+     just enough that the heart and its words stay on screen. 333 = what sits above the square (~197) +
+     the controls below it (~128) + a little air. Phones held upright are narrower than 600px (unchanged);
+     phones held sideways mostly have 58vh < 240px (unchanged; a tall one loses at most ~9px) */
+  @media (min-width:600px){
+    .camera-stage{width:min(100%, 58vh, max(240px, calc(100vh - 333px))); width:min(100%, 58svh, max(240px, calc(100svh - 333px)));}
+  }
   .camera-stage video{width:100%; height:100%; object-fit:cover;}
   .camera-stage video.mirror{transform:scaleX(-1);}
   /* effect + decoration layers over the solo camera and over your tile in the live room */
@@ -315,6 +337,14 @@
   .btn-shutter::after{content:'♡'; font-size:1.8rem;}
   .btn-shutter[disabled]{opacity:.5;}
   .btn-shutter.fallback::after{content:'📷'; font-size:1.6rem;}
+  /* the little words under the shutter heart ("tap to start ♡"), so nobody wonders where to press.
+     They belong to the button (tapping them works too) and show only while it can be pressed; during a
+     countdown they hide but keep their room, so nothing jumps. The room sits BELOW the row: the heart
+     itself doesn't move (in the live room it must stay on a small phone's screen) */
+  .camera-controls{padding-bottom:24px;}
+  .shutter-label{position:absolute; top:calc(100% + 12px); left:50%; transform:translateX(-50%); white-space:nowrap;
+    font-size:.78rem; font-weight:600; letter-spacing:.01em; line-height:1.2; color:var(--rose-800);}
+  .btn-shutter[disabled] .shutter-label{visibility:hidden;}
   /* phone vs. computer: set once on <html> by the script */
   .is-phone .desktop-only, .is-desktop .phone-only{display:none !important;}
   .ios-only{display:none;} .is-ios .ios-only{display:block;}
@@ -373,6 +403,12 @@
   .filter-card canvas{width:72px; height:72px; border-radius:14px; border:3px solid transparent; box-shadow:var(--shadow-soft);}
   .filter-card.active canvas{border-color:var(--rose-600);}
   .filter-card.active{color:var(--rose-600);}
+  /* with a mouse the frame and filter rows can't be swiped sideways (the wheel only scrolls up and down),
+     so most frames and filters stayed hidden on laptops. Mouse / touchpad computers get them all, in rows
+     that wrap; phones and tablets (touch) keep the sideways swipe */
+  @media (hover:hover) and (pointer:fine){
+    .frame-pick-row, .filter-row{flex-wrap:wrap; overflow-x:visible; scroll-snap-type:none;}
+  }
   .app-version{display:inline-block; margin-left:6px; padding:2px 8px; border-radius:999px; background:var(--blush-100); font-weight:600;}
 
   /* phone comfort: everything you tap is at least ~44px tall (Apple/Google's minimum touch size) */
@@ -478,6 +514,19 @@
   .save-hint{align-self:center; text-align:center; font-size:.76rem; color:var(--rose-800); line-height:1.4; margin:-4px 0 0;
     padding:4px 12px; border-radius:999px; background:rgba(255,255,255,.92); box-shadow:var(--shadow-soft);}
   .privacy-inline{text-align:center; font-size:.78rem; color:var(--rose-800); opacity:.9; margin-top:18px; line-height:1.5;}   /* small text: kept dark enough to read */
+  /* laptops: in one column the Photo / Animated cards sat under the DOWNLOAD bar and AGAIN · FRAME · SHARE
+     below the screen. Like the editor: the strip on the left (bigger), every choice on the right, nothing
+     covered. Not on phones (narrower than 900px) nor on phones held sideways (520px tall or less) */
+  @media (min-width:900px) and (min-height:521px){
+    .app-stage.wide-result{max-width:1000px;}
+    #step-result.active{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); column-gap:28px; align-items:start;}
+    #step-result > h2, #step-result > .step-sub{grid-column:1 / -1;}
+    #step-result .result-frame{grid-column:1; grid-row:3 / span 6; margin:14px 0 0;}
+    #step-result .result-frame canvas{max-height:calc(100vh - 270px); max-height:calc(100svh - 270px);}   /* fits without scrolling */
+    #step-result > .save-as, #step-result > .save-note, #step-result > .result-more,
+    #step-result > .result-actions, #step-result > .privacy-inline{grid-column:2;}
+    #step-result > .save-as{margin-top:14px;}
+  }
 
   /* fallback capture (phone camera app / gallery) */
   .fallback-row{margin-top:22px; background:var(--white); border:1px dashed var(--pink-300); border-radius:var(--radius-md); padding:18px 16px;}
@@ -783,11 +832,11 @@
       <h3 id="duoHelpTitle">Together ♡ how it works</h3>
       <ul>
         <li>One photo for both of you, side by side.</li>
-        <li>The one who <b>made the room</b> is always on the <b>left</b>, the one who <b>joined</b> on the <b>right</b> — so your photo is exactly the same on both phones.</li>
-        <li>Hold your phone upright and keep your face inside the dotted oval.</li>
+        <li>The one who <b>made the room</b> is always on the <b>left</b>, the one who <b>joined</b> on the <b>right</b> — so your photo is exactly the same for both of you.</li>
+        <li><span class="phone-only">Hold your phone upright and keep</span><span class="desktop-only">Keep</span> your face inside the dotted oval.</li>
         <li>"Lean in" always means toward the <b>middle line</b>.</li>
         <li>Cute trick: each make half a heart with your hands next to the middle line ♡</li>
-        <li>Rather have your photos one below the other? Tap <b>more styles</b> → <b>Stacked</b>.</li>
+        <li>Rather have your photos one below the other? <span class="js-tap">Tap</span> <b>more styles</b> → <b>Stacked</b>.</li>
       </ul>
       <button type="button" class="btn btn-secondary btn-block" id="duoHelpPoses">SEE POSE IDEAS ♡</button>
       <button type="button" class="btn btn-primary btn-block" id="duoHelpOk">GOT IT ♡</button>
@@ -1010,10 +1059,20 @@
     </section>
 
     <section class="section" style="padding-top:0;">
-      <div class="privacy-note">🔒 Your photos stay on your device. We don't upload or store your photos.</div>
+      <div class="privacy-note">🔒 Your photos stay on your device. We don't upload or store them.</div>
+      <!-- the honest details, one tap away (the short line above stays true for your own photos) -->
+      <details class="privacy-more">
+        <summary><span>how it works</span></summary>
+        <ul>
+          <li>Live room: your photos go straight to your love's phone, encrypted on the way.</li>
+          <li>To connect you, a room server (PeerJS) and sometimes a Cloudflare relay pass along encrypted data. They can't see your photos.</li>
+          <li>A photo code contains your photos, so only send it to your love.</li>
+          <li>The letters come from Google Fonts, so Google can see that this page was opened.</li>
+        </ul>
+      </details>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.9.7</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.9.9</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -1075,7 +1134,7 @@
         </div>
         <div class="camera-controls">
           <button class="icon-btn" id="switchCameraBtn" aria-label="Switch camera">↻</button>
-          <button class="btn btn-shutter" id="takePhotoBtn" aria-label="Start capturing"></button>
+          <button class="btn btn-shutter" id="takePhotoBtn" aria-label="Start capturing"><span class="shutter-label" id="takePhotoLabel" aria-hidden="true"></span></button>
           <button class="icon-btn" id="changeFrameFromCamera" aria-label="Choose a different frame">🖼</button>
         </div>
         <div class="fx-row">
@@ -1164,7 +1223,7 @@
           <div class="live-tiles" id="liveTiles">
             <div class="live-tile tile-local"><video id="liveLocal" playsinline autoplay muted aria-label="Your camera"></video><canvas class="fx-canvas" id="liveOverlay" aria-hidden="true"></canvas><span class="live-tag">me ♡</span></div>
             <div class="live-tile tile-remote"><video id="liveRemote" playsinline autoplay aria-label="Your love's camera"></video><span class="live-tag">you ♡</span>
-              <button class="live-unmute" id="liveUnmute" hidden>🔈 Tap to hear</button></div>
+              <button class="live-unmute" id="liveUnmute" hidden>🔈 <span class="js-tap">Tap</span> to hear</button></div>
             <canvas class="duo-overlay" id="liveDuoOverlay" aria-hidden="true"></canvas>
             <p class="duo-side" id="duoSide"></p>
             <div class="duo-pose" id="duoPose" aria-live="polite" hidden></div>
@@ -1175,7 +1234,7 @@
           <div class="chip-row live-rounds" id="liveRounds" role="group" aria-label="How many photos"></div>
           <div class="camera-controls">
             <button class="icon-btn" id="liveSwitchBtn" aria-label="Switch camera">↻</button>
-            <button class="btn btn-shutter" id="liveShutter" aria-label="Start the countdown for both of you" disabled></button>
+            <button class="btn btn-shutter" id="liveShutter" aria-label="Start the countdown for both of you" disabled><span class="shutter-label" id="liveShutterLabel" aria-hidden="true"></span></button>
             <button class="icon-btn" id="liveMicBtn" aria-label="Mute microphone">🎙</button>
           </div>
           <!-- below the controls, so it never pushes the heart button off a phone screen -->
@@ -1185,7 +1244,7 @@
               <li>Stay on this screen until you see "Swapping photos…".</li>
               <li>Your love's photo turns sharp a moment after the click.</li>
               <li>While you decorate, your picture pauses — your voice stays on.</li>
-              <li>WiFi on both phones works best.</li>
+              <li>WiFi works best for both of you.</li>
             </ul>
             <button type="button" class="btn-text" id="liveTipsOk">Got it ♡</button>
           </div>
@@ -1233,7 +1292,7 @@
               <div class="chip-row" id="stickerChips"></div>
               <label class="switch-row"><input type="checkbox" id="animToggle" checked><span>Moving stickers and decorations ✨</span></label>
               <p class="motion-note" id="motionNote" hidden>Your phone or browser has <b>Reduce motion</b> turned on, so movement starts switched off. Turn it on with the switch above — or turn off Reduce motion in your device's accessibility settings (iPhone: Settings → Accessibility → Motion · Android: Settings → Accessibility → Remove animations). Battery saver can also slow animations down.</p>
-              <p class="motion-note" id="liteNote" hidden>This phone looked a little busy, so the moving previews now update less often to keep everything smooth. Your saved photo and video aren't affected ♡</p>
+              <p class="motion-note" id="liteNote" hidden>This <span class="phone-only">phone</span><span class="desktop-only">computer</span> looked a little busy, so the moving previews now update less often to keep everything smooth. Your saved photo and video aren't affected ♡</p>
             </div>
             <div class="tool-panel" data-panel="text" role="tabpanel" hidden>
               <label class="switch-row" id="titleToggleRow" hidden><input type="checkbox" id="titleToggle" checked><span>Show frame title</span></label>
@@ -1255,10 +1314,10 @@
                   <button type="button" class="btn btn-primary" id="togetherBtn">DESIGN TOGETHER ♡</button>
                   <button type="button" class="btn btn-secondary" id="sendDesignBtn">SEND MY DESIGN</button>
                 </div>
-                <p class="live-design-hint">Together: every change shows on both phones. Send: they see your design on their photos and choose.</p>
+                <p class="live-design-hint">Together: every change shows for both of you. Send: they see your design on their photos and choose.</p>
               </div>
               <div id="togetherOn" hidden>
-                <p class="together-status">♡ Designing together — your changes show on both phones</p>
+                <p class="together-status">♡ Designing together — your changes show for both of you</p>
                 <button type="button" class="btn-text" id="togetherSaveFrame" hidden>Save their frame to my frames</button>
                 <button type="button" class="btn-text" id="togetherStop">Stop designing together</button>
               </div>
@@ -1305,7 +1364,7 @@
           <button class="btn btn-primary btn-block" id="downloadBtn">DOWNLOAD PHOTO ♡</button>
           <p class="save-hint" id="saveHint" aria-live="polite" hidden></p>
         </div>
-        <p class="privacy-inline">🔒 Your memories stay yours. Photos are processed locally on your device and are never uploaded.</p>
+        <p class="privacy-inline">🔒 Your memories stay yours. Photos are made on your device, and we never upload or store them.</p>
       </section>
     </div>
   </main>
@@ -1452,6 +1511,11 @@
     /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
     (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent)));   // iPads pretend to be Macs
   document.documentElement.classList.add(IS_PHONE ? 'is-phone' : 'is-desktop');
+  // the word for pressing things: phones "tap", computers "click" (in texts that both of them see)
+  var TAP = IS_PHONE ? 'tap' : 'click', TAP_ = IS_PHONE ? 'Tap' : 'Click';
+  Array.prototype.forEach.call(document.querySelectorAll('.js-tap'), function(el){
+    el.textContent = el.textContent === 'Tap' ? TAP_ : TAP;
+  });
   // this page's version = the label in the footer (the one place it's written), e.g. "v4.9.2"
   var APP_VERSION = ((document.querySelector('.app-version') || {}).textContent || '').trim();
   // compares "v4.10" and "v4.9.2" number by number: 1 = a is newer, -1 = a is older, 0 = the same
@@ -1927,6 +1991,7 @@
     });
     renderDots();
     document.querySelector('.app-stage').classList.toggle('wide', step === 'customize');   // side-by-side editor on laptops
+    document.querySelector('.app-stage').classList.toggle('wide-result', step === 'result');   // and result page (laptops only)
     if(step === 'count'){ syncCountGrid(); }
     if(step === 'frame'){
       showFrameTab(templateById(state.templateId).tab);   // opens the right tab and draws its thumbnails
@@ -2065,7 +2130,7 @@
     if(!n) return Promise.resolve(true);
     return confirmBox({
       title: together ? 'Take new photos together? ♡' : 'Take new photos? ♡',
-      text: 'Your ' + n + (n === 1 ? ' photo' : ' photos') + ' will be replaced' + (together ? ' on both phones' : '') +
+      text: 'Your ' + n + (n === 1 ? ' photo' : ' photos') + ' will be replaced' + (together ? ' for both of you' : '') +
             '. Download them first if you want to keep them.',
       yes: 'TAKE NEW', no: 'KEEP THESE ♡'
     }).then(function(yes){ return yes === true; });
@@ -2121,6 +2186,79 @@
     else if(!$('cfEditor').hidden) closeCfEditor();
     else closeLandingCard();
   });
+
+  /* ---- keyboard: Tab stays inside an open pop-up ----
+     With a pop-up open, Tab / Shift+Tab used to wander to the page behind it (buttons you can't see).
+     Now they go round inside the top pop-up, and when it closes the focus goes back to the button that
+     opened it. Only for keyboards: a tap never moves the focus (no rings or keyboards popping up on phones) */
+  var POPUPS = Array.prototype.slice.call(document.querySelectorAll('.code-modal, .cf-editor, .welcome-overlay'));
+  var usingKeys = false;
+  document.addEventListener('keydown', function(e){ if(e.key === 'Tab' || e.key === 'Escape') usingKeys = true; }, true);
+  document.addEventListener('pointerdown', function(){ usingKeys = false; }, true);
+  function popupOpen(d){
+    if(d.hidden || !d.getClientRects().length) return false;
+    return !d.classList.contains('welcome-overlay') || d.classList.contains('show');
+  }
+  function topPopup(){
+    var top = null, topZ = -Infinity;
+    POPUPS.forEach(function(d){
+      if(!popupOpen(d)) return;
+      var z = parseInt(getComputedStyle(d).zIndex, 10) || 0;
+      if(z >= topZ){ top = d; topZ = z; }   // same level: the later one is drawn on top
+    });
+    return top;
+  }
+  function tabStops(d){
+    return Array.prototype.filter.call(d.querySelectorAll('a[href], button, input, select, textarea, summary, [tabindex]'), function(el){
+      return el.tabIndex >= 0 && !el.disabled && el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden';
+    });
+  }
+  document.addEventListener('keydown', function(e){
+    if(e.key !== 'Tab' || e.altKey || e.ctrlKey || e.metaKey) return;
+    var d = topPopup();
+    if(!d) return;
+    var stops = tabStops(d), i = stops.indexOf(document.activeElement);
+    if(!stops.length){ e.preventDefault(); return; }
+    if(i < 0){ e.preventDefault(); stops[e.shiftKey ? stops.length - 1 : 0].focus(); }   // was behind the pop-up
+    else if(e.shiftKey && i === 0){ e.preventDefault(); stops[stops.length - 1].focus(); }
+    else if(!e.shiftKey && i === stops.length - 1){ e.preventDefault(); stops[0].focus(); }
+  });
+  // remember what had the focus when a pop-up opened; give it back when the pop-up closes
+  if(window.MutationObserver){
+    var popupWatch = new MutationObserver(function(){
+      POPUPS.forEach(function(d){
+        var open = popupOpen(d), a = document.activeElement;
+        if(open === !!d.oobOpen) return;
+        d.oobOpen = open;
+        if(open){ d.oobOpener = a && a !== document.body && !d.contains(a) ? a : null; return; }
+        var back = d.oobOpener;
+        d.oobOpener = null;
+        if(!usingKeys || !back || !back.isConnected || back.disabled || !back.getClientRects().length) return;
+        if(a && a !== document.body && !d.contains(a)) return;   // something else already took the focus
+        try{ back.focus({preventScroll:true}); }catch(err){}
+      });
+    });
+    POPUPS.forEach(function(d){
+      d.oobOpen = popupOpen(d);
+      popupWatch.observe(d, {attributes:true, attributeFilter:['hidden', 'class']});
+    });
+  }
+
+  /* ---- keyboard shutter: Space or Enter takes the photos on the camera and live pages ----
+     Like a real photo booth button. Not while typing, not with a pop-up open, and not on a button you
+     moved to with Tab (there Space / Enter press that button, as usual). A button you just CLICKED keeps
+     the focus in some browsers — that one doesn't count, so Space still means "photo" */
+  document.addEventListener('keydown', function(e){
+    if((e.key !== ' ' && e.key !== 'Enter') || e.repeat || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    var btn = state.currentStep === 'camera' ? $('takePhotoBtn') : state.currentStep === 'live' ? $('liveShutter') : null;
+    if(!btn || $('app').dataset.view !== 'app' || !btn.getClientRects().length || topPopup()) return;
+    var a = document.activeElement;
+    if(a && (a.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return;   // typing
+    if(a === btn) return;   // the heart itself has the focus: the browser presses it already
+    if(usingKeys && a && a !== document.body && a.matches('button, a[href], summary, [tabindex]')) return;   // reached with Tab
+    e.preventDefault();   // no page scroll (Space), and the button you clicked before isn't pressed again
+    if(!btn.disabled) btn.click();
+  }, true);
   function renderDots(){
     var wrap = $('progressDots');
     wrap.innerHTML = '';
@@ -2298,6 +2436,7 @@
       $('takePhotoBtn').setAttribute('aria-label', IS_PHONE ? "Take a photo with your phone's camera" : 'Choose a photo');
       $('fallbackRow').classList.add('highlight');
     }
+    syncShutterLabel();
   }
   function hidePermission(){
     $('permissionState').classList.remove('show');
@@ -2307,7 +2446,18 @@
     $('takePhotoBtn').setAttribute('aria-label', 'Start capturing');
     $('fallbackRow').classList.remove('highlight');
     $('switchCameraBtn').disabled = false;
+    syncShutterLabel();
   }
+  // the words under the shutter heart = what a tap does right now (CSS hides them while it can't be pressed)
+  // (computers can also press Space or Enter — see "keyboard shutter" below — so their words say so)
+  var PRESS = IS_PHONE ? 'tap' : 'click or press space';
+  function syncShutterLabel(){
+    $('takePhotoLabel').textContent = state.cameraFallbackMode
+      ? (IS_PHONE ? 'tap to take a photo' : 'click to choose photos')
+      : state.shots.length >= state.shotCount ? TAP + ' for new photos' : PRESS + ' to start ♡';
+  }
+  syncShutterLabel();
+  $('liveShutterLabel').textContent = PRESS + ' to start for both of you ♡';
   // what to suggest when the live camera fails, worded for the device
   var ALT_CAPTURE = IS_PHONE
     ? "use your phone's own camera below — it works without any permission here."
@@ -2404,17 +2554,31 @@
       return;
     }
     files = files.slice(0, room);
-    Promise.all(files.map(fileToShot)).then(function(canvases){
-      canvases.forEach(function(c){ c.dataset.from = 'me'; state.shots.push(c); });
+    if(files.length > 1) showToast('Adding your photos… ♡');
+    // one photo at a time: phones make 12–48 MP photos, and opening four of them at once could need
+    // almost 1 GB of memory — enough for an iPhone to reload the page (and lose everything).
+    // A photo that can't be read is skipped; the others still come in
+    var canvases = [], failed = 0;
+    files.reduce(function(prev, f){
+      return prev.then(function(){
+        return fileToShot(f).then(function(c){ canvases.push(c); }, function(){ failed++; });
+      });
+    }, Promise.resolve()).then(function(){
+      if($('app').dataset.view !== 'app') return;   // you went home meanwhile: that emptied the strip on purpose
+      if(!canvases.length){ showToast("We couldn't read that photo. Try another one ♡"); return; }
+      canvases.slice(0, Math.max(0, state.shotCount - state.shots.length))   // the strip may have filled meanwhile
+        .forEach(function(c){ c.dataset.from = 'me'; state.shots.push(c); });
       updateTray();
-      if(state.shots.length >= state.shotCount){
+      if(failed){
+        showToast("We couldn't read " + (failed === 1 ? 'one photo' : failed + ' photos') + ' — try another one ♡');
+      } else if(state.shots.length >= state.shotCount){
         showToast('That was cute ♡');
-        setTimeout(function(){ goToStep('customize'); }, 700);
       } else {
         showToast(state.shots.length + ' of ' + state.shotCount + ' — keep going ♡');
       }
-    }).catch(function(){
-      showToast("We couldn't read that photo. Try another one ♡");
+      if(state.shots.length >= state.shotCount && state.currentStep === 'camera'){
+        setTimeout(function(){ if(state.currentStep === 'camera') goToStep('customize'); }, 700);
+      }
     });
   }
   function updateTray(){
@@ -2438,6 +2602,7 @@
     });
     $('trayCount').textContent = state.shots.length + ' / ' + state.shotCount + ' photos';
     $('tray').hidden = state.shots.length === 0;
+    syncShutterLabel();   // "tap to start ♡" or, with the strip full, "tap for new photos"
     if(state.currentStep === 'camera') drawMiniStrip();   // the little strip in the corner fills up as you go
     saveSessionSoon();   // a photo was added or removed
   }
@@ -2546,7 +2711,7 @@
     var mine = myOwnShots();
     if(!mine.length){
       var together = state.shots.some(function(c){ return isDuoShot(c) && !c.pairMine; });
-      showToast(together ? 'Your Together photos are already on both phones ♡' : 'Take a photo first, then copy your code ♡');
+      showToast(together ? 'Your Together photos are already with both of you ♡' : 'Take a photo first, then copy your code ♡');
       return;
     }
     var code;
@@ -2753,7 +2918,7 @@
       // ← and the shutter bounce you back and forth)
       confirmReplace(false).then(function(yes){
         if(state.currentStep !== 'camera') return;
-        if(!yes){ showToast('Tap × on a photo to retake just that one ♡'); return; }
+        if(!yes){ showToast(TAP_ + ' × on a photo to retake just that one ♡'); return; }
         state.shots = [];
         updateTray();
         $('takePhotoBtn').click();   // and start the countdown
@@ -3238,7 +3403,7 @@
   }
   // the phones found each other but couldn't open a line — not even through the relay
   function networkFail(){
-    var msg = "We couldn't connect your phones. Check both internet connections and try again ♡ If it keeps failing, one of you can switch between WiFi and mobile data.";
+    var msg = "We couldn't connect you two. Check both internet connections and try again ♡ If it keeps failing, one of you can switch between WiFi and mobile data.";
     if(live.role === 'host' && live.peer){
       dropPartner();
       updateLivePanels();
@@ -3312,7 +3477,7 @@
         var wasReady = live.partnerReady;
         live.partnerReady = !!msg.ready;
         if(live.partnerReady && !wasReady && state.currentStep !== 'live' && live.connected){
-          showToast('Your love is at the camera ♡ Tap ← to join');
+          showToast('Your love is at the camera ♡ ' + TAP_ + ' ← to join');
         }
         updateShutter();
         break;
@@ -3346,7 +3511,7 @@
         if(!together.inviting) break;
         if(msg.join === true){
           startTogether(together.inviteDesign);
-          showToast('Your love joined ♡ Your changes now show on both phones');
+          showToast('Your love joined ♡ Your changes now show for both of you');
         } else {
           together.inviting = false; clearTimeout(together.inviteTimer); syncLiveDesign();
           showToast('Your love said not now ♡');
@@ -3677,7 +3842,7 @@
     tiles.querySelector('.tile-local').classList.toggle('side-right', duo && !left);
     tiles.querySelector('.tile-remote').classList.toggle('side-left', duo && !left);
     tiles.querySelector('.tile-remote').classList.toggle('side-right', duo && left);
-    $('duoSide').textContent = (left ? "You're on the left ♡" : "You're on the right ♡") + ' same photo on both phones';
+    $('duoSide').textContent = (left ? "You're on the left ♡" : "You're on the right ♡") + ' same photo for both of you';
     live.rounds = live.roundsBy[mode];
     buildRoundChips();
     applyAutoTemplate();   // e.g. your love's phone turned out to support Together
@@ -3811,9 +3976,9 @@
       b.setAttribute('aria-checked', on ? 'true' : 'false');
     });
     $('poseHint').textContent = {
-      surprise: 'A different pose for every photo, picked for you. The same pose shows on both phones.',
-      pick: 'Tap poses in the order you want them — the number is the photo. Up to 4.',
-      off: 'No pose ideas — just be yourselves ♡ Tap a pose to pick your own.'
+      surprise: 'A different pose for every photo, picked for you. The same pose shows for both of you.',
+      pick: TAP_ + ' poses in the order you want them — the number is the photo. Up to 4.',
+      off: 'No pose ideas — just be yourselves ♡ ' + TAP_ + ' a pose to pick your own.'
     }[live.poseMode];
     var grid = $('poseGrid');
     grid.innerHTML = '';
@@ -3832,7 +3997,7 @@
         var i = live.posePick.indexOf(p.id);
         if(i !== -1) live.posePick.splice(i, 1);
         else if(live.posePick.length < MAX_SHOTS) live.posePick.push(p.id);
-        else showToast('Up to 4 poses — tap one to remove it ♡');
+        else showToast('Up to 4 poses — ' + TAP + ' one to remove it ♡');
         renderPoseSheet();
       });
       grid.appendChild(b);
@@ -5563,7 +5728,7 @@
     var invite = kind === 'invite';
     $('designTitle').textContent = invite ? 'Design together? ♡' : 'Your love sent a design ♡';
     $('designText').textContent = invite
-      ? "Your love wants to decorate with you. You'll start from their design (here on your photos) — then every change shows on both phones."
+      ? "Your love wants to decorate with you. You'll start from their design (here on your photos) — then every change shows for both of you."
       : 'Here it is with your photos:';
     $('designUse').textContent = invite ? 'JOIN ♡' : 'USE THEIRS ♡';
     $('designKeep').textContent = invite ? 'NOT NOW' : 'KEEP MINE';
@@ -5642,7 +5807,7 @@
     }
     saved.then(function(ok){
       if(saving && !ok) showToast("Couldn't save their frame on this device — it works until you close the page");
-      else if(invite && used) showToast("Designing together ♡ Your changes show on both phones");
+      else if(invite && used) showToast("Designing together ♡ Your changes show for both of you");
       else if(used) showToast(saving ? "Using your love's design ♡ Their frame is in your frames" : "Using your love's design ♡");
       else if(saving) showToast('Their frame is saved in your frames ♡');
     });
@@ -5997,6 +6162,26 @@
       return true;
     });
   }).catch(function(){ session.pending = false; return false; });
+  // A page left open for days (phones keep tabs) deletes the kept photos when they turn 24 hours old,
+  // instead of waiting for the next visit: checked every 10 minutes while the page is shown and when you
+  // come back to it. Photos you're working on stay on screen (and are saved again at your next change).
+  // While the site is closed nothing can run — then the next visit deletes them, as before.
+  function expireOldSession(){
+    if(document.hidden) return;
+    var o = session.offer;
+    if(o && !(Date.now() - o.rec.saved < SESSION_MAX_AGE)){
+      // the "Welcome back" card is still waiting: it closes (you can simply tap START again)
+      session.offer = null;
+      session.pending = false;
+      $('resumeOverlay').classList.remove('show');
+      clearSession();
+      showToast('Those photos were kept for 24 hours — now they\'re gone ♡');
+      return;
+    }
+    loadSession();   // reads the kept photos' date and deletes them if they're older than 24 hours
+  }
+  setInterval(expireOldSession, 10*60*1000);
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) expireOldSession(); });
   $('designUse').addEventListener('click', function(){ answerDesign(true); });
   $('designKeep').addEventListener('click', function(){ answerDesign(false); });
   $('designX').addEventListener('click', function(){ answerDesign(false); });   // ✕ = KEEP MINE / NOT NOW (your love is told)
@@ -6516,7 +6701,7 @@
   function goLite(){
     motion.lite = true;
     $('liteNote').hidden = false;
-    showToast('Your phone looked busy — previews now move more gently ♡');
+    showToast('Your ' + (IS_PHONE ? 'phone' : 'computer') + ' looked busy — previews now move more gently ♡');
   }
 
   /* ---------------- preview / result render ---------------- */
