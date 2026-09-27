@@ -487,7 +487,28 @@
   .st-tools button, .st-tab{min-height:44px; border-radius:12px; border:1.5px solid var(--blush-100); background:var(--white); color:var(--plum-900); font-size:.8rem; font-weight:600; padding:0 2px;}
   .st-tools.off button{opacity:.5;}
   .st-tools button[aria-pressed="true"], .st-tab.active{background:var(--rose-600); border-color:var(--rose-600); color:#fff;}
-  .st-tabs{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:6px;}
+  .st-tabs{display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:6px;}
+  .st-tab{font-size:.78rem; white-space:nowrap;}
+  /* (v4.13) drawing: pens, 14 colours in two rows, line sizes — they replace the tools, tabs and trays
+     while you draw; the photo gets a dashed outline so you can see you're drawing */
+  .st-tools[hidden], .st-tabs[hidden], .st-panels[hidden], .st-pens[hidden], .st-inks[hidden], .st-sizes[hidden]{display:none;}
+  .st-editor.drawing .st-stage{outline:2px dashed var(--rose-600); outline-offset:-2px;}
+  .st-editor.drawing .st-nav{display:none;}   /* (no ‹ › while drawing: the title gets their room) */
+  .st-pens{display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:6px;}
+  .st-sizes{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:6px;}
+  .st-pens button, .st-sizes button{min-height:44px; border-radius:12px; border:1.5px solid var(--blush-100); background:var(--white); color:var(--plum-900); font-size:.78rem; font-weight:600; padding:0 2px; white-space:nowrap;}
+  .st-pens button[aria-pressed="true"], .st-sizes button[aria-checked="true"]{background:var(--rose-600); border-color:var(--rose-600); color:#fff;}
+  .st-sizes .dot{display:inline-block; border-radius:50%; background:currentColor; margin-right:6px; vertical-align:middle;}
+  .st-inks{display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:0 2px;}
+  .st-ink{min-height:44px; padding:0; border:0; background:none; display:flex; align-items:center; justify-content:center;}
+  .st-ink span{width:30px; height:30px; border-radius:50%; border:1.5px solid var(--pink-300); display:flex; align-items:center; justify-content:center; font-size:.8rem; color:#fff;}
+  .st-ink[aria-checked="true"] span{box-shadow:0 0 0 2.5px var(--blush-50), 0 0 0 5px var(--plum-900);}
+  .st-inks.off .st-ink{opacity:.35;}
+  .st-tile.new-draw{flex-basis:96px; border:2px dashed var(--pink-300); font-size:.72rem; font-weight:600; color:var(--rose-800); line-height:1.2; text-align:center;}
+  @media (max-width:359px){   /* 320px phones: "rainbow" fits its button */
+    .st-pens{gap:4px;}
+    .st-pens button{font-size:.7rem;}
+  }
   .st-tray{display:flex; gap:8px; align-items:center; min-height:60px; overflow-x:auto; padding:2px 2px 6px; -webkit-overflow-scrolling:touch;}
   .st-tile{position:relative; flex:0 0 52px; height:52px; border-radius:14px; border:1.5px solid var(--blush-100); background:var(--white); display:flex; align-items:center; justify-content:center; padding:4px;}
   .st-tile.wide{flex-basis:88px;}
@@ -513,7 +534,7 @@
     .st-inner{max-width:1000px; display:grid; grid-template-columns:minmax(0,1fr) 400px; column-gap:24px; row-gap:8px; align-items:start;}
     .st-head{grid-column:1 / -1;}
     .st-stage{grid-column:1; grid-row:2 / span 5;}
-    .st-hintrow, .st-tools, .st-tabs, .st-panels{grid-column:2;}
+    .st-hintrow, .st-tools, .st-tabs, .st-panels, .st-pens, .st-inks, .st-sizes{grid-column:2;}
     .st-hintrow{justify-content:flex-start;}
   }
   @media (orientation:landscape) and (max-height:520px) and (min-width:600px){
@@ -1074,7 +1095,7 @@
       <div class="st-stage" id="stStage">
         <canvas id="stCanvas" width="10" height="10" tabindex="0" aria-label="Your photo with its stickers. Drag a sticker to move it; pinch with two fingers to resize and turn it. Arrow keys move the chosen sticker, + and − change its size."></canvas>
       </div>
-      <div class="st-hintrow"><p class="st-hint" id="stHint"></p><button type="button" class="btn-text" id="stClear" hidden>remove all</button></div>
+      <div class="st-hintrow"><p class="st-hint" id="stHint"></p><button type="button" class="btn-text" id="stClear" hidden>remove all</button><button type="button" class="btn-text" id="stDrawClear" hidden>clear</button></div>
       <div class="st-tools off" id="stTools" role="toolbar" aria-label="The chosen sticker">
         <button type="button" data-act="smaller" aria-label="Smaller">−</button>
         <button type="button" data-act="bigger" aria-label="Bigger">+</button>
@@ -1085,10 +1106,11 @@
       </div>
       <div class="st-tabs" role="tablist" aria-label="Add">
         <button type="button" class="st-tab active" role="tab" aria-selected="true" data-tray="shapes">Stickers</button>
-        <button type="button" class="st-tab" role="tab" aria-selected="false" data-tray="images">My images</button>
-        <button type="button" class="st-tab" role="tab" aria-selected="false" data-tray="words">Your words</button>
+        <button type="button" class="st-tab" role="tab" aria-selected="false" data-tray="images" aria-label="My images">Images</button>
+        <button type="button" class="st-tab" role="tab" aria-selected="false" data-tray="words" aria-label="Your words">Words</button>
+        <button type="button" class="st-tab" role="tab" aria-selected="false" data-tray="draw" aria-label="Draw">✏️ Draw</button>
       </div>
-      <!-- the same height for all three, so the photo doesn't jump when you switch -->
+      <!-- the same height for all four, so the photo doesn't jump when you switch -->
       <div class="st-panels">
         <div class="st-tray" id="stTrayShapes" role="tabpanel" aria-label="Stickers"></div>
         <div id="stTrayImages" role="tabpanel" aria-label="My images" hidden>
@@ -1102,6 +1124,22 @@
           </form>
           <div class="st-tray" id="stWordTiles"></div>
         </div>
+        <!-- (v4.13) "+ new drawing" and your last drawings -->
+        <div class="st-tray" id="stTrayDraw" role="tabpanel" aria-label="Draw" hidden></div>
+      </div>
+      <!-- (v4.13) while you draw: pens, colours and line sizes take the place of the rows above -->
+      <div class="st-pens" id="stPens" role="toolbar" aria-label="Pen" hidden>
+        <button type="button" data-pen="pen" aria-pressed="true">pen</button>
+        <button type="button" data-pen="neon" aria-pressed="false">neon</button>
+        <button type="button" data-pen="rainbow" aria-pressed="false">rainbow</button>
+        <button type="button" data-pen="hearts" aria-pressed="false">hearts</button>
+        <button type="button" data-pen="undo" aria-label="Undo the last line">↶ undo</button>
+      </div>
+      <div class="st-inks" id="stInks" role="radiogroup" aria-label="Colour" hidden></div>
+      <div class="st-sizes" id="stSizes" role="radiogroup" aria-label="Line size" hidden>
+        <button type="button" role="radio" data-size="thin" aria-checked="false"><span class="dot" style="width:5px;height:5px"></span>thin</button>
+        <button type="button" role="radio" data-size="medium" aria-checked="true"><span class="dot" style="width:9px;height:9px"></span>medium</button>
+        <button type="button" role="radio" data-size="thick" aria-checked="false"><span class="dot" style="width:15px;height:15px"></span>thick</button>
       </div>
     </div>
   </div>
@@ -1231,7 +1269,7 @@
       </details>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.12</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.13</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -2334,7 +2372,8 @@
       return;
     }
     if(st.open && $('confirmModal').hidden){   // back in the sticker studio = DONE (your stickers stay)
-      closeStudio();
+      if(st.draw) finishDrawing();             // (drawing: = ✓ DONE — the drawing becomes a sticker, you stay)
+      else closeStudio();
       history.pushState(currentEntry(), '');
       return;
     }
@@ -2447,7 +2486,7 @@
     else if(!$('zoomModal').hidden) closeZoom();
     else if(!$('duoHelp').hidden) closeDuoHelp();
     else if(!$('poseSheet').hidden) closePoseSheet();
-    else if(st.open){ if(st.sel){ st.sel = null; syncStudioUI(); } else closeStudio(); }   // first let go of the chosen sticker
+    else if(st.open){ if(st.draw) finishDrawing(); else if(st.sel){ st.sel = null; syncStudioUI(); } else closeStudio(); }   // first finish drawing / let go of the chosen sticker
     else if(!$('cfEditor').hidden) closeCfEditor();
     else closeLandingCard();
   });
@@ -4938,9 +4977,12 @@
                · 'img' = one of your own pictures (key = the picture's id, see stickerImgs)
        p       its photo (0 = the first) · x, y = its middle, from the photo's middle, in photo widths
                (turning with the photo on polaroid frames) · s = its width in photo widths · r = its turn
-       e       a thin white edge · ph = where its gentle motion starts (so they don't all move in sync) */
+       e       a thin white edge · ph = where its gentle motion starts (so they don't all move in sync)
+     (v4.13) k 'draw' = your own drawing (key = the drawing's id, see DRAWINGS below) */
   var STUDIO_MAX = 30;                                      // stickers on one strip (keeps phones smooth)
   var ST_MIN = 0.04, ST_MAX = 1.2, ST_MAX_TALL = 1.4;        // size limits, in photo widths
+  // a drawing may be as big as the studio's view (the photo and a bit of frame around it)
+  var ST_MAX_DRAW = 1.4, ST_MAX_DRAW_TALL = 1.6;
   // each drawing's outline at size 1, measured once: [left, top, width, height] around its drawing point
   var STICKER_BOX = {
     heart:[-0.5, 0.005, 1, 1.195], star:[-0.995, -0.995, 1.99, 1.99], flower:[-1.105, -1.15, 2.21, 2.13],
@@ -4948,12 +4990,14 @@
     cherry:[-0.65, -0.64, 1.3, 1.44], crown:[-1, -0.6, 2, 1.05], cloud:[-1.02, -0.795, 2.04, 1.415]
   };
   var stickerImgs = {};   // picture id → {blob, img (a canvas), w, h, alpha} — kept while the page is open
+  var stickerDraws = {};  // (v4.13) drawing id → its lines (see DRAWINGS) — kept while the page is open
   function stId(){ return (Date.now() % 1e8).toString(36) + Math.random().toString(36).slice(2, 6); }
   function cleanWord(v){ return typeof v === 'string' ? v.replace(/\s+/g, ' ').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 16) : ''; }
   // what a sticker draws: {kind, text}
   function stickerDef(it){
     if(it.k === 'word') return {kind:'word', text:it.key};
     if(it.k === 'img') return {kind:'img'};
+    if(it.k === 'draw') return {kind:'draw'};
     for(var i = 0; i < STICKERS.length; i++) if(STICKERS[i].id === it.key) return STICKERS[i];
     return null;
   }
@@ -4970,6 +5014,7 @@
   // height ÷ width (0 = can't be drawn, e.g. a picture that isn't here)
   function itemAspect(it){
     if(it.k === 'img'){ var im = stickerImgs[it.key]; return im ? im.h / im.w : 0; }
+    if(it.k === 'draw'){ var dr = stickerDraws[it.key]; return dr ? dr.h0 / dr.w0 : 0; }
     var d = stickerDef(it);
     if(!d) return 0;
     if(d.kind === 'word') return 40 / badgeWidth(d.text);
@@ -4992,8 +5037,8 @@
   }
   // up to about a whole photo wide (a tall picture: up to 1.4 photos tall)
   function setItemWidth(it, b, w){
-    var asp = itemAspect(it) || 1;
-    it.s = clamp(w / b.rects[it.p].w, ST_MIN, Math.min(ST_MAX, ST_MAX_TALL / asp));
+    var asp = itemAspect(it) || 1, draw = it.k === 'draw';
+    it.s = clamp(w / b.rects[it.p].w, ST_MIN, Math.min(draw ? ST_MAX_DRAW : ST_MAX, (draw ? ST_MAX_DRAW_TALL : ST_MAX_TALL) / asp));
   }
   function setItemTurn(it, b, rot){
     var r = rot - (b.rects[it.p].rot || 0);
@@ -5021,6 +5066,9 @@
     if(it.k === 'img'){
       var im = stickerImgs[it.key];
       if(im) ctx.drawImage(im.img, -g.w/2, -g.h/2, g.w, g.h);
+    } else if(it.k === 'draw'){
+      var dr = stickerDraws[it.key];
+      if(dr){ ctx.scale(g.w / dr.w0, g.w / dr.w0); drawDrawing(ctx, dr, Infinity, false, 0, color); }
     } else {
       var d = stickerDef(it);
       if(d && d.kind === 'word'){
@@ -5076,6 +5124,7 @@
     list.forEach(function(it){
       var g = itemGeom(it, b);
       if(!g) return;
+      if(it.k === 'draw'){ paintDrawing(ctx, it, g, b.accent, moving && it.id !== still ? t : -1); return; }   // writes itself
       var alpha = 1;
       if(moving && it.id !== still){
         var bob, rot, k = 1;
@@ -5092,6 +5141,264 @@
       }
       if(it.e) paintEdged(ctx, it, g, b.accent, alpha);
       else paintSticker(ctx, it, g, b.accent, alpha);
+    });
+  }
+
+  /* ================= DRAWINGS (v4.13) =================
+     ✏️ Draw in the sticker studio: you write or draw on the photo with one finger (or the mouse), and DONE
+     turns the lines into ONE sticker (k 'draw') that moves, grows and turns like the others. A drawing is
+     kept as its lines, not as a picture, so it stays sharp at any size and can "write itself" in the video.
+     A drawing: {id, strokes, w0, h0, len} in drawing units — 1000 = the width of the photo it was drawn on,
+     (0, 0) = its middle; w0 × h0 = its box (glow, hearts and white edge included); len = all its lines' length.
+     A line (stroke): {pen, c, sz, pts [x, y, x, y, …], cum (the length so far at each point), len, w, hs}
+       pen  'pen' · 'neon' (glow = wide see-through lines under a coloured core with a white middle — no blur,
+            so it's cheap on phones) · 'rainbow' (the colour turns along the line) · 'hearts' (hearts along it)
+       c    '#rrggbb', or 'accent' = ★ the frame's colour (it follows the frame, like the stickers do)
+       sz   'thin' · 'medium' · 'thick' → w = the line's width, hs = the size of the hearts */
+  var DRAW_W = {thin:11, medium:20, thick:37}, DRAW_HEART = {thin:34, medium:53, thick:78};
+  var DRAW_PENS = ['pen', 'neon', 'rainbow', 'hearts'], DRAW_SIZES = ['thin', 'medium', 'thick'];
+  // the basic colours (owner) + the frame's colour, sky and lavender — two rows of 7 in the studio
+  var DRAW_INKS = [
+    {c:'accent', name:'Frame colour'}, {c:'#FFFFFF', name:'White'}, {c:'#9E9E9E', name:'Grey'}, {c:'#2B1B18', name:'Black'},
+    {c:'#8B5A3C', name:'Brown'}, {c:'#E0314B', name:'Red'}, {c:'#FF8A3D', name:'Orange'},
+    {c:'#FFD166', name:'Yellow'}, {c:'#3FBF6B', name:'Green'}, {c:'#5AB4F0', name:'Sky'}, {c:'#2F6FDB', name:'Blue'},
+    {c:'#8B4FD8', name:'Purple'}, {c:'#A78BFA', name:'Lavender'}, {c:'#FF8FB3', name:'Pink'}
+  ];
+  // "writes itself" (Moving on): the lines appear in the order you drew them in 1.8 s (owner: keep 1.8 s),
+  // stay, then fade — timed so the loop's start (the photo, the print) shows the whole drawing
+  var DRAW_WRITE = 1.8, DRAW_FADE = 2.7;
+  var DRAW_MAX_STROKES = 80, DRAW_MAX_POINTS = 6000, DRAW_MAX_LINE = 1500;
+  function newStroke(pen, c, sz){
+    return {pen:pen, c:c, sz:sz, w:DRAW_W[sz], hs:DRAW_HEART[sz], pts:[], cum:[], len:0, spots:null};
+  }
+  function strokePoint(s, x, y, minD){
+    var n = s.pts.length;
+    if(n){
+      var d = Math.hypot(x - s.pts[n - 2], y - s.pts[n - 1]);
+      if(d < minD) return;
+      s.len += d;
+    }
+    s.pts.push(x, y); s.cum.push(s.len); s.spots = null;
+  }
+  // how far a line reaches past its middle (glow and hearts included), its white edge, its visible width
+  function strokeReach(s){ return s.pen === 'neon' ? s.w * 1.6 : s.pen === 'hearts' ? s.hs * 0.72 : s.w / 2; }
+  function strokeEdge(s){ return Math.max(8, s.pen === 'hearts' ? s.hs * 0.2 : s.w * 0.45); }
+  function strokeWidth(s){ return s.pen === 'neon' ? s.w * 2 : s.w; }
+  // a single tap (a dot) still takes a moment to "write"
+  function strokeLen(s){ return s.pts.length > 2 ? s.len : (s.pen === 'hearts' ? s.hs : s.w); }
+  function rainbowAt(l){ return 'hsl(' + Math.round(l * 0.38 % 360) + ',92%,62%)'; }   // one turn ≈ 1 photo wide
+  // the line up to `upto` along it, smoothed through the middles of its points
+  function traceStroke(ctx, s, upto){
+    var p = s.pts, n = p.length / 2;
+    ctx.beginPath(); ctx.moveTo(p[0], p[1]);
+    if(n === 1){ ctx.lineTo(p[0] + 0.01, p[1]); return; }
+    for(var i = 1; i < n; i++){
+      var px = p[i*2], py = p[i*2 + 1];
+      if(s.cum[i] > upto){
+        var a = s.cum[i - 1], f = (upto - a) / Math.max(1e-6, s.cum[i] - a);
+        if(f > 0.5 || i === 1) ctx.lineTo(p[i*2 - 2] + (px - p[i*2 - 2]) * f, p[i*2 - 1] + (py - p[i*2 - 1]) * f);
+        return;
+      }
+      if(i < n - 1) ctx.quadraticCurveTo(px, py, (px + p[i*2 + 2]) / 2, (py + p[i*2 + 3]) / 2);
+      else ctx.lineTo(px, py);
+    }
+  }
+  // rainbow: short pieces, each a little further round the colour wheel
+  function drawRainbowStroke(ctx, s, upto){
+    var p = s.pts, n = p.length / 2, BAND = 25, i = 1;
+    ctx.lineWidth = s.w;
+    if(n === 1){ traceStroke(ctx, s, upto); ctx.strokeStyle = rainbowAt(0); ctx.stroke(); return; }
+    while(i < n && s.cum[i - 1] < upto){
+      var band = Math.floor(s.cum[i - 1] / BAND);
+      ctx.beginPath(); ctx.moveTo(p[i*2 - 2], p[i*2 - 1]); ctx.strokeStyle = rainbowAt(band * BAND);
+      while(i < n && s.cum[i - 1] < upto && Math.floor(s.cum[i - 1] / BAND) === band){
+        var px = p[i*2], py = p[i*2 + 1];
+        if(s.cum[i] > upto){
+          var f = (upto - s.cum[i - 1]) / Math.max(1e-6, s.cum[i] - s.cum[i - 1]);
+          px = p[i*2 - 2] + (px - p[i*2 - 2]) * f; py = p[i*2 - 1] + (py - p[i*2 - 1]) * f;
+        }
+        ctx.lineTo(px, py); i++;
+      }
+      ctx.stroke();
+    }
+  }
+  // hearts pen: a heart every 1.15 heart sizes along the line, tilted a little left and right
+  function heartSpots(s){
+    if(s.spots) return s.spots;
+    var p = s.pts, n = p.length / 2, gap = s.hs * 1.15, out = [], next = 0;
+    if(n === 1) out.push({x:p[0], y:p[1], at:0});
+    for(var i = 1; i < n; i++){
+      var a = s.cum[i - 1], b = s.cum[i];
+      while(next <= b){
+        var f = b > a ? (next - a) / (b - a) : 0;
+        out.push({x:p[i*2 - 2] + (p[i*2] - p[i*2 - 2]) * f, y:p[i*2 - 1] + (p[i*2 + 1] - p[i*2 - 1]) * f, at:next});
+        next += gap;
+      }
+    }
+    return (s.spots = out);
+  }
+  var HEART_TILT = [-0.22, 0.05, 0.24], HEART_SWELL = [1, 0.86, 1.1];
+  function drawHeartStroke(ctx, s, upto, edge, popU, color){
+    heartSpots(s).forEach(function(h, k){
+      if(h.at > upto) return;
+      var e = popU > 0 ? Math.min(1, (upto - h.at) / popU) : 1;
+      var pop = e >= 1 ? 1 : 0.35 + 0.65 * e + Math.sin(e * Math.PI) * 0.3;   // pops in a little too big, then settles
+      var size = (s.hs * HEART_SWELL[k % 3] + (edge ? strokeEdge(s) * 2 : 0)) * pop;
+      ctx.save(); ctx.translate(h.x, h.y); ctx.rotate(HEART_TILT[k % 3]);
+      drawHeart(ctx, 0, -size * 0.6, size, edge ? '#FFFFFF' : color, ctx.globalAlpha);   // (keeps the fade)
+      ctx.restore();
+    });
+  }
+  // one line up to `upto` along it; edge = only its white edge (drawn under all the lines first)
+  function drawStroke(ctx, s, upto, edge, popU, accent){
+    if(upto <= 0) return;
+    var color = s.c === 'accent' ? accent : s.c;
+    if(s.pen === 'hearts'){ drawHeartStroke(ctx, s, upto, edge, popU, color); return; }
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    if(edge){ traceStroke(ctx, s, upto); ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = strokeWidth(s) + strokeEdge(s) * 2; ctx.stroke(); return; }
+    if(s.pen === 'rainbow'){ drawRainbowStroke(ctx, s, upto); return; }
+    traceStroke(ctx, s, upto);
+    if(s.pen === 'neon'){
+      var a = ctx.globalAlpha;
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = a * 0.16; ctx.lineWidth = s.w * 3.2; ctx.stroke();
+      ctx.globalAlpha = a * 0.34; ctx.lineWidth = s.w * 2; ctx.stroke();
+      ctx.globalAlpha = a; ctx.lineWidth = s.w; ctx.stroke();
+      ctx.globalAlpha = a * 0.9; ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = s.w * 0.36; ctx.stroke();
+      ctx.globalAlpha = a;
+    } else { ctx.strokeStyle = color; ctx.lineWidth = s.w; ctx.stroke(); }
+  }
+  // a whole drawing, `reveal` = how much of it is written so far (Infinity = all of it)
+  function drawDrawing(ctx, d, reveal, edge, popU, accent){
+    var r, i;
+    if(edge){
+      for(r = reveal, i = 0; i < d.strokes.length && r > 0; i++){ drawStroke(ctx, d.strokes[i], r, true, popU, accent); r -= strokeLen(d.strokes[i]); }
+    }
+    for(r = reveal, i = 0; i < d.strokes.length && r > 0; i++){ drawStroke(ctx, d.strokes[i], r, false, popU, accent); r -= strokeLen(d.strokes[i]); }
+  }
+  // a drawing sticker at g; t = seconds into the loop, or -1 = the whole drawing (standing still)
+  function paintDrawing(ctx, it, g, accent, t){
+    var dr = stickerDraws[it.key];
+    if(!dr) return;
+    var reveal = Infinity, alpha = 1;
+    if(t >= 0){
+      var u = (t + DRAW_WRITE) % LOOP;   // t = 0 (the resting pose) = just written
+      if(u < DRAW_WRITE) reveal = dr.len * u / DRAW_WRITE;
+      else if(u > DRAW_FADE) alpha = Math.max(0, 1 - (u - DRAW_FADE) / (LOOP - DRAW_FADE));
+    }
+    var k = g.w / dr.w0;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(g.x, g.y); ctx.rotate(g.rot); ctx.scale(k, k);
+    drawDrawing(ctx, dr, reveal, it.e, dr.len * 0.12 / DRAW_WRITE, accent);
+    ctx.restore();
+  }
+  // finished lines → a drawing around its own middle; returns {d, cx, cy} (cx, cy = where its middle was)
+  function makeDrawing(strokes, id){
+    var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, len = 0;
+    strokes.forEach(function(s){
+      var m = strokeReach(s) + strokeEdge(s) + 3;
+      for(var i = 0; i < s.pts.length; i += 2){
+        x0 = Math.min(x0, s.pts[i] - m); x1 = Math.max(x1, s.pts[i] + m);
+        y0 = Math.min(y0, s.pts[i + 1] - m); y1 = Math.max(y1, s.pts[i + 1] + m);
+      }
+    });
+    var cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+    strokes.forEach(function(s){
+      for(var i = 0; i < s.pts.length; i += 2){ s.pts[i] -= cx; s.pts[i + 1] -= cy; }
+      s.spots = null;
+      len += strokeLen(s);
+    });
+    var d = {id:id || stId(), strokes:strokes, w0:x1 - x0, h0:y1 - y0, len:len};
+    stickerDraws[d.id] = d;
+    return {d:d, cx:cx, cy:cy};
+  }
+  // a drawing is picked up by its lines (plus a finger's width), not by the empty space between them.
+  // l = the point in the sticker's own frame, g = its size on the strip, grace = a finger's width
+  function drawingHit(it, l, g, grace){
+    var dr = stickerDraws[it.key];
+    if(!dr) return false;
+    var k = g.w / dr.w0, lx = l.x / k, ly = l.y / k;
+    return dr.strokes.some(function(s){
+      var m = strokeReach(s) + grace / k, m2 = m * m, q = s.pts;
+      if(q.length === 2) return (lx - q[0]) * (lx - q[0]) + (ly - q[1]) * (ly - q[1]) <= m2;
+      for(var i = 2; i < q.length; i += 2){
+        var dx = q[i] - q[i - 2], dy = q[i + 1] - q[i - 1], ll = dx*dx + dy*dy;
+        var f = ll ? clamp(((lx - q[i - 2]) * dx + (ly - q[i - 1]) * dy) / ll, 0, 1) : 0;
+        var ex = q[i - 2] + dx * f - lx, ey = q[i - 1] + dy * f - ly;
+        if(ex*ex + ey*ey <= m2) return true;
+      }
+      return false;
+    });
+  }
+  // a drawing as plain data (auto-save, your last drawings, your love's phone): [pen, colour, size, points] per line
+  function packDraw(d){
+    return {id:d.id, s:d.strokes.map(function(s){ return [s.pen, s.c, s.sz, s.pts.map(function(v){ return Math.round(v); })]; })};
+  }
+  // …and back, everything checked: known pens and sizes, real colours, numbers, not too many lines or points
+  function unpackDraw(x){
+    var id = x && typeof x.id === 'string' && /^[a-z0-9]{4,32}$/.test(x.id) ? x.id : null;
+    if(!id || !Array.isArray(x.s) || !x.s.length || x.s.length > DRAW_MAX_STROKES) return null;
+    if(stickerDraws[id]) return stickerDraws[id];   // (the same drawing: we have it already)
+    var total = 0, strokes = [];
+    for(var i = 0; i < x.s.length; i++){
+      var a = x.s[i];
+      if(!Array.isArray(a) || DRAW_PENS.indexOf(a[0]) === -1 || DRAW_SIZES.indexOf(a[2]) === -1 || !Array.isArray(a[3])) return null;
+      if(!(a[1] === 'accent' || (typeof a[1] === 'string' && /^#[0-9a-fA-F]{6}$/.test(a[1])))) return null;
+      var p = a[3];
+      if(p.length < 2 || p.length % 2 || p.length > DRAW_MAX_LINE * 2) return null;
+      total += p.length / 2;
+      if(total > DRAW_MAX_POINTS) return null;
+      var s = newStroke(a[0], a[1], a[2]);
+      for(var j = 0; j < p.length; j += 2){
+        if(typeof p[j] !== 'number' || typeof p[j + 1] !== 'number' || !isFinite(p[j]) || !isFinite(p[j + 1])) return null;
+        strokePoint(s, clamp(p[j], -3000, 3000), clamp(p[j + 1], -3000, 3000), 0);
+      }
+      strokes.push(s);
+    }
+    return makeDrawing(strokes, id).d;
+  }
+  // your last 8 drawings stay on this device (the ✏️ Draw tab shows them to use again)
+  var DRAWS_KEY = 'oob-draws', recentDrawList = null;
+  function recentDraws(){
+    if(recentDrawList) return recentDrawList;
+    recentDrawList = [];
+    try{
+      var a = JSON.parse(localStorage.getItem(DRAWS_KEY) || '[]');
+      if(Array.isArray(a)) a.slice(0, 8).forEach(function(x){ var d = unpackDraw(x); if(d) recentDrawList.push(d); });
+    }catch(e){}
+    return recentDrawList;
+  }
+  function rememberDraw(d){
+    var list = recentDraws().filter(function(x){ return x.id !== d.id; });
+    list.unshift(d);
+    recentDrawList = list.slice(0, 8);
+    // this storage is small: when it's full, the oldest drawings go first
+    var packed = recentDrawList.map(packDraw);
+    while(packed.length > 1 && JSON.stringify(packed).length > 600000) packed.pop();
+    while(packed.length){
+      try{ localStorage.setItem(DRAWS_KEY, JSON.stringify(packed)); return; }catch(e){ packed.pop(); }
+    }
+  }
+  // in designs: the drawings your stickers use travel along (like pictures, each only once while designing together)
+  function usedDrawIds(list){
+    var ids = [];
+    (list || []).forEach(function(it){ if(it.k === 'draw' && stickerDraws[it.key] && ids.indexOf(it.key) === -1) ids.push(it.key); });
+    return ids;
+  }
+  function packDraws(ids){ return ids.map(function(id){ return packDraw(stickerDraws[id]); }); }
+  // drawings that came with a design (or the auto-save): checked, at most 60,000 points in one go;
+  // got = called with each one's id (your love has it: no need to send it back)
+  function unpackDraws(arr, got){
+    if(!Array.isArray(arr)) return;
+    var total = 0;
+    arr.slice(0, STUDIO_MAX).forEach(function(x){
+      var n = x && Array.isArray(x.s) ? x.s.reduce(function(a, s){ return a + (Array.isArray(s) && Array.isArray(s[3]) ? s[3].length / 2 : 0); }, 0) : 0;
+      if(total + n > 60000) return;
+      var d = unpackDraw(x);
+      if(!d) return;
+      total += n;
+      if(got) got(d.id);
     });
   }
 
@@ -5246,11 +5553,12 @@
       if(k === 'st'){ if(!STICKERS.some(function(s){ return s.id === key; })) return; }
       else if(k === 'word'){ key = cleanWord(key); if(!key) return; }
       else if(k === 'img'){ if(typeof key !== 'string' || !/^[a-z0-9]{4,32}$/.test(key) || !stickerImgs[key]) return; }
+      else if(k === 'draw'){ if(typeof key !== 'string' || !/^[a-z0-9]{4,32}$/.test(key) || !stickerDraws[key]) return; }   // (unpackDraws first)
       else return;
       var id = typeof it.id === 'string' && /^[a-z0-9]{1,24}$/.test(it.id) && !seen[it.id] ? it.id : stId();
       seen[id] = true;
       out.push({id:id, k:k, key:key, p:Math.round(num(it.p, 0, MAX_SHOTS - 1, 0)), x:num(it.x, -3, 3, 0), y:num(it.y, -3, 3, 0),
-                s:num(it.s, ST_MIN, ST_MAX, 0.23), r:num(it.r, -7, 7, 0), e:it.e === true, ph:num(it.ph, 0, 7, 0)});
+                s:num(it.s, ST_MIN, k === 'draw' ? ST_MAX_DRAW : ST_MAX, 0.23), r:num(it.r, -7, 7, 0), e:it.e === true, ph:num(it.ph, 0, 7, 0)});
     });
     return out;
   }
@@ -6823,7 +7131,10 @@
      resize and turn it (the ↻ corner does both with one finger or a mouse; the mouse wheel resizes, with
      Shift it turns). Everything fits on one phone screen: the photo shrinks on short screens.
      The editor's preview pauses while the studio is open; DONE (or back) returns to it. */
-  var st = {open:false, i:0, last:0, sel:null, cw:1, ch:1, crops:[], bg:null, raf:0, dirty:true, tray:'shapes', manage:false, wheelT:0};
+  // (v4.13) draw = the drawing you're making ({strokes, points, p = its photo}), stroke = the line under your finger
+  var st = {open:false, i:0, last:0, sel:null, cw:1, ch:1, crops:[], bg:null, raf:0, dirty:true, tray:'shapes', manage:false, wheelT:0,
+            draw:null, stroke:null, drawBlocked:false, draftStale:true};
+  var stPen = {pen:'pen', c:'accent', sz:'medium'};   // (v4.13) the pen, colour and size you picked last
   var FINE_POINTER = !!(window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches);
   var STUDIO_WIDE = window.matchMedia ? matchMedia('(min-width: 900px) and (min-height: 521px), (orientation: landscape) and (max-height: 520px) and (min-width: 600px)') : null;   // = the CSS
   var stPtr = {pts:{}, mode:null, grab:null, pinch:null, down:null, moved:false};
@@ -6857,6 +7168,7 @@
   // quiet: you're leaving the editor anyway (goToStep draws the next page)
   function closeStudio(quiet){
     if(!st.open) return;
+    if(st.draw) finishDrawing();   // (a drawing is never lost: it stays as a sticker)
     st.open = false; st.sel = null; st.bg = null; st.manage = false;
     stPtr.pts = {}; stPtr.mode = null;
     cancelAnimationFrame(st.raf); st.raf = 0;
@@ -6865,7 +7177,7 @@
     document.body.style.overflow = '';
     if(!quiet && state.currentStep === 'customize') renderPreview();
   }
-  $('stDone').addEventListener('click', function(){ closeStudio(); });
+  $('stDone').addEventListener('click', function(){ if(st.draw) finishDrawing(); else closeStudio(); });   // drawing: ✓ DONE
   $('stPrev').addEventListener('click', function(){ studioGo(st.i - 1); });
   $('stNext').addEventListener('click', function(){ studioGo(st.i + 1); });
   function studioGo(i){
@@ -6897,7 +7209,7 @@
       else top = (x.t + x.b)/2 - st.ch/2;
       return {left:clamp((x.l + x.r)/2 - st.cw/2, 0, b.w - st.cw), top:clamp(top, 0, b.h - st.ch)};
     });
-    st.bg = null;
+    st.bg = null; st.draftStale = true;
     fitStudio();
   }
   function fitStudio(){
@@ -6938,10 +7250,31 @@
     ctx.drawImage(st.bg, 0, 0);
     ctx.setTransform(k, 0, 0, k, -c.left * k, -c.top * k);
     drawPlaced(ctx, base, t, state.animated, st.sel);
+    if(st.draw) paintDraft(ctx, cv, k, c);
     drawLabels(ctx, base);
     var it = selItem();
     if(it) drawSelection(ctx, it, st.cw / (cv.clientWidth || 1));
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+  // (v4.13) while you draw: the finished lines come from a picture made once (stDraft) — only the line under
+  // your finger is drawn again every time
+  var stDraft = document.createElement('canvas');
+  function paintDraft(ctx, cv, k, c){
+    var r = base.rects[st.draw.p];
+    if(!r) return;
+    var s = k * r.w / 1000, ox = (r.cx - c.left) * k, oy = (r.cy - c.top) * k;
+    if(st.draftStale || stDraft.width !== cv.width || stDraft.height !== cv.height){
+      stDraft.width = cv.width; stDraft.height = cv.height;   // (also wipes it)
+      var dx = stDraft.getContext('2d');
+      dx.setTransform(s, 0, 0, s, ox, oy);
+      st.draw.strokes.forEach(function(line){ drawStroke(dx, line, Infinity, false, 0, base.accent); });
+      st.draftStale = false;
+    }
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(stDraft, 0, 0);
+    if(st.stroke){ ctx.setTransform(s, 0, 0, s, ox, oy); drawStroke(ctx, st.stroke, Infinity, false, 0, base.accent); }
+    ctx.restore();
   }
   // the chosen sticker: a dashed box with ✕ (remove) and ↻ (resize and turn); u = strip units per screen pixel
   function drawSelection(ctx, it, u){
@@ -7004,16 +7337,21 @@
   }
   function syncStudioUI(){
     if(!st.open) return;
-    var n = base.rects.length, it = selItem();
-    $('stTitle').textContent = n > 1 ? 'Photo ' + (st.i + 1) + ' of ' + n : 'Your photo';
-    $('stPrev').classList.toggle('off', n < 2);
-    $('stNext').classList.toggle('off', n < 2);
+    var n = base.rects.length, it = selItem(), drawing = !!st.draw;
+    $('stTitle').textContent = drawing ? '✏️ Drawing' + (n > 1 ? ' · photo ' + (st.i + 1) : '')
+      : n > 1 ? 'Photo ' + (st.i + 1) + ' of ' + n : 'Your photo';
+    $('stPrev').classList.toggle('off', n < 2 || drawing);
+    $('stNext').classList.toggle('off', n < 2 || drawing);
+    $('stDone').textContent = drawing ? '✓ DONE' : 'DONE ♡';
     $('stTools').classList.toggle('off', !it);
     $('stTools').querySelector('[data-act="edge"]').setAttribute('aria-pressed', it && it.e ? 'true' : 'false');
-    $('stHint').textContent = it ? (FINE_POINTER ? 'drag to move · ↻ corner or mouse wheel: size and turn' : 'drag to move · two fingers: size and turn')
+    $('stHint').textContent = drawing ? (stPen.pen === 'rainbow' ? 'Rainbow picks its own colours ✏️' : 'Write big, then shrink it after DONE ✏️')
+      : it ? (FINE_POINTER ? 'drag to move · ↻ corner or mouse wheel: size and turn' : 'drag to move · two fingers: size and turn')
       : st.tray === 'images' ? 'Saved on this device only ♡ Cut-out pictures look best'
+      : st.tray === 'draw' ? (recentDraws().length ? 'Your last drawings stay on this device ♡' : TAP_ + ' + new drawing to write or draw ✏️')
       : state.placed.length ? TAP_ + ' a sticker to move it ♡' : 'Add a sticker below ♡';
-    $('stClear').hidden = !!it || !state.placed.length;
+    $('stClear').hidden = drawing || !!it || !state.placed.length;
+    $('stDrawClear').hidden = !(drawing && st.draw.strokes.length);
     st.dirty = true;
   }
   // after every change: your love sees it (designing together), and it's in the auto-save
@@ -7039,6 +7377,12 @@
       it.x = 0.5 - it.s * 0.3; it.y = ratio / 2 - it.s * asp / 2;
       var g = itemGeom(it, base);
       setItemCenter(it, base, Math.min(g.x, base.w - g.w / 2), g.y);
+    } else if(k === 'draw'){
+      // (v4.13) one of your last drawings: at most 60% of the photo wide — a big one low in the middle,
+      // a small one in a free corner
+      setItemWidth(it, base, Math.min(stickerDraws[key].w0 / 1000, 0.6) * r.w);
+      if(it.s > 0.35){ it.x = 0; it.y = ratio * 0.28; }
+      else { var sp = freeSpot(st.i, ratio); it.x = sp[0]; it.y = sp[1]; }
     } else {
       var d = stickerDef(it), word = d.kind === 'word';
       setItemWidth(it, base, word ? Math.min(300, 60 + badgeWidth(d.text) * 1.6) : 150);
@@ -7135,6 +7479,7 @@
       if(!g) continue;
       var l = stLocal(g, p);
       if(Math.abs(l.x) > Math.max(g.w/2, g0) || Math.abs(l.y) > Math.max(g.h/2, g0)) continue;
+      if(it.k === 'draw'){ if(drawingHit(it, l, g, g0 * 0.8)) return it; continue; }   // by its lines
       if(it.k !== 'img' || (g.w < 3*g0 && g.h < 3*g0)) return it;
       var im = stickerImgs[it.key], e = g0 * 0.6;
       if(im && [[0,0],[e,0],[-e,0],[0,e],[0,-e]].some(function(o){ return imgSolidAt(im, (l.x + o[0]) / g.w + 0.5, (l.y + o[1]) / g.h + 0.5); })) return it;
@@ -7161,6 +7506,7 @@
   }
   stCv.addEventListener('pointerdown', function(e){
     if(!st.open) return;
+    if(st.draw){ drawPointerDown(e); return; }   // (v4.13) drawing: see "✏️ Draw" below
     try{ stCv.setPointerCapture(e.pointerId); }catch(err){}
     var p = stWorld(e);
     stPtr.pts[e.pointerId] = p;
@@ -7188,6 +7534,7 @@
     if(!(e.pointerId in stPtr.pts)) return;
     var p = stWorld(e);
     stPtr.pts[e.pointerId] = p;
+    if(st.draw){ if(st.stroke && !st.drawBlocked && Object.keys(stPtr.pts).length === 1) moveStroke(e); return; }
     if(stPtr.down && Math.hypot(e.clientX - stPtr.down.x, e.clientY - stPtr.down.y) > 6) stPtr.moved = true;
     var it = selItem();
     if(!it) return;
@@ -7208,6 +7555,11 @@
   function stPointerEnd(e){
     if(!(e.pointerId in stPtr.pts)) return;
     delete stPtr.pts[e.pointerId];
+    if(st.draw){   // the last finger lifted: the line is done (a second finger's line was cancelled)
+      if(!Object.keys(stPtr.pts).length){ if(st.stroke) endStroke(); st.drawBlocked = false; }
+      st.dirty = true;
+      return;
+    }
     var left = Object.keys(stPtr.pts).length, tap = !stPtr.moved && e.type === 'pointerup', it = selItem();
     if(stPtr.mode === 'x' && tap && it) removeSticker(it.id);
     else if(stPtr.mode === 'empty' && tap && st.sel){ st.sel = null; syncStudioUI(); }
@@ -7237,6 +7589,7 @@
   }, {passive:false});
   // keyboard: Enter / Space picks the next sticker on this photo, arrows move it, + and − resize, Delete removes
   stCv.addEventListener('keydown', function(e){
+    if(st.draw) return;   // (drawing: Escape = DONE, Ctrl+Z = undo — see "✏️ Draw")
     if(e.key === 'Enter' || e.key === ' '){
       var mine = state.placed.filter(function(x){ return x.p === st.i; });
       if(!mine.length) return;
@@ -7262,7 +7615,7 @@
     stickersChanged();
   });
 
-  /* ---- the three trays: Stickers · My images · Your words ---- */
+  /* ---- the trays: Stickers · (My) Images · (Your) Words · (v4.13) ✏️ Draw ---- */
   function stickerTile(it, wide, label, onClick, color){
     var b = document.createElement('button');
     b.type = 'button'; b.className = 'st-tile' + (wide ? ' wide' : '');
@@ -7294,9 +7647,11 @@
     $('stTrayShapes').hidden = name !== 'shapes';
     $('stTrayImages').hidden = name !== 'images';
     $('stTrayWords').hidden = name !== 'words';
+    $('stTrayDraw').hidden = name !== 'draw';
     if(name !== 'images') st.manage = false;
     else renderImageTiles();
     if(name === 'words') renderWordTiles();
+    if(name === 'draw') renderDrawTiles();
     syncStudioUI();   // (the hint says where My images are kept)
   }
   Array.prototype.forEach.call(document.querySelectorAll('.st-tab'), function(b){
@@ -7404,6 +7759,171 @@
     });
   });
 
+  /* ---- (v4.13) ✏️ Draw: one finger (or the mouse) draws, DONE turns the lines into one sticker ----
+     While you draw, the lines are kept around the photo's middle in drawing units (1000 = its width), so a
+     new frame from your love (designing together) can't move them. A second finger cancels the line it
+     interrupted (it was probably a pinch). ✓ DONE, back, Escape — and anything that closes the studio — keep
+     the drawing as a sticker: nothing you drew is lost by accident. */
+  function renderDrawTiles(){
+    var row = $('stTrayDraw'), color = trayColor();
+    row.innerHTML = '';
+    var add = document.createElement('button');
+    add.type = 'button'; add.className = 'st-tile new-draw'; add.textContent = '+ new drawing';
+    add.addEventListener('click', startDrawing);
+    row.appendChild(add);
+    recentDraws().forEach(function(d){
+      row.appendChild(stickerTile({k:'draw', key:d.id}, d.w0 / d.h0 > 1.4, 'Add this drawing', function(){ addSticker('draw', d.id); }, color));
+    });
+  }
+  function startDrawing(){
+    if(!st.open || st.draw) return;
+    if(state.placed.length >= STUDIO_MAX){ showToast(STUDIO_MAX + ' stickers is the most for one strip ♡'); return; }
+    st.draw = {strokes:[], points:0, p:st.i}; st.stroke = null; st.drawBlocked = false; st.sel = null;
+    setDrawUI(true);
+  }
+  function finishDrawing(){
+    if(!st.draw) return;
+    if(st.stroke) endStroke();
+    var d = st.draw, r = base.rects[d.p];
+    st.draw = null; st.stroke = null;
+    setDrawUI(false);
+    if(!d.strokes.length || !r) return;
+    var m = makeDrawing(d.strokes);
+    rememberDraw(m.d);   // (in the ✏️ Draw tab from now on, also when the strip is full)
+    if(st.tray === 'draw') renderDrawTiles();
+    if(state.placed.length >= STUDIO_MAX){ showToast(STUDIO_MAX + " stickers is the most for one strip — your drawing waits in ✏️ Draw ♡"); return; }
+    // right where you drew it, standing straight (also on a tilted polaroid photo)
+    var it = {id:stId(), k:'draw', key:m.d.id, p:d.p, x:0, y:0, s:0.23, r:-(r.rot || 0), e:false, ph:0};
+    setItemCenter(it, base, r.cx + m.cx * r.w / 1000, r.cy + m.cy * r.w / 1000);
+    setItemWidth(it, base, m.d.w0 * r.w / 1000);
+    state.placed.push(it);
+    st.sel = it.id;   // chosen at once: move it, pinch it smaller
+    stickersChanged();
+  }
+  // the pens, colours and sizes take the place of the tools, tabs and trays (the photo re-fits: those rows
+  // are a little taller)
+  function setDrawUI(on){
+    stPtr.pts = {}; stPtr.mode = null;
+    $('stEditor').classList.toggle('drawing', on);
+    $('stTools').hidden = on;
+    document.querySelector('.st-tabs').hidden = on;
+    document.querySelector('.st-panels').hidden = on;
+    $('stPens').hidden = !on; $('stInks').hidden = !on; $('stSizes').hidden = !on;
+    if(on) syncPens();
+    st.draftStale = true;
+    syncStudioUI();
+    fitStudio();
+  }
+  function drawPointerDown(e){
+    if(e.pointerType === 'mouse' && e.button !== 0) return;
+    try{ stCv.setPointerCapture(e.pointerId); }catch(err){}
+    stPtr.pts[e.pointerId] = stWorld(e);
+    if(Object.keys(stPtr.pts).length === 1 && !st.drawBlocked) startStroke(e);
+    else {
+      if(st.stroke){ st.stroke = null; showToast('Draw with one finger ✏️'); }
+      st.drawBlocked = true;
+    }
+    st.dirty = true;
+  }
+  // a point on the strip → drawing units: from the middle of the photo you draw on, 1000 = its width
+  function drawUnits(p){
+    var r = base.rects[st.draw.p];
+    return {x:(p.x - r.cx) * 1000 / r.w, y:(p.y - r.cy) * 1000 / r.w, k:1000 / r.w};
+  }
+  function startStroke(e){
+    var d = st.draw;
+    if(!base.rects[d.p]) return;
+    if(d.strokes.length >= DRAW_MAX_STROKES || d.points >= DRAW_MAX_POINTS - 20){ showToast('This drawing is full ♡ Tap DONE and start another'); return; }
+    var q = drawUnits(stWorld(e));
+    st.stroke = newStroke(stPen.pen, stPen.c, stPen.sz);
+    strokePoint(st.stroke, q.x, q.y, 0);
+  }
+  function moveStroke(e){
+    var list = e.getCoalescedEvents ? e.getCoalescedEvents() : null;   // (all the points a fast finger passed)
+    if(!list || !list.length) list = [e];
+    var room = Math.min(DRAW_MAX_LINE, DRAW_MAX_POINTS - st.draw.points);
+    for(var i = 0; i < list.length && st.stroke; i++){
+      var p = stWorld(list[i]), q = drawUnits(p);
+      strokePoint(st.stroke, q.x, q.y, 1.5 * p.u * q.k);   // a new point every 1.5 screen pixels
+      if(st.stroke.pts.length / 2 >= room){ endStroke(); showToast('That line is long enough ♡ Lift your finger and go on'); }
+    }
+    st.dirty = true;
+  }
+  function endStroke(){
+    if(!st.stroke) return;
+    st.draw.strokes.push(st.stroke); st.draw.points += st.stroke.pts.length / 2;
+    st.stroke = null; st.draftStale = true;
+    syncStudioUI();
+  }
+  function undoStroke(){
+    if(!st.draw) return;
+    var s = st.draw.strokes.pop();
+    if(!s){ showToast('Nothing to undo yet ✏️'); return; }
+    st.draw.points -= s.pts.length / 2; st.draftStale = true;
+    syncStudioUI();
+  }
+  function clearDrawing(){
+    var d = st.draw;
+    if(!d || !d.strokes.length) return;
+    var old = d.strokes, pts = d.points;
+    d.strokes = []; d.points = 0; st.draftStale = true;
+    syncStudioUI();
+    showToast('Drawing cleared', {label:'UNDO', fn:function(){
+      if(st.draw !== d) return;
+      d.strokes = old.concat(d.strokes); d.points += pts; st.draftStale = true;
+      syncStudioUI();
+    }});
+  }
+  function syncPens(){
+    var row = $('stInks');
+    if(!row.children.length){
+      DRAW_INKS.forEach(function(ink){
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'st-ink'; b.dataset.c = ink.c;
+        b.setAttribute('role', 'radio'); b.setAttribute('aria-label', ink.name);
+        var dot = document.createElement('span');
+        if(ink.c === 'accent') dot.textContent = '★'; else dot.style.background = ink.c;
+        b.appendChild(dot);
+        row.appendChild(b);
+      });
+    }
+    row.firstChild.firstChild.style.background = trayColor();   // ★ = this frame's colour
+    Array.prototype.forEach.call($('stPens').querySelectorAll('[data-pen]'), function(b){
+      if(b.dataset.pen !== 'undo') b.setAttribute('aria-pressed', b.dataset.pen === stPen.pen ? 'true' : 'false');
+    });
+    Array.prototype.forEach.call(row.children, function(b){
+      b.setAttribute('aria-checked', stPen.pen !== 'rainbow' && b.dataset.c === stPen.c ? 'true' : 'false');
+    });
+    row.classList.toggle('off', stPen.pen === 'rainbow');
+    Array.prototype.forEach.call($('stSizes').children, function(b){
+      b.setAttribute('aria-checked', b.dataset.size === stPen.sz ? 'true' : 'false');
+    });
+  }
+  $('stPens').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if(!b) return;
+    if(b.dataset.pen === 'undo'){ undoStroke(); return; }
+    stPen.pen = b.dataset.pen;
+    syncPens(); syncStudioUI();
+  });
+  $('stInks').addEventListener('click', function(e){
+    var b = e.target.closest('.st-ink');
+    if(!b) return;
+    stPen.c = b.dataset.c;
+    if(stPen.pen === 'rainbow') stPen.pen = 'pen';   // a colour while on rainbow = back to the plain pen
+    syncPens(); syncStudioUI();
+  });
+  $('stSizes').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if(!b) return;
+    stPen.sz = b.dataset.size;
+    syncPens();
+  });
+  $('stDrawClear').addEventListener('click', clearDrawing);
+  document.addEventListener('keydown', function(e){
+    if(st.open && st.draw && (e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')){ e.preventDefault(); undoStroke(); }
+  });
+
   /* ---- the editor's Stickers tab ---- */
   var quickFor = null;   // the color the row below the button was drawn in
   function renderStickerQuick(){
@@ -7445,7 +7965,7 @@
   // Design together (below): on = in a session, inviting = waiting for an answer, last = the design both
   // phones agreed on (changes are measured from it), sentFrames = custom frames the other phone already has,
   // unsaved = their frames you're using but haven't saved, queue = incoming changes, handled in order
-  var together = {on:false, inviting:false, inviteTimer:0, inviteDesign:null, last:null, timer:0, sentFrames:{}, sentImgs:{}, unsaved:{}, queue:Promise.resolve()};
+  var together = {on:false, inviting:false, inviteTimer:0, inviteDesign:null, last:null, timer:0, sentFrames:{}, sentImgs:{}, sentDraws:{}, unsaved:{}, queue:Promise.resolve()};
   var INVITE_TIMEOUT = 45000;
 
   function copyStickers(src){
@@ -7476,7 +7996,7 @@
     var d = currentDesign(), t = templateById(d.templateId);
     btn.disabled = true;
     Promise.all([t.custom ? packFrame(t.rec) : null, packStickerImgs(usedImgIds(d.placed))]).then(function(res){
-      sendLive({type:'design', design:partnerDesign(d), frame:res[0], imgs:res[1]});
+      sendLive({type:'design', design:partnerDesign(d), frame:res[0], imgs:res[1], draws:packDraws(usedDrawIds(d.placed))});
       showToast('Sent to your love ♡');
     }).catch(function(){
       showToast("Couldn't send your design. Please try again ♡");
@@ -7549,9 +8069,10 @@
   }
   // kind: 'send' (Send my design) or 'invite' (Design together)
   function receiveDesign(msg, kind){
-    // the pictures its stickers use come first (cleanDesign keeps only stickers whose picture is here)
-    unpackStickerImgs(msg.imgs).then(function(){ receiveDesignNow(msg, kind); });
+    // the pictures and drawings its stickers use come first (cleanDesign keeps only stickers whose picture is here)
+    unpackStickerImgs(msg.imgs).then(function(){ unpackDraws(msg.draws, drawArrived); receiveDesignNow(msg, kind); });
   }
+  function drawArrived(id){ together.sentDraws[id] = true; }   // (your love has it: no need to send it back)
   function receiveDesignNow(msg, kind){
     var raw = msg.design;
     if(raw && typeof raw === 'object' && raw.placed){
@@ -7730,13 +8251,14 @@
     if(together.on || together.inviting) return;
     var d = currentDesign(), t = templateById(d.templateId);
     together.inviting = true; together.inviteDesign = d; syncLiveDesign();
-    var imgIds = usedImgIds(d.placed);
+    var imgIds = usedImgIds(d.placed), drawIds = usedDrawIds(d.placed);
     Promise.all([t.custom ? packFrame(t.rec) : null, packStickerImgs(imgIds)]).then(function(res){
       var frame = res[0];
       if(!together.inviting) return;
       if(t.custom) together.sentFrames[t.rec.id] = true;
       imgIds.forEach(function(id){ together.sentImgs[id] = true; });
-      sendLive({type:'together-invite', design:partnerDesign(d), frame:frame, imgs:res[1]});
+      drawIds.forEach(function(id){ together.sentDraws[id] = true; });
+      sendLive({type:'together-invite', design:partnerDesign(d), frame:frame, imgs:res[1], draws:packDraws(drawIds)});
       showToast('Invite sent — waiting for your love ♡');
       clearTimeout(together.inviteTimer);
       together.inviteTimer = setTimeout(function(){
@@ -7778,7 +8300,7 @@
   function endTogether(){
     together.on = false; together.inviting = false; together.inviteDesign = null;
     clearTimeout(together.inviteTimer); clearTimeout(together.timer);
-    together.unsaved = {}; together.sentFrames = {}; together.sentImgs = {};
+    together.unsaved = {}; together.sentFrames = {}; together.sentImgs = {}; together.sentDraws = {};
     syncLiveDesign();
   }
   // a frame's id is the same on both phones: the maker's own id (a copy remembers it as srcId)
@@ -7808,18 +8330,20 @@
     var needsFrame = custom && !together.sentFrames[t.rec.id];
     // placed stickers: in your love's photo order, with any picture they don't have yet
     var imgIds = patch.placed ? usedImgIds(patch.placed).filter(function(id){ return !together.sentImgs[id]; }) : [];
+    var drawIds = patch.placed ? usedDrawIds(patch.placed).filter(function(id){ return !together.sentDraws[id]; }) : [];
     if(patch.placed) patch.placed = placedToPartner(patch.placed);
     Promise.all([needsFrame ? packFrame(t.rec) : null, packStickerImgs(imgIds)]).then(function(res){
       var frame = res[0];
       if(frame) together.sentFrames[t.rec.id] = true;
       imgIds.forEach(function(id){ together.sentImgs[id] = true; });
-      sendLive({type:'together-change', patch:patch, frameId:custom ? frameKey(t.rec) : null, frame:frame, imgs:res[1]});
+      drawIds.forEach(function(id){ together.sentDraws[id] = true; });
+      sendLive({type:'together-change', patch:patch, frameId:custom ? frameKey(t.rec) : null, frame:frame, imgs:res[1], draws:packDraws(drawIds)});
     }).catch(function(){ /* the next change sends everything that differs again */ });
   }
   function receiveTogetherChange(msg){
     if(!together.on || !msg.patch || typeof msg.patch !== 'object') return;
-    // pictures for their stickers first (cleanDesign keeps only stickers whose picture is here)
-    return unpackStickerImgs(msg.imgs).then(function(){ return applyTogetherChange(msg); });
+    // pictures and drawings for their stickers first (cleanDesign keeps only stickers whose picture is here)
+    return unpackStickerImgs(msg.imgs).then(function(){ unpackDraws(msg.draws, drawArrived); return applyTogetherChange(msg); });
   }
   function applyTogetherChange(msg){
     if(!together.on) return;
@@ -7949,7 +8473,8 @@
     }
     return Promise.all(shots.map(blobsOf)).then(function(sets){
       if(gen !== session.gen || sets.some(function(b){ return !b[0]; })) return;
-      var rec = {v:1, saved:Date.now(), shotCount:count, design:design, stickerImgs:sessionStickerImgs(design.placed), shots:shots.map(function(c, i){
+      var rec = {v:1, saved:Date.now(), shotCount:count, design:design, stickerImgs:sessionStickerImgs(design.placed),
+                 draws:packDraws(usedDrawIds(design.placed)), shots:shots.map(function(c, i){
         var from = c.dataset.from === 'you' || c.dataset.from === 'duo' ? c.dataset.from : 'me';
         var s = {blob:sets[i][0], from:from, round:c.dataset.round || '', side:c.dataset.side || ''};
         if(sets[i][1] && sets[i][2]){ s.pairMine = sets[i][1]; s.pairTheirs = sets[i][2]; }
@@ -8000,7 +8525,9 @@
         return c;
       });
     })).then(function(canvases){
-      // (v4.12) the pictures your stickers use — ready before the design is read (sessionDesign)
+      // (v4.12) the pictures your stickers use — ready before the design is read (sessionDesign);
+      // (v4.13) the same for your drawings
+      unpackDraws(rec.draws);
       return loadSessionStickerImgs(rec).then(function(){ return canvases; });
     });
   }
