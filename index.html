@@ -467,6 +467,58 @@
   .cf-tip{font-size:.78rem; color:var(--rose-800); opacity:.8; line-height:1.45;}
   .cf-section input[type=range]{width:100%; accent-color:var(--rose-600); min-height:44px;}
   .cf-danger{color:#C0392B;}
+  /* sticker studio (v4.12): one photo big — move, resize and turn your stickers. Everything fits one phone
+     screen without scrolling (the photo shrinks on short screens) */
+  .st-inner{max-width:520px; margin:0 auto; padding:0 16px 14px; display:flex; flex-direction:column; gap:6px;}
+  .st-head{position:sticky; top:0; z-index:3; display:flex; align-items:center; gap:6px; padding:6px 0 2px; background:var(--blush-50);}
+  .st-head h3{flex:1; min-width:0; text-align:center; font-size:1.02rem; color:var(--plum-900); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .st-nav{width:44px; height:44px; flex:0 0 44px; border-radius:14px; border:1.5px solid var(--pink-300); background:var(--white); color:var(--rose-800); font-size:1.4rem; line-height:1; padding:0;}
+  .st-nav.off{visibility:hidden;}
+  .st-done{min-height:44px; padding:10px 16px; font-size:.85rem; white-space:nowrap;}
+  .st-stage{display:flex; justify-content:center; background:var(--blush-100); border-radius:14px; padding:4px;}
+  #stCanvas{display:block; touch-action:none; border-radius:8px; max-width:100%; box-shadow:var(--shadow-soft);}
+  .st-hintrow{display:flex; align-items:center; justify-content:center; gap:8px; min-height:36px;}
+  .st-hint{text-align:center; font-size:.76rem; color:var(--rose-800); margin:0; line-height:1.3;}
+  .st-hintrow .btn-text{min-height:36px; padding:6px 4px; font-size:.76rem; white-space:nowrap; flex:0 0 auto;}
+  .st-hintrow .btn-text[hidden]{display:none;}
+  .st-panels{min-height:62px;}
+  .st-panels > [hidden], .st-tray[hidden]{display:none;}
+  .st-tools{display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:6px;}
+  .st-tools button, .st-tab{min-height:44px; border-radius:12px; border:1.5px solid var(--blush-100); background:var(--white); color:var(--plum-900); font-size:.8rem; font-weight:600; padding:0 2px;}
+  .st-tools.off button{opacity:.5;}
+  .st-tools button[aria-pressed="true"], .st-tab.active{background:var(--rose-600); border-color:var(--rose-600); color:#fff;}
+  .st-tabs{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:6px;}
+  .st-tray{display:flex; gap:8px; align-items:center; min-height:60px; overflow-x:auto; padding:2px 2px 6px; -webkit-overflow-scrolling:touch;}
+  .st-tile{position:relative; flex:0 0 52px; height:52px; border-radius:14px; border:1.5px solid var(--blush-100); background:var(--white); display:flex; align-items:center; justify-content:center; padding:4px;}
+  .st-tile.wide{flex-basis:88px;}
+  .st-tile canvas{width:40px; height:40px;}
+  .st-tile.wide canvas{width:76px;}
+  .st-tile.add{border:2px dashed var(--pink-300); font-size:1.5rem; color:var(--rose-600);}
+  .st-tile .st-del{position:absolute; top:-7px; right:-7px; width:24px; height:24px; border-radius:50%; background:var(--plum-900); color:#fff; font-size:.72rem; display:flex; align-items:center; justify-content:center;}
+  .st-tile.edit, .st-tile.new-word{font-size:.72rem; font-weight:600; color:var(--rose-800);}
+  .st-tile.new-word{flex-basis:88px; border:2px dashed var(--pink-300);}
+  .st-words{display:flex; gap:8px; padding:6px 2px 8px;}
+  .st-words[hidden]{display:none;}
+  .st-words input[type="text"]{flex:1; min-width:0; min-height:44px; padding:10px 12px; font-size:16px;}   /* 16px: iPhones don't zoom in */
+  .st-words .btn{min-height:44px; padding:10px 18px; font-size:.82rem;}
+  /* editor, Stickers tab: one button, one row of stickers to add, the "moving" switch */
+  .st-open{width:100%; min-height:48px; padding:12px 14px; font-size:.84rem;}
+  .st-quick{display:flex; gap:8px; overflow-x:auto; padding:2px 2px 6px; -webkit-overflow-scrolling:touch;}
+  #previewCanvas{cursor:pointer;}
+  @media (hover:hover) and (pointer:fine){
+    .st-tray, .st-quick{flex-wrap:wrap; overflow-x:visible;}
+  }
+  /* laptops and phones held sideways (like the editor): the photo on the left, the tools on the right */
+  @media (min-width:900px) and (min-height:521px), (orientation:landscape) and (max-height:520px) and (min-width:600px){
+    .st-inner{max-width:1000px; display:grid; grid-template-columns:minmax(0,1fr) 400px; column-gap:24px; row-gap:8px; align-items:start;}
+    .st-head{grid-column:1 / -1;}
+    .st-stage{grid-column:1; grid-row:2 / span 5;}
+    .st-hintrow, .st-tools, .st-tabs, .st-panels{grid-column:2;}
+    .st-hintrow{justify-content:flex-start;}
+  }
+  @media (orientation:landscape) and (max-height:520px) and (min-width:600px){
+    .st-inner{grid-template-columns:minmax(0,1fr) 300px; column-gap:14px; row-gap:6px;}
+  }
   #cfBases .frame-card{flex:0 0 84px;}
   #cfBases .frame-thumb{height:96px;}
 
@@ -816,6 +868,8 @@
     box-shadow:0 14px 30px -10px rgba(0,0,0,.4);
   }
   .toast.show{opacity:1; transform:translate(-50%,0);}
+  .toast.has-act{pointer-events:auto;}   /* a toast with a button (UNDO) can be tapped */
+  .toast-act{margin-left:12px; min-height:36px; padding:4px 6px; background:none; border:none; color:#fff; font-weight:700; text-decoration:underline; font-size:.86rem;}
 
   /* transition message overlay inside camera step */
   .transition-msg{
@@ -979,6 +1033,8 @@
       <div class="cf-section">
         <h4>Your images <small>— saved only on this device</small></h4>
         <div class="cf-images" id="cfImages"></div>
+        <p class="cf-tip" id="cfFullNote" hidden>All 6 spots are used ♡ Remove one to add another.</p>
+        <p class="cf-tip cf-danger" id="cfDoubleNote" hidden></p>
         <p class="cf-tip">Tip: PNG images with a see-through background look best. They sit at the edges — make one big (above 60%) and it stands right next to you in the photo.</p>
         <p class="cf-tip ios-only">On iPhone, Safari clears saved frames if this site isn't opened for 7 days. To keep them, tap Share → <b>Add to Home Screen</b> and open the booth from there.</p>
         <input type="file" id="cfFile" accept="image/*" class="sr-only" tabindex="-1" aria-hidden="true">
@@ -1005,6 +1061,51 @@
       </div>
     </div>
   </div>
+
+  <!-- sticker studio (v4.12): one photo big — move, resize and turn stickers, your own images and words -->
+  <div class="cf-editor st-editor" id="stEditor" role="dialog" aria-modal="true" aria-labelledby="stTitle" hidden>
+    <div class="st-inner">
+      <div class="st-head">
+        <button type="button" class="st-nav" id="stPrev" aria-label="Previous photo">‹</button>
+        <h3 id="stTitle">Photo 1</h3>
+        <button type="button" class="st-nav" id="stNext" aria-label="Next photo">›</button>
+        <button type="button" class="btn btn-primary st-done" id="stDone">DONE ♡</button>
+      </div>
+      <div class="st-stage" id="stStage">
+        <canvas id="stCanvas" width="10" height="10" tabindex="0" aria-label="Your photo with its stickers. Drag a sticker to move it; pinch with two fingers to resize and turn it. Arrow keys move the chosen sticker, + and − change its size."></canvas>
+      </div>
+      <div class="st-hintrow"><p class="st-hint" id="stHint"></p><button type="button" class="btn-text" id="stClear" hidden>remove all</button></div>
+      <div class="st-tools off" id="stTools" role="toolbar" aria-label="The chosen sticker">
+        <button type="button" data-act="smaller" aria-label="Smaller">−</button>
+        <button type="button" data-act="bigger" aria-label="Bigger">+</button>
+        <button type="button" data-act="front" aria-label="Bring to front">front</button>
+        <button type="button" data-act="back" aria-label="Send to back">back</button>
+        <button type="button" data-act="edge" aria-pressed="false" aria-label="White edge">edge</button>
+        <button type="button" data-act="remove" aria-label="Remove this sticker">✕</button>
+      </div>
+      <div class="st-tabs" role="tablist" aria-label="Add">
+        <button type="button" class="st-tab active" role="tab" aria-selected="true" data-tray="shapes">Stickers</button>
+        <button type="button" class="st-tab" role="tab" aria-selected="false" data-tray="images">My images</button>
+        <button type="button" class="st-tab" role="tab" aria-selected="false" data-tray="words">Your words</button>
+      </div>
+      <!-- the same height for all three, so the photo doesn't jump when you switch -->
+      <div class="st-panels">
+        <div class="st-tray" id="stTrayShapes" role="tabpanel" aria-label="Stickers"></div>
+        <div id="stTrayImages" role="tabpanel" aria-label="My images" hidden>
+          <div class="st-tray" id="stImageTiles"></div>
+        </div>
+        <!-- your last words as tiles, or (first time / "+ new words") the box to type them -->
+        <div id="stTrayWords" role="tabpanel" aria-label="Your words" hidden>
+          <form class="st-words" id="stWordForm" autocomplete="off" hidden>
+            <input type="text" id="stWordInput" maxlength="16" placeholder="our first trip" aria-label="Your words">
+            <button type="submit" class="btn btn-primary">ADD</button>
+          </form>
+          <div class="st-tray" id="stWordTiles"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <input type="file" id="stFile" accept="image/*" class="sr-only" tabindex="-1" aria-hidden="true">
 
   <div class="welcome-overlay" id="welcomeOverlay" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
     <div class="welcome-card">
@@ -1130,7 +1231,7 @@
       </details>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.11</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.12</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -1368,7 +1469,8 @@
               <div class="chip-row" id="filterChips"></div>
             </div>
             <div class="tool-panel" data-panel="stickers" role="tabpanel" hidden>
-              <div class="chip-row" id="stickerChips"></div>
+              <button type="button" class="btn btn-secondary st-open" id="stOpenBtn">✋ PLACE &amp; EDIT STICKERS</button>
+              <div class="st-quick" id="stickerChips" role="group" aria-label="Add a sticker"></div>
               <label class="switch-row"><input type="checkbox" id="animToggle" checked><span>Moving stickers and decorations ✨</span></label>
               <p class="motion-note" id="motionNote" hidden>Your phone or browser has <b>Reduce motion</b> turned on, so movement starts switched off. Turn it on with the switch above — or turn off Reduce motion in your device's accessibility settings (iPhone: Settings → Accessibility → Motion · Android: Settings → Accessibility → Remove animations). Battery saver can also slow animations down.</p>
               <p class="motion-note" id="liteNote" hidden>This <span class="phone-only">phone</span><span class="desktop-only">computer</span> looked a little busy, so the moving previews now update less often to keep everything smooth. Your saved photo and video aren't affected ♡</p>
@@ -1576,7 +1678,8 @@
     resultMode: 'photo',
     colorId: null,
     filterId: 'original',
-    stickers: {},
+    stickers: {},      // (before v4.12) stickers at automatic spots — still drawn until you edit stickers
+    placed: [],        // (v4.12) stickers you placed yourself: see "FREE STICKERS"
     customText: '',
     showDate: true,
     dateLabel: 'date',
@@ -1704,10 +1807,19 @@
     r = clamp(r,0,255); g = clamp(g,0,255); b = clamp(b,0,255);
     return '#' + (0x1000000 + r*0x10000 + g*0x100 + b).toString(16).slice(1);
   }
-  function showToast(msg){
-    var t = $('toast'); t.textContent = msg; t.classList.add('show');
+  // action (optional): {label, fn} — a button in the toast, e.g. UNDO
+  function showToast(msg, action){
+    var t = $('toast'); t.textContent = msg;
+    if(action){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'toast-act'; b.textContent = action.label;
+      b.addEventListener('click', function(){ t.classList.remove('show', 'has-act'); action.fn(); });
+      t.appendChild(b);
+    }
+    t.classList.toggle('has-act', !!action);
+    t.classList.add('show');
     clearTimeout(showToast._t);
-    showToast._t = setTimeout(function(){ t.classList.remove('show'); }, 2600);
+    showToast._t = setTimeout(function(){ t.classList.remove('show', 'has-act'); }, action ? 5000 : 2600);
   }
   function isDarkHex(hex){
     var num = parseInt(hex.replace('#',''),16);
@@ -2024,18 +2136,9 @@
       filterRow.appendChild(b);
     });
 
-    var stickerRow = $('stickerChips');
-    STICKERS.forEach(function(s){
-      var b = document.createElement('button');
-      b.type = 'button'; b.className = 'chip';
-      b.textContent = s.label;
-      b.addEventListener('click', function(){
-        state.stickers[s.id] = !state.stickers[s.id];
-        b.classList.toggle('active', !!state.stickers[s.id]);
-        renderPreview();
-      });
-      stickerRow.appendChild(b);
-    });
+    // Stickers tab (v4.12): the button opens the sticker studio; the row below adds a sticker and opens it
+    // too (the row is drawn in the frame's colors by renderStickerQuick)
+    $('stOpenBtn').addEventListener('click', function(){ openStudio(st.last); });
 
     $('customText').addEventListener('input', function(){
       state.customText = this.value;
@@ -2122,6 +2225,7 @@
       showToast('Your photos are saved on this device for 24 hours ♡');
     }
     state.shots = [];
+    state.placed = [];   // placed stickers belong to those photos (they're in the saved session)
     $('app').setAttribute('data-view','landing');
   }
   function goToStep(step){
@@ -2132,6 +2236,7 @@
     if(state.currentStep === 'live' && step !== 'live') leaveLiveStep();
     stopAnim();
     cancelVideo();       // a video still being made on the result page isn't needed anymore
+    closeStudio(true);   // (e.g. your love pressed the heart for new photos while you were placing stickers)
     closeHoldSheet();
     closePrintSheet();
     state.currentStep = step;
@@ -2225,6 +2330,11 @@
     if(afterBack){ var fn = afterBack; afterBack = null; fn(); return; }   // our own step towards home
     if(!$('cfEditor').hidden){   // back while editing a custom frame just closes the editor
       closeCfEditor();
+      history.pushState(currentEntry(), '');
+      return;
+    }
+    if(st.open && $('confirmModal').hidden){   // back in the sticker studio = DONE (your stickers stay)
+      closeStudio();
       history.pushState(currentEntry(), '');
       return;
     }
@@ -2337,6 +2447,7 @@
     else if(!$('zoomModal').hidden) closeZoom();
     else if(!$('duoHelp').hidden) closeDuoHelp();
     else if(!$('poseSheet').hidden) closePoseSheet();
+    else if(st.open){ if(st.sel){ st.sel = null; syncStudioUI(); } else closeStudio(); }   // first let go of the chosen sticker
     else if(!$('cfEditor').hidden) closeCfEditor();
     else closeLandingCard();
   });
@@ -2447,6 +2558,7 @@
   function takeNewPhotos(){
     if(inRoom()){ goToStep('live'); return; }
     state.shots = [];
+    state.placed = [];   // stickers you placed were for the old photos
     clearSession();   // taking new photos: last time's are no longer offered
     goToStep('camera');
   }
@@ -3082,6 +3194,7 @@
         if(state.currentStep !== 'camera') return;
         if(!yes){ showToast(TAP_ + ' × on a photo to retake just that one ♡'); return; }
         state.shots = [];
+        state.placed = [];
         updateTray();
         $('takePhotoBtn').click();   // and start the countdown
       });
@@ -4020,6 +4133,7 @@
     if(!$('duoHelp').hidden) closeDuoHelp();
     if(!$('confirmModal').hidden) closeConfirm(null);
     state.shots = [];
+    state.placed = [];   // (both phones do this: each starts its new photos without stickers)
     live.roundIdx = 0;
     // your love may have picked another style or count: follow theirs
     live.mode = mode; live.rounds = rounds; live.roundsBy[mode] = rounds;
@@ -4776,7 +4890,7 @@
     kiss:drawKiss, cherry:drawCherry, crown:drawCrown, cloud:drawCloud
   };
   function hasStickers(){
-    return STICKERS.some(function(s){ return state.stickers[s.id]; });
+    return (state.placed && state.placed.length > 0) || STICKERS.some(function(s){ return state.stickers[s.id]; });
   }
   // anything on the strip that moves? (stickers, or a frame whose illustrations are animated)
   function hasMotion(){
@@ -4812,6 +4926,409 @@
       else STICKER_DRAWERS[s.kind](ctx, 0, 0, 30 + (idx%3)*6, accent, alpha);
       ctx.restore();
     });
+  }
+
+  /* ================= FREE STICKERS (v4.12) =================
+     Stickers you place yourself in the sticker studio (below): drag with a finger, pinch with two to resize
+     and turn. Each sticker belongs to a photo and remembers where it sits RELATIVE to that photo (in photo
+     widths), so it moves along when you pick another frame or layout. Placed stickers may cover faces —
+     you put them there (the owner's choice); a frame's own decorations still never do.
+     A placed sticker: {id, k, key, p, x, y, s, r, e, ph}
+       k, key  'st' = one of the STICKERS drawings (key = its id) · 'word' = your own words (key = the text)
+               · 'img' = one of your own pictures (key = the picture's id, see stickerImgs)
+       p       its photo (0 = the first) · x, y = its middle, from the photo's middle, in photo widths
+               (turning with the photo on polaroid frames) · s = its width in photo widths · r = its turn
+       e       a thin white edge · ph = where its gentle motion starts (so they don't all move in sync) */
+  var STUDIO_MAX = 30;                                      // stickers on one strip (keeps phones smooth)
+  var ST_MIN = 0.04, ST_MAX = 1.2, ST_MAX_TALL = 1.4;        // size limits, in photo widths
+  // each drawing's outline at size 1, measured once: [left, top, width, height] around its drawing point
+  var STICKER_BOX = {
+    heart:[-0.5, 0.005, 1, 1.195], star:[-0.995, -0.995, 1.99, 1.99], flower:[-1.105, -1.15, 2.21, 2.13],
+    bow:[-1, -0.6, 2, 1.2], sparkle:[-1.06, -1.06, 2.12, 2.12], kiss:[-1, -0.285, 2, 0.51],
+    cherry:[-0.65, -0.64, 1.3, 1.44], crown:[-1, -0.6, 2, 1.05], cloud:[-1.02, -0.795, 2.04, 1.415]
+  };
+  var stickerImgs = {};   // picture id → {blob, img (a canvas), w, h, alpha} — kept while the page is open
+  function stId(){ return (Date.now() % 1e8).toString(36) + Math.random().toString(36).slice(2, 6); }
+  function cleanWord(v){ return typeof v === 'string' ? v.replace(/\s+/g, ' ').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 16) : ''; }
+  // what a sticker draws: {kind, text}
+  function stickerDef(it){
+    if(it.k === 'word') return {kind:'word', text:it.key};
+    if(it.k === 'img') return {kind:'img'};
+    for(var i = 0; i < STICKERS.length; i++) if(STICKERS[i].id === it.key) return STICKERS[i];
+    return null;
+  }
+  // a word badge is as wide as its letters (the font drawWordBadge uses)
+  var badgeWidths = {}, badgeCtx = null;
+  function badgeWidth(text){
+    if(badgeWidths[text]) return badgeWidths[text];
+    badgeCtx = badgeCtx || document.createElement('canvas').getContext('2d');
+    badgeCtx.font = '700 22px Poppins, sans-serif';
+    return (badgeWidths[text] = badgeCtx.measureText(text).width + 26);
+  }
+  // (measured before Poppins arrived? measure again)
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ badgeWidths = {}; quickFor = null; });
+  // height ÷ width (0 = can't be drawn, e.g. a picture that isn't here)
+  function itemAspect(it){
+    if(it.k === 'img'){ var im = stickerImgs[it.key]; return im ? im.h / im.w : 0; }
+    var d = stickerDef(it);
+    if(!d) return 0;
+    if(d.kind === 'word') return 40 / badgeWidth(d.text);
+    var bx = STICKER_BOX[d.kind];
+    return bx ? bx[3] / bx[2] : 0;
+  }
+  // where a sticker sits on strip b (full-size units): {x, y (its middle), w, h, rot} — null if its photo
+  // isn't on this strip (fewer photos now) or its picture is missing
+  function itemGeom(it, b){
+    var r = b.rects[it.p], asp = itemAspect(it);
+    if(!r || !(asp > 0)) return null;
+    var rot = r.rot || 0, c = Math.cos(rot), s = Math.sin(rot), w = it.s * r.w;
+    return {x:r.cx + (it.x*c - it.y*s) * r.w, y:r.cy + (it.x*s + it.y*c) * r.w, w:w, h:w * asp, rot:rot + it.r};
+  }
+  // move a sticker's middle to strip point (x, y) — its middle never leaves the strip
+  function setItemCenter(it, b, x, y){
+    var r = b.rects[it.p], rot = r.rot || 0, c = Math.cos(rot), s = Math.sin(rot);
+    var dx = (clamp(x, 0, b.w) - r.cx) / r.w, dy = (clamp(y, 0, b.h) - r.cy) / r.w;
+    it.x = dx*c + dy*s; it.y = -dx*s + dy*c;
+  }
+  // up to about a whole photo wide (a tall picture: up to 1.4 photos tall)
+  function setItemWidth(it, b, w){
+    var asp = itemAspect(it) || 1;
+    it.s = clamp(w / b.rects[it.p].w, ST_MIN, Math.min(ST_MAX, ST_MAX_TALL / asp));
+  }
+  function setItemTurn(it, b, rot){
+    var r = rot - (b.rects[it.p].rot || 0);
+    r = Math.atan2(Math.sin(r), Math.cos(r));
+    it.r = Math.abs(r) < 0.06 ? 0 : r;   // nearly straight = straight
+  }
+  // the photo at strip point (x, y); strict: -1 when it's not on a photo (else the nearest one)
+  function photoAt(b, x, y, strict){
+    var best = strict ? -1 : 0, bd = Infinity;
+    for(var i = 0; i < b.rects.length; i++){
+      var r = b.rects[i], c = Math.cos(-(r.rot || 0)), s = Math.sin(-(r.rot || 0));
+      var dx = x - r.cx, dy = y - r.cy;
+      if(Math.abs(dx*c - dy*s) <= r.w/2 && Math.abs(dx*s + dy*c) <= r.h/2) return i;
+      if(!strict && dx*dx + dy*dy < bd){ bd = dx*dx + dy*dy; best = i; }
+    }
+    return best;
+  }
+
+  /* ---- drawing ---- */
+  // one sticker at g = {x, y, w, h, rot}
+  function paintSticker(ctx, it, g, color, alpha){
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(g.x, g.y); ctx.rotate(g.rot);
+    if(it.k === 'img'){
+      var im = stickerImgs[it.key];
+      if(im) ctx.drawImage(im.img, -g.w/2, -g.h/2, g.w, g.h);
+    } else {
+      var d = stickerDef(it);
+      if(d && d.kind === 'word'){
+        var k = g.w / badgeWidth(d.text);
+        ctx.scale(k, k);
+        drawWordBadge(ctx, 0, 0, d.text, color, '#fff');
+      } else if(d && STICKER_BOX[d.kind]){
+        var bx = STICKER_BOX[d.kind], S = g.w / bx[2];
+        STICKER_DRAWERS[d.kind](ctx, -(bx[0] + bx[2]/2) * S, -(bx[1] + bx[3]/2) * S, S, color, alpha);
+      }
+    }
+    ctx.restore();
+  }
+  /* the thin white edge (button "edge"): the sticker drawn once, big, with a white copy of its outline
+     stamped all around it — a canvas can't outline any shape, this works for words and pictures too */
+  var edgeSprites = {}, edgeCount = 0;
+  function edgeSprite(it, color){
+    var id = it.k + '|' + it.key + '|' + (it.k === 'img' ? '' : color);
+    if(edgeSprites[id]) return edgeSprites[id];
+    if(edgeCount > 40){ edgeSprites = {}; edgeCount = 0; }   // many colors tried: start over
+    var asp = itemAspect(it), w = asp > 1 ? 480 / asp : 480, h = w * asp;
+    var pad = Math.round(Math.max(w, h) * 0.02) + 4;
+    var c = document.createElement('canvas');
+    c.width = Math.ceil(w + pad*2); c.height = Math.ceil(h + pad*2);
+    paintSticker(c.getContext('2d'), it, {x:c.width/2, y:c.height/2, w:w, h:h, rot:0}, color, 1);
+    var sil = document.createElement('canvas');
+    sil.width = c.width; sil.height = c.height;
+    var sx = sil.getContext('2d');
+    sx.drawImage(c, 0, 0);
+    sx.globalCompositeOperation = 'source-in'; sx.fillStyle = '#FFFFFF'; sx.fillRect(0, 0, sil.width, sil.height);
+    var out = document.createElement('canvas');
+    out.width = c.width; out.height = c.height;
+    var o = out.getContext('2d'), rr = pad - 2, i, a;
+    for(i = 0; i < 16; i++){ a = i * Math.PI / 8; o.drawImage(sil, Math.cos(a) * rr, Math.sin(a) * rr); }
+    for(i = 0; i < 8; i++){ a = i * Math.PI / 4; o.drawImage(sil, Math.cos(a) * rr / 2, Math.sin(a) * rr / 2); }
+    o.drawImage(c, 0, 0);
+    out.innerW = w;
+    edgeCount++;
+    return (edgeSprites[id] = out);
+  }
+  function paintEdged(ctx, it, g, color, alpha){
+    var sp = edgeSprite(it, color), k = g.w / sp.innerW;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(g.x, g.y); ctx.rotate(g.rot);
+    ctx.drawImage(sp, -sp.width * k / 2, -sp.height * k / 2, sp.width * k, sp.height * k);
+    ctx.restore();
+  }
+  // every placed sticker on strip b. t = seconds into the loop; still = the id of the one you're holding
+  function drawPlaced(ctx, b, t, moving, still){
+    var list = state.placed;
+    if(!list || !list.length) return;
+    list.forEach(function(it){
+      var g = itemGeom(it, b);
+      if(!g) return;
+      var alpha = 1;
+      if(moving && it.id !== still){
+        var bob, rot, k = 1;
+        if(it.k === 'img'){   // your own pictures only sway gently (a person shouldn't bounce)
+          bob = wave(t, 1, it.ph) * 5; rot = wave(t, 1, it.ph + 1) * 0.035 * Math.min(1, 300 / g.w);
+        } else {              // the motions stickers always had — big ones move less
+          var d = stickerDef(it), kind = d ? d.kind : '', damp = Math.min(1, 160 / g.w);
+          bob = wave(t, 2, it.ph) * 8; rot = wave(t, 1, it.ph) * 0.18 * damp; k = 1 + wave(t, 3, it.ph) * 0.06 * damp;
+          if(kind === 'heart') k += Math.max(0, wave(t, 3, it.ph)) * 0.15 * damp;             // heartbeat
+          if(kind === 'sparkle') alpha = 0.5 + 0.45 * (wave(t, 3, it.ph) * 0.5 + 0.5);         // twinkle
+          if(kind === 'star') rot = Math.PI * 2 * t / LOOP;                                    // one spin per loop
+        }
+        g = {x:g.x, y:g.y + bob, w:g.w * k, h:g.h * k, rot:g.rot + rot};
+      }
+      if(it.e) paintEdged(ctx, it, g, b.accent, alpha);
+      else paintSticker(ctx, it, g, b.accent, alpha);
+    });
+  }
+
+  /* ---- your own pictures ---- */
+  // any picture → a PNG at most 700px, see-through margins cut off (so it sits exactly where you put it).
+  // Pictures from your love are re-drawn this way too: what we keep is always a clean PNG we made
+  function prepareStickerImage(file){
+    return loadImage(file).then(function(src){
+      var k = Math.min(1, 700 / Math.max(src.width, src.height));
+      var c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(src.width * k)); c.height = Math.max(1, Math.round(src.height * k));
+      var ctx = c.getContext('2d');
+      ctx.drawImage(src, 0, 0, c.width, c.height);
+      freeImage(src);
+      var box = alphaBounds(ctx, c.width, c.height), out = c;
+      if(!box) throw new Error('empty');
+      if(box.w < c.width || box.h < c.height){
+        out = document.createElement('canvas');
+        out.width = box.w; out.height = box.h;
+        out.getContext('2d').drawImage(c, box.x, box.y, box.w, box.h, 0, 0, box.w, box.h);
+      }
+      return new Promise(function(resolve, reject){ out.toBlob(function(b){ b ? resolve(b) : reject(new Error('png')); }, 'image/png'); });
+    });
+  }
+  function alphaBounds(ctx, w, h){
+    var d = ctx.getImageData(0, 0, w, h).data, minX = w, minY = h, maxX = -1, maxY = -1;
+    for(var y = 0; y < h; y++){
+      for(var x = 0, i = y * w * 4 + 3; x < w; x++, i += 4){
+        if(d[i] > 12){ if(x < minX) minX = x; if(x > maxX) maxX = x; if(y < minY) minY = y; if(y > maxY) maxY = y; }
+      }
+    }
+    return maxX < 0 ? null : {x:minX, y:minY, w:maxX - minX + 1, h:maxY - minY + 1};
+  }
+  function loadStickerImg(id, blob){
+    if(stickerImgs[id]) return Promise.resolve(stickerImgs[id]);
+    return loadImage(blob).then(function(src){
+      var c = document.createElement('canvas');
+      c.width = src.width; c.height = src.height;
+      c.getContext('2d').drawImage(src, 0, 0);
+      freeImage(src);
+      return (stickerImgs[id] = {blob:blob, img:c, w:c.width, h:c.height, alpha:null});
+    });
+  }
+  /* "My images": pictures you add in the studio stay on this device for next time (up to 24), in their own
+     little database — separate from frames and photos, so a problem here can't touch those */
+  var MY_IMAGES_MAX = 24;
+  var myImages = {list:null, loading:null};   // list: [{id, blob, created}], oldest first
+  var stickerDbPromise = null;
+  function stickerDb(){
+    if(stickerDbPromise) return stickerDbPromise;
+    stickerDbPromise = new Promise(function(resolve){
+      var timer = setTimeout(function(){ resolve(null); }, 3000);   // a stuck database never blocks the studio
+      try{
+        var req = indexedDB.open('our-little-booth-stickers', 1);
+        req.onupgradeneeded = function(){ req.result.createObjectStore('images', {keyPath:'id'}); };
+        req.onsuccess = function(){ clearTimeout(timer); resolve(req.result); };
+        req.onerror = req.onblocked = function(){ clearTimeout(timer); resolve(null); };
+      }catch(e){ clearTimeout(timer); resolve(null); }   // private windows: pictures last until the page closes
+    });
+    return stickerDbPromise;
+  }
+  // null = didn't work (no database)
+  function stickerDbRun(mode, work){
+    return stickerDb().then(function(db){
+      if(!db) return null;
+      return new Promise(function(resolve){
+        try{
+          var tx = db.transaction('images', mode), req = work(tx.objectStore('images'));
+          tx.oncomplete = function(){ resolve(req && req.result !== undefined ? req.result : true); };
+          tx.onerror = tx.onabort = function(){ resolve(null); };
+        }catch(e){ resolve(null); }
+      });
+    });
+  }
+  function loadMyImages(){
+    if(myImages.list) return Promise.resolve(myImages.list);
+    if(myImages.loading) return myImages.loading;
+    myImages.loading = stickerDbRun('readonly', function(store){ return store.getAll(); }).then(function(recs){
+      myImages.list = (Array.isArray(recs) ? recs : []).filter(function(r){
+        return r && typeof r.id === 'string' && /^[a-z0-9]{4,32}$/.test(r.id) && r.blob instanceof Blob;
+      }).sort(function(a, b){ return (a.created || 0) - (b.created || 0); });
+      myImages.loading = null;
+      syncBackupRow();
+      return myImages.list;
+    });
+    return myImages.loading;
+  }
+  function putMyImage(rec){
+    myImages.list.push(rec);
+    syncBackupRow();
+    return stickerDbRun('readwrite', function(store){ return store.put(rec); });
+  }
+  function addMyImage(file){
+    return loadMyImages().then(function(list){
+      if(list.length >= MY_IMAGES_MAX) throw new Error('full');
+      return prepareStickerImage(file);
+    }).then(function(blob){
+      var rec = {id:cfUid(), blob:blob, created:Date.now()};
+      return loadStickerImg(rec.id, blob).then(function(){ return putMyImage(rec); }).then(function(res){
+        if(res === null) showToast("Added for now — this browser can't keep it after you close the page");
+        else keepStorage();
+        return rec;
+      });
+    });
+  }
+  // (a sticker already on your strip keeps its picture until the page closes)
+  function removeMyImage(id){
+    myImages.list = (myImages.list || []).filter(function(r){ return r.id !== id; });
+    syncBackupRow();
+    return stickerDbRun('readwrite', function(store){ return store.delete(id); });
+  }
+
+  /* ---- stickers from before v4.12 (automatic spots) become placed ones, at the same spots ---- */
+  var LEGACY_SPOTS = [
+    {x:0.14,y:0.10},{x:0.86,y:0.10},{x:0.14,y:0.9},{x:0.86,y:0.9},
+    {x:0.08,y:0.5},{x:0.92,y:0.5},{x:0.08,y:0.3},{x:0.92,y:0.7},
+    {x:0.92,y:0.3},{x:0.08,y:0.7},{x:0.5,y:0.06},{x:0.5,y:0.94}
+  ];
+  function convertLegacyStickers(b){
+    var picks = STICKERS.filter(function(s){ return state.stickers[s.id]; });
+    if(!picks.length || !b.rects.length) return false;
+    picks.forEach(function(s, idx){
+      var pos = LEGACY_SPOTS[idx % LEGACY_SPOTS.length], size = 30 + (idx % 3) * 6;
+      var x = pos.x * b.w, y = pos.y * b.h, w;
+      if(s.kind === 'word') w = badgeWidth(s.text);
+      else {   // those were drawn from their drawing point; a placed sticker is placed by its middle
+        var bx = STICKER_BOX[s.kind];
+        w = bx[2] * size; x += (bx[0] + bx[2]/2) * size; y += (bx[1] + bx[3]/2) * size;
+      }
+      var it = {id:stId(), k:'st', key:s.id, p:photoAt(b, x, y), x:0, y:0, s:ST_MIN, r:0, e:false, ph:idx * 1.3};
+      setItemCenter(it, b, x, y);
+      setItemWidth(it, b, w);
+      it.r = -(b.rects[it.p].rot || 0);   // they stood straight, also next to a tilted polaroid photo
+      state.placed.push(it);
+    });
+    state.stickers = {};
+    return true;
+  }
+
+  /* ---- in designs (auto-save, Send my design, Design together) ---- */
+  function copyPlaced(list){
+    return (list || []).map(function(it){ return {id:it.id, k:it.k, key:it.key, p:it.p, x:it.x, y:it.y, s:it.s, r:it.r, e:it.e, ph:it.ph}; });
+  }
+  // everything checked: known kinds and drawings, short words, pictures we have, sensible numbers
+  function cleanPlaced(raw){
+    if(!Array.isArray(raw)) return [];
+    var out = [], seen = {};
+    function num(v, a, b, dflt){ return typeof v === 'number' && isFinite(v) ? clamp(v, a, b) : dflt; }
+    raw.slice(0, STUDIO_MAX).forEach(function(it){
+      if(!it || typeof it !== 'object') return;
+      var k = it.k, key = it.key;
+      if(k === 'st'){ if(!STICKERS.some(function(s){ return s.id === key; })) return; }
+      else if(k === 'word'){ key = cleanWord(key); if(!key) return; }
+      else if(k === 'img'){ if(typeof key !== 'string' || !/^[a-z0-9]{4,32}$/.test(key) || !stickerImgs[key]) return; }
+      else return;
+      var id = typeof it.id === 'string' && /^[a-z0-9]{1,24}$/.test(it.id) && !seen[it.id] ? it.id : stId();
+      seen[id] = true;
+      out.push({id:id, k:k, key:key, p:Math.round(num(it.p, 0, MAX_SHOTS - 1, 0)), x:num(it.x, -3, 3, 0), y:num(it.y, -3, 3, 0),
+                s:num(it.s, ST_MIN, ST_MAX, 0.23), r:num(it.r, -7, 7, 0), e:it.e === true, ph:num(it.ph, 0, 7, 0)});
+    });
+    return out;
+  }
+  // In a Stacked strip each phone puts "me" first, so photo 1 isn't the same photo on both phones. A sticker
+  // travels as "the n-th photo of me / you / both of us", and the other phone finds that photo again
+  function shotWho(c){ var f = c && c.dataset && c.dataset.from; return f === 'you' || f === 'duo' ? f : 'me'; }
+  function placedToPartner(list){
+    return copyPlaced(list).map(function(it){
+      var c = state.shots[it.p];
+      if(c){
+        var who = shotWho(c), n = 0;
+        for(var i = 0; i < it.p; i++) if(shotWho(state.shots[i]) === who) n++;
+        it.w = who; it.n = n;
+      }
+      return it;
+    });
+  }
+  function placedFromPartner(list){
+    if(!Array.isArray(list)) return list;
+    return list.map(function(it){
+      if(!it || typeof it !== 'object' || ['me', 'you', 'duo'].indexOf(it.w) === -1 || typeof it.n !== 'number') return it;
+      var who = it.w === 'me' ? 'you' : it.w === 'you' ? 'me' : 'duo', n = 0, out = {};
+      Object.keys(it).forEach(function(k){ out[k] = it[k]; });
+      for(var i = 0; i < state.shots.length; i++){
+        if(shotWho(state.shots[i]) !== who) continue;
+        if(n++ === it.n){ out.p = i; break; }
+      }
+      return out;
+    });
+  }
+  // a design sent to your love: the same, with the stickers' photos described their way
+  function partnerDesign(d){
+    var out = {};
+    Object.keys(d).forEach(function(k){ out[k] = d[k]; });
+    out.placed = placedToPartner(d.placed);
+    return out;
+  }
+  function usedImgIds(list){
+    var ids = [];
+    (list || []).forEach(function(it){ if(it.k === 'img' && stickerImgs[it.key] && ids.indexOf(it.key) === -1) ids.push(it.key); });
+    return ids;
+  }
+  function packStickerImgs(ids){
+    return Promise.all(ids.map(function(id){
+      return stickerImgs[id].blob.arrayBuffer().then(function(buf){ return {id:id, buf:buf}; });
+    }));
+  }
+  // pictures that came with a design from your love: checked, re-drawn by us, kept only while the page is open
+  function unpackStickerImgs(arr){
+    if(!Array.isArray(arr) || !arr.length) return Promise.resolve();
+    var total = 0;
+    return arr.slice(0, 12).reduce(function(chain, x){
+      return chain.then(function(){
+        var id = x && typeof x.id === 'string' && /^[a-z0-9]{4,32}$/.test(x.id) ? x.id : null;
+        var bytes = x && binaryOf(x.buf);
+        if(id && stickerImgs[id]){ together.sentImgs[id] = true; return; }   // (your love has it: no need to send it back)
+        if(!id || !bytes || bytes.byteLength > MAX_FRAME_IMG) return;
+        total += bytes.byteLength;
+        if(total > MAX_FRAME_TOTAL) return;
+        return prepareStickerImage(new Blob([bytes])).then(function(blob){
+          together.sentImgs[id] = true;
+          return loadStickerImg(id, blob);
+        }).catch(function(){});
+      });
+    }, Promise.resolve());
+  }
+  // auto-save: the pictures your stickers use travel inside the saved session
+  function sessionStickerImgs(list){
+    return usedImgIds(list).map(function(id){ return {id:id, blob:stickerImgs[id].blob}; });
+  }
+  function loadSessionStickerImgs(rec){
+    var arr = rec && Array.isArray(rec.stickerImgs) ? rec.stickerImgs : [];
+    return arr.slice(0, STUDIO_MAX).reduce(function(chain, x){
+      return chain.then(function(){
+        if(!x || typeof x.id !== 'string' || !/^[a-z0-9]{4,32}$/.test(x.id) || !(x.blob instanceof Blob)) return;
+        return loadStickerImg(x.id, x.blob).catch(function(){});
+      });
+    }, Promise.resolve());
   }
 
   /* ================= ILLUSTRATED THEMES =================
@@ -5963,11 +6480,25 @@
       btn.addEventListener('click', function(){ cf.sel = i; renderCf(); });
       box.appendChild(btn);
     });
-    var add = document.createElement('button');
-    add.type = 'button'; add.className = 'cf-img cf-add'; add.textContent = '+';
-    add.setAttribute('aria-label', 'Add an image from your gallery');
-    add.addEventListener('click', function(){ $('cfFile').click(); });
-    box.appendChild(add);
+    // (v4.12) one image per spot, so at most 6: the + goes away when every spot is used
+    var full = d.items.length >= CUSTOM_POSITIONS.length;
+    if(!full){
+      var add = document.createElement('button');
+      add.type = 'button'; add.className = 'cf-img cf-add'; add.textContent = '+';
+      add.setAttribute('aria-label', 'Add an image from your gallery');
+      add.addEventListener('click', function(){ $('cfFile').click(); });
+      box.appendChild(add);
+    }
+    $('cfFullNote').hidden = !full;
+    // frames from before v4.12 may have two images in one spot (only the top one shows): say which
+    var doubled = CUSTOM_POSITIONS.filter(function(p){
+      return d.items.filter(function(x){ return x.pos === p.id; }).length > 1;
+    });
+    $('cfDoubleNote').hidden = !doubled.length;
+    if(doubled.length){
+      $('cfDoubleNote').textContent = 'Two images share ' + doubled.map(function(p){ return p.label; }).join(' and ') +
+        ' — only the top one shows. ' + (full ? 'Remove one of them.' : 'Move one to a free spot ♡');
+    }
     // controls for the selected image
     var it = d.items[cf.sel];
     $('cfItemControls').hidden = !it;
@@ -5975,10 +6506,18 @@
       var row = $('cfPositions');
       row.innerHTML = '';
       CUSTOM_POSITIONS.forEach(function(p){
+        // a spot another image uses: picking it swaps the two images
+        var other = d.items.filter(function(x){ return x !== it && x.pos === p.id; })[0];
         var c = document.createElement('button');
         c.type = 'button'; c.className = 'chip' + (p.id === it.pos ? ' active' : '');
-        c.textContent = p.label;
-        c.addEventListener('click', function(){ it.pos = p.id; renderCf(); });
+        c.textContent = p.label + (other && p.id !== it.pos ? ' ●' : '');
+        if(other && p.id !== it.pos) c.setAttribute('aria-label', p.label + ' (used — swaps the two images)');
+        c.addEventListener('click', function(){
+          if(p.id === it.pos) return;
+          if(other) other.pos = it.pos;
+          it.pos = p.id;
+          renderCf();
+        });
         row.appendChild(c);
       });
       $('cfSize').value = it.size;
@@ -6026,8 +6565,14 @@
     var file = this.files && this.files[0];
     this.value = '';
     if(!file) return;
+    if(cf.draft.items.length >= CUSTOM_POSITIONS.length){ showToast('All 6 spots are used ♡ Remove one to add another'); return; }
     prepareImage(file).then(function(blob){
-      var it = {id:cfUid(), pos:cf.pending.shift() || 'br', size:42, v:3, blob:blob};   // v:3 = today's scale (42% = 70% before v4.11)
+      // a free spot: the quick start's next one, else bottom right, else the first free one (v4.12: one per spot)
+      function free(pos){ return pos && !cf.draft.items.some(function(x){ return x.pos === pos; }); }
+      var want = cf.pending.shift(), pos = free(want) ? want : free('br') ? 'br' :
+        (CUSTOM_POSITIONS.filter(function(p){ return free(p.id); })[0] || {}).id;
+      if(!pos){ showToast('All 6 spots are used ♡ Remove one to add another'); return; }
+      var it = {id:cfUid(), pos:pos, size:42, v:3, blob:blob};   // v:3 = today's scale (42% = 70% before v4.11)
       return loadImage(blob).then(function(img){
         customImages[it.id] = img;
         cf.draft.items.push(it);
@@ -6101,10 +6646,16 @@
   var BACKUP_KIND = 'our-little-photo-booth/frames';
   var MAX_BACKUP_FILE = 80*1024*1024, MAX_BACKUP_FRAMES = 60;
   function hasCustomFrames(){ return TEMPLATES.some(function(t){ return t.custom; }); }
+  // (v4.12) the same file also keeps your "My images" (the sticker studio's pictures)
+  // (also called while the page is still starting, before FREE STICKERS has set myImages up)
+  function hasMyImages(){ return !!(myImages && myImages.list && myImages.list.length); }
   function syncBackupRow(){
     var on = state.frameTab === 'custom';
     Array.prototype.forEach.call(document.querySelectorAll('.js-cf-backup'), function(row){ row.hidden = !on; });
-    Array.prototype.forEach.call(document.querySelectorAll('.js-cf-export'), function(b){ b.hidden = !hasCustomFrames(); });
+    Array.prototype.forEach.call(document.querySelectorAll('.js-cf-export'), function(b){
+      b.hidden = !hasCustomFrames() && !hasMyImages();
+      b.textContent = hasMyImages() ? '⬇ BACKUP FRAMES & IMAGES' : '⬇ BACKUP MY FRAMES';
+    });
   }
   function blobToDataUrl(blob){
     return new Promise(function(resolve, reject){
@@ -6134,16 +6685,21 @@
     btn.addEventListener('click', function(){
       if(btn.disabled) return;
       btn.disabled = true;
-      savedFrameRecs().then(function(recs){
-        if(!recs.length){ showToast('No saved frames to back up yet ♡'); return; }
+      Promise.all([savedFrameRecs(), loadMyImages()]).then(function(res){
+        var recs = res[0], pics = res[1];
+        if(!recs.length && !pics.length){ showToast('No saved frames to back up yet ♡'); return; }
         recs.sort(function(a, b){ return a.created - b.created; });
-        return Promise.all(recs.map(function(rec){
+        return Promise.all([Promise.all(recs.map(function(rec){
           return Promise.all(rec.items.map(function(it){ return blobToDataUrl(it.blob); })).then(function(urls){
             return {id:rec.id, srcId:rec.srcId, name:rec.name, baseId:rec.baseId, colorId:rec.colorId, wiggle:!!rec.wiggle,
                     created:rec.created, items:rec.items.map(function(it, i){ return {pos:it.pos, size:it.size, v:it.v, png:urls[i]}; })};
           });
-        })).then(function(frames){
-          var file = JSON.stringify({kind:BACKUP_KIND, v:1, saved:new Date().toISOString(), frames:frames});
+        })), Promise.all(pics.map(function(p){
+          return blobToDataUrl(p.blob).then(function(url){ return {id:p.id, created:p.created, png:url}; });
+        }))]).then(function(parts){
+          var frames = parts[0];
+          // (older pages read only `frames`; `images` = My images, from v4.12)
+          var file = JSON.stringify({kind:BACKUP_KIND, v:1, saved:new Date().toISOString(), frames:frames, images:parts[1]});
           // a download on every device (on iPhones it goes to the Files app — the right place for a backup)
           saveBlob(new Blob([file], {type:'application/json'}), 'our-little-frames-' + todayIso() + '.json');
         });
@@ -6189,6 +6745,26 @@
       throw err;
     });
   }
+  // My images from a backup file: each checked and re-drawn by us; ones already here are skipped
+  function restoreMyImages(arr){
+    var out = {added:0, had:0, bad:0, full:false};
+    if(!Array.isArray(arr) || !arr.length) return Promise.resolve(out);
+    return loadMyImages().then(function(list){
+      return arr.slice(0, MY_IMAGES_MAX * 2).reduce(function(chain, x){
+        return chain.then(function(){
+          var id = x && typeof x.id === 'string' && /^[a-z0-9]{4,32}$/.test(x.id) ? x.id : null;
+          if(id && list.some(function(r){ return r.id === id; })){ out.had++; return; }
+          if(list.length >= MY_IMAGES_MAX){ out.full = true; return; }
+          var bytes = x && dataUrlBytes(x.png);
+          if(!id || !bytes){ out.bad++; return; }
+          return prepareStickerImage(new Blob([bytes])).then(function(blob){
+            var rec = {id:id, blob:blob, created:typeof x.created === 'number' && isFinite(x.created) ? x.created : Date.now()};
+            return loadStickerImg(id, blob).then(function(){ out.added++; return putMyImage(rec); });
+          }, function(){ out.bad++; });
+        });
+      }, Promise.resolve());
+    }).then(function(){ return out; }, function(){ return out; });
+  }
   Array.prototype.forEach.call(document.querySelectorAll('.js-cf-import'), function(btn){
     btn.addEventListener('click', function(){ $('cfImportInput').value = ''; $('cfImportInput').click(); });
   });
@@ -6222,17 +6798,636 @@
           }, function(){ bad++; });
         });
       }, Promise.resolve()).then(function(){
-        if(added) keepStorage();
+        return restoreMyImages(data.images);
+      }).then(function(pics){
+        if(added || pics.added) keepStorage();
         showFrameTab('custom');
-        var msg = added ? 'Restored ' + added + (added === 1 ? ' frame' : ' frames') + ' ♡' : 'Nothing new to restore ♡';
-        if(had) msg += ' (' + had + ' already here)';
-        if(bad) msg += ' · ' + bad + " couldn't be opened";
+        var parts = [];
+        if(added) parts.push(added + (added === 1 ? ' frame' : ' frames'));
+        if(pics.added) parts.push(pics.added + (pics.added === 1 ? ' picture' : ' pictures'));
+        var msg = parts.length ? 'Restored ' + parts.join(' and ') + ' ♡' : 'Nothing new to restore ♡';
+        if(had + pics.had) msg += ' (' + (had + pics.had) + ' already here)';
+        if(bad + pics.bad) msg += ' · ' + (bad + pics.bad) + " couldn't be opened";
+        if(pics.full) msg += ' · My images is full (' + MY_IMAGES_MAX + ')';
         showToast(msg);
       });
     }).catch(function(){ showToast("Couldn't read that file. Please try again ♡"); });
   });
 
   var customFramesReady = loadCustomFrames();   // the "continue your last photos" check waits for these
+  setTimeout(loadMyImages, 1500);   // (so the backup button knows about My images too)
+
+  /* ================= STICKER STUDIO (v4.12) =================
+     A full-screen page over the editor: one photo big (with the frame around it — the first photo shows
+     the title, the last one the date), ‹ › for the other photos. One finger drags a sticker, two fingers
+     resize and turn it (the ↻ corner does both with one finger or a mouse; the mouse wheel resizes, with
+     Shift it turns). Everything fits on one phone screen: the photo shrinks on short screens.
+     The editor's preview pauses while the studio is open; DONE (or back) returns to it. */
+  var st = {open:false, i:0, last:0, sel:null, cw:1, ch:1, crops:[], bg:null, raf:0, dirty:true, tray:'shapes', manage:false, wheelT:0};
+  var FINE_POINTER = !!(window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches);
+  var STUDIO_WIDE = window.matchMedia ? matchMedia('(min-width: 900px) and (min-height: 521px), (orientation: landscape) and (max-height: 520px) and (min-width: 600px)') : null;   // = the CSS
+  var stPtr = {pts:{}, mode:null, grab:null, pinch:null, down:null, moved:false};
+  function selItem(){
+    if(!st.sel) return null;
+    for(var i = 0; i < state.placed.length; i++) if(state.placed[i].id === st.sel) return state.placed[i];
+    return null;
+  }
+  // i: the photo to show · add (optional): {k, key} — a sticker to add right away
+  function openStudio(i, add){
+    if(state.currentStep !== 'customize') return;
+    buildBase();
+    if(!base.rects.length) return;
+    var converted = convertLegacyStickers(base);
+    closeZoom();
+    stopAnim();   // the editor's preview waits behind the studio
+    st.open = true; st.sel = null; st.manage = false;
+    st.i = st.last = clamp(i || 0, 0, base.rects.length - 1);
+    stPtr.pts = {}; stPtr.mode = null;
+    $('stEditor').hidden = false;
+    $('stEditor').scrollTop = 0;
+    document.body.style.overflow = 'hidden';
+    renderStudioTrays();
+    showStudioTray(st.tray);
+    studioLayout();
+    if(add) addSticker(add.k, add.key);
+    else if(converted) stickersChanged();
+    syncStudioUI();
+    startStudioLoop();
+  }
+  // quiet: you're leaving the editor anyway (goToStep draws the next page)
+  function closeStudio(quiet){
+    if(!st.open) return;
+    st.open = false; st.sel = null; st.bg = null; st.manage = false;
+    stPtr.pts = {}; stPtr.mode = null;
+    cancelAnimationFrame(st.raf); st.raf = 0;
+    clearTimeout(st.wheelT);
+    $('stEditor').hidden = true;
+    document.body.style.overflow = '';
+    if(!quiet && state.currentStep === 'customize') renderPreview();
+  }
+  $('stDone').addEventListener('click', function(){ closeStudio(); });
+  $('stPrev').addEventListener('click', function(){ studioGo(st.i - 1); });
+  $('stNext').addEventListener('click', function(){ studioGo(st.i + 1); });
+  function studioGo(i){
+    var n = base.rects.length;
+    st.i = st.last = (i + n) % n;
+    st.sel = null; st.bg = null;
+    syncStudioUI();
+  }
+  // what each photo's view shows (strip units): a bit of frame around the photo; the first row also the
+  // title above, the last row the date below
+  function studioLayout(){
+    var b = base, n = b.rects.length;
+    st.i = clamp(st.i, 0, n - 1);
+    var boxes = b.rects.map(function(r){
+      var c = Math.abs(Math.cos(r.rot || 0)), s = Math.abs(Math.sin(r.rot || 0)), w = c*r.w + s*r.h, h = s*r.w + c*r.h;
+      return {l:r.cx - w/2, t:r.cy - h/2, r:r.cx + w/2, b:r.cy + h/2, w:w, h:h};
+    });
+    var m = b.rects[0].w * 0.14;
+    var bw = Math.max.apply(null, boxes.map(function(x){ return x.w; }));
+    var bh = Math.max.apply(null, boxes.map(function(x){ return x.h; }));
+    st.cw = Math.min(b.w, bw + 2*m);
+    st.ch = Math.min(b.h, Math.max(bh + 2*m, st.cw * 1.15));
+    st.crops = boxes.map(function(x, i){
+      var above = boxes.some(function(y, j){ return j !== i && y.b <= x.t + 2; });
+      var below = boxes.some(function(y, j){ return j !== i && y.t >= x.b - 2; });
+      var top;
+      if(!above && below) top = x.b + m/2 - st.ch;          // first row: as much of the title as fits
+      else if(above && !below) top = x.t - m/2;              // last row: as much of the date as fits
+      else top = (x.t + x.b)/2 - st.ch/2;
+      return {left:clamp((x.l + x.r)/2 - st.cw/2, 0, b.w - st.cw), top:clamp(top, 0, b.h - st.ch)};
+    });
+    st.bg = null;
+    fitStudio();
+  }
+  function fitStudio(){
+    if(!st.open) return;
+    var cv = $('stCanvas'), inner = document.querySelector('.st-inner');
+    var avail = $('stStage').clientWidth - 8;
+    // laptops: the tools sit beside the photo, so only the top row is above it; phones: everything else
+    var wide = STUDIO_WIDE && STUDIO_WIDE.matches;
+    var other = wide ? document.querySelector('.st-head').offsetHeight + 30 : inner.offsetHeight - cv.offsetHeight;
+    var byHeight = (window.innerHeight - other - 6) * st.cw / st.ch;
+    var w = Math.round(Math.min(avail, wide ? 640 : 460, Math.max(160, byHeight)));
+    var h = Math.round(w * st.ch / st.cw), dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.style.width = w + 'px'; cv.style.height = h + 'px';
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    st.dirty = true;
+  }
+  window.addEventListener('resize', function(){
+    if(!st.open) return;
+    clearTimeout(fitStudio.t);
+    fitStudio.t = setTimeout(fitStudio, 150);
+  });
+  // the photo's view without stickers (the frame's decorations standing still), made once per photo
+  function studioBg(){
+    var c = st.crops[st.i], cv = document.createElement('canvas');
+    cv.width = Math.round(st.cw); cv.height = Math.round(st.ch);
+    var ctx = cv.getContext('2d');
+    ctx.translate(-c.left, -c.top);
+    ctx.drawImage(base.canvas, 0, 0);
+    drawDecorLayer(ctx, base, 0, false);
+    return cv;
+  }
+  function paintStudio(t){
+    if(!st.bg) st.bg = studioBg();
+    var cv = $('stCanvas'), ctx = cv.getContext('2d'), k = cv.width / st.cw, c = st.crops[st.i];
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.setTransform(k, 0, 0, k, 0, 0);
+    ctx.drawImage(st.bg, 0, 0);
+    ctx.setTransform(k, 0, 0, k, -c.left * k, -c.top * k);
+    drawPlaced(ctx, base, t, state.animated, st.sel);
+    drawLabels(ctx, base);
+    var it = selItem();
+    if(it) drawSelection(ctx, it, st.cw / (cv.clientWidth || 1));
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+  // the chosen sticker: a dashed box with ✕ (remove) and ↻ (resize and turn); u = strip units per screen pixel
+  function drawSelection(ctx, it, u){
+    var g = itemGeom(it, base);
+    if(!g) return;
+    var pad = 6 * u, hw = g.w/2 + pad, hh = g.h/2 + pad, h = handleSpots(g, u);
+    ctx.save();
+    ctx.translate(g.x, g.y); ctx.rotate(g.rot);
+    ctx.lineWidth = 3.5 * u; ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.strokeRect(-hw, -hh, hw*2, hh*2);
+    ctx.setLineDash([7 * u, 5 * u]); ctx.lineWidth = 1.8 * u; ctx.strokeStyle = '#3B1626'; ctx.strokeRect(-hw, -hh, hw*2, hh*2);
+    ctx.setLineDash([]);
+    studioHandle(ctx, h.x[0], h.x[1], 'x', u);
+    studioHandle(ctx, h.r[0], h.r[1], 'r', u);
+    ctx.restore();
+  }
+  // ✕ sits at the top-right corner and ↻ at the bottom-right — unless that corner is outside the view (a big
+  // picture at the strip's edge): then they move to a corner you can reach. In the sticker's own frame
+  function handleSpots(g, u){
+    var pad = 6 * u, hw = g.w/2 + pad, hh = g.h/2 + pad, c = st.crops[st.i], m = 16 * u;
+    var co = Math.cos(g.rot), si = Math.sin(g.rot);
+    function inView(p){
+      var x = g.x + p[0]*co - p[1]*si, y = g.y + p[0]*si + p[1]*co;
+      return x >= c.left + m && x <= c.left + st.cw - m && y >= c.top + m && y <= c.top + st.ch - m;
+    }
+    var xs = [[hw, -hh], [-hw, -hh], [hw, hh], [-hw, hh]], rs = [[hw, hh], [-hw, hh], [hw, -hh], [-hw, -hh]];
+    var x = xs.filter(inView)[0] || xs[0];
+    var r = rs.filter(function(p){ return inView(p) && (p[0] !== x[0] || p[1] !== x[1]); })[0] || (x === rs[0] ? rs[1] : rs[0]);
+    return {x:x, r:r};
+  }
+  function studioHandle(ctx, x, y, type, u){
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.beginPath(); ctx.arc(0, 0, 14 * u, 0, Math.PI * 2);
+    ctx.fillStyle = type === 'x' ? '#3B1626' : '#FFFFFF'; ctx.fill();
+    ctx.lineWidth = 2 * u; ctx.strokeStyle = type === 'x' ? '#FFFFFF' : '#3B1626'; ctx.stroke();
+    ctx.lineWidth = 2.4 * u; ctx.lineCap = 'round'; ctx.beginPath();
+    if(type === 'x'){ ctx.moveTo(-5*u, -5*u); ctx.lineTo(5*u, 5*u); ctx.moveTo(5*u, -5*u); ctx.lineTo(-5*u, 5*u); }
+    else {
+      ctx.arc(0, 0, 6.5 * u, -2.6, 1.3);
+      var ex = Math.cos(1.3) * 6.5 * u, ey = Math.sin(1.3) * 6.5 * u;
+      ctx.moveTo(ex, ey); ctx.lineTo(ex + 4.5*u, ey - 0.5*u); ctx.moveTo(ex, ey); ctx.lineTo(ex + u, ey - 4.5*u);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+  // redraws only when something changed — or all the time while stickers move ("Moving" on)
+  function startStudioLoop(){
+    cancelAnimationFrame(st.raf);
+    var start = performance.now(), pacer = makePacer();
+    st.dirty = true;
+    (function tick(now){
+      if(!st.open) return;
+      st.raf = requestAnimationFrame(tick);
+      var moving = state.animated && state.placed.length > 0;
+      if(moving){ if(!paceFrame(pacer, now) && !st.dirty) return; }
+      else if(!st.dirty) return;
+      st.dirty = false;
+      paintStudio(moving ? ((now - start) / 1000) % LOOP : 0);
+    })(start);
+  }
+  function syncStudioUI(){
+    if(!st.open) return;
+    var n = base.rects.length, it = selItem();
+    $('stTitle').textContent = n > 1 ? 'Photo ' + (st.i + 1) + ' of ' + n : 'Your photo';
+    $('stPrev').classList.toggle('off', n < 2);
+    $('stNext').classList.toggle('off', n < 2);
+    $('stTools').classList.toggle('off', !it);
+    $('stTools').querySelector('[data-act="edge"]').setAttribute('aria-pressed', it && it.e ? 'true' : 'false');
+    $('stHint').textContent = it ? (FINE_POINTER ? 'drag to move · ↻ corner or mouse wheel: size and turn' : 'drag to move · two fingers: size and turn')
+      : st.tray === 'images' ? 'Saved on this device only ♡ Cut-out pictures look best'
+      : state.placed.length ? TAP_ + ' a sticker to move it ♡' : 'Add a sticker below ♡';
+    $('stClear').hidden = !!it || !state.placed.length;
+    st.dirty = true;
+  }
+  // after every change: your love sees it (designing together), and it's in the auto-save
+  function stickersChanged(){
+    if(st.open) syncStudioUI();
+    else if(state.currentStep === 'customize') renderPreview();   // e.g. UNDO after the studio closed
+    syncStickerButton();
+    noteDesignChange();
+    saveSessionSoon();
+  }
+
+  /* ---- adding and removing ---- */
+  function addSticker(k, key){
+    if(!st.open) return null;
+    if(state.placed.length >= STUDIO_MAX){ showToast(STUDIO_MAX + ' stickers is the most for one strip ♡'); return null; }
+    var r = base.rects[st.i], ratio = r.h / r.w;
+    var it = {id:stId(), k:k, key:key, p:st.i, x:0, y:0, s:0.23, r:0, e:false, ph:Math.random() * 6.28};
+    var asp = itemAspect(it);
+    if(!(asp > 0)) return null;
+    if(k === 'img'){
+      // "standing next to you": 82% as tall as the photo, at its right side, feet on the photo's bottom edge
+      setItemWidth(it, base, r.w * 0.82 * ratio / asp);
+      it.x = 0.5 - it.s * 0.3; it.y = ratio / 2 - it.s * asp / 2;
+      var g = itemGeom(it, base);
+      setItemCenter(it, base, Math.min(g.x, base.w - g.w / 2), g.y);
+    } else {
+      var d = stickerDef(it), word = d.kind === 'word';
+      setItemWidth(it, base, word ? Math.min(300, 60 + badgeWidth(d.text) * 1.6) : 150);
+      var spot = freeSpot(st.i, ratio);
+      it.x = spot[0]; it.y = spot[1];
+      if(word) it.r = -0.12;
+    }
+    state.placed.push(it);
+    st.sel = it.id;
+    stickersChanged();
+    return it;
+  }
+  // a corner of the photo without a sticker yet (faces are usually in the middle)
+  function freeSpot(p, ratio){
+    var spots = [[-.32,-.32],[.32,-.32],[-.32,.32],[.32,.32],[0,-.38],[0,.38],[-.38,0],[.38,0]];
+    for(var i = 0; i < spots.length; i++){
+      var x = spots[i][0], y = spots[i][1] * ratio;
+      if(!state.placed.some(function(it){ return it.p === p && Math.abs(it.x - x) < 0.12 && Math.abs(it.y - y) < 0.12; })) return [x, y];
+    }
+    return [(Math.random() - 0.5) * 0.6, (Math.random() - 0.5) * 0.6 * ratio];
+  }
+  function removeSticker(id){
+    var i = -1;
+    state.placed.forEach(function(x, j){ if(x.id === id) i = j; });
+    if(i < 0) return;
+    var it = state.placed.splice(i, 1)[0];
+    if(st.sel === id) st.sel = null;
+    stickersChanged();
+    showToast('Sticker removed', {label:'UNDO', fn:function(){
+      if(state.placed.some(function(x){ return x.id === it.id; }) || state.placed.length >= STUDIO_MAX) return;
+      state.placed.splice(Math.min(i, state.placed.length), 0, it);
+      if(st.open) st.sel = it.id;
+      stickersChanged();
+    }});
+  }
+  $('stClear').addEventListener('click', function(){
+    confirmBox({title:'Remove all stickers?', text:'From every photo on this strip.', yes:'REMOVE ALL', no:'KEEP'}).then(function(yes){
+      if(!yes) return;
+      state.placed = []; state.stickers = {}; st.sel = null;
+      stickersChanged();
+    });
+  });
+  // a sticker let go over another photo now belongs to that photo (it follows it to other frames)
+  function reanchor(it){
+    var g = itemGeom(it, base);
+    if(!g) return;
+    var p = photoAt(base, g.x, g.y, true);
+    if(p < 0 || p === it.p) return;
+    it.p = p;
+    setItemCenter(it, base, g.x, g.y); setItemWidth(it, base, g.w); setItemTurn(it, base, g.rot);
+  }
+
+  /* ---- the tool row ---- */
+  $('stTools').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if(!b) return;
+    var it = selItem(), g = it && itemGeom(it, base);
+    if(!g){ showToast(TAP_ + ' a sticker on the photo first ♡'); return; }
+    var act = b.dataset.act;
+    if(act === 'smaller') setItemWidth(it, base, g.w / 1.15);
+    else if(act === 'bigger') setItemWidth(it, base, g.w * 1.15);
+    else if(act === 'front' || act === 'back'){
+      state.placed.splice(state.placed.indexOf(it), 1);
+      if(act === 'front') state.placed.push(it); else state.placed.unshift(it);
+      if(act === 'back') showToast('Moved behind the other stickers ♡');
+    }
+    else if(act === 'edge') it.e = !it.e;
+    else if(act === 'remove'){ removeSticker(it.id); return; }
+    stickersChanged();
+  });
+
+  /* ---- touch and mouse on the photo ---- */
+  var stCv = $('stCanvas');
+  function stWorld(e){
+    var r = stCv.getBoundingClientRect(), u = st.cw / r.width, c = st.crops[st.i];
+    return {x:c.left + (e.clientX - r.left) * u, y:c.top + (e.clientY - r.top) * u, u:u};
+  }
+  // point p in a sticker's own turned frame (0,0 = its middle)
+  function stLocal(g, p){
+    var dx = p.x - g.x, dy = p.y - g.y, c = Math.cos(-g.rot), s = Math.sin(-g.rot);
+    return {x:dx*c - dy*s, y:dx*s + dy*c};
+  }
+  function imgSolidAt(im, fx, fy){   // fx, fy: 0..1 across the picture
+    if(!im.alpha){ try{ im.alpha = im.img.getContext('2d').getImageData(0, 0, im.w, im.h).data; }catch(e){ return true; } }
+    var x = Math.floor(fx * im.w), y = Math.floor(fy * im.h);
+    return x >= 0 && y >= 0 && x < im.w && y < im.h && im.alpha[(y * im.w + x) * 4 + 3] > 24;
+  }
+  // the top sticker under the finger (see-through parts of your pictures don't count) — failing that,
+  // anywhere in the chosen sticker's box (so a big picture stays easy to drag)
+  function stHit(p){
+    var g0 = 22 * p.u, list = state.placed;
+    for(var i = list.length - 1; i >= 0; i--){
+      var it = list[i], g = itemGeom(it, base);
+      if(!g) continue;
+      var l = stLocal(g, p);
+      if(Math.abs(l.x) > Math.max(g.w/2, g0) || Math.abs(l.y) > Math.max(g.h/2, g0)) continue;
+      if(it.k !== 'img' || (g.w < 3*g0 && g.h < 3*g0)) return it;
+      var im = stickerImgs[it.key], e = g0 * 0.6;
+      if(im && [[0,0],[e,0],[-e,0],[0,e],[0,-e]].some(function(o){ return imgSolidAt(im, (l.x + o[0]) / g.w + 0.5, (l.y + o[1]) / g.h + 0.5); })) return it;
+    }
+    var sel = selItem(), gs = sel && itemGeom(sel, base);
+    if(gs){ var ls = stLocal(gs, p); if(Math.abs(ls.x) <= gs.w/2 && Math.abs(ls.y) <= gs.h/2) return sel; }
+    return null;
+  }
+  function stHandle(it, p){
+    var g = itemGeom(it, base);
+    if(!g) return null;
+    var l = stLocal(g, p), h = handleSpots(g, p.u), r = 24 * p.u;
+    if(Math.hypot(l.x - h.x[0], l.y - h.x[1]) <= r) return 'x';
+    if(Math.hypot(l.x - h.r[0], l.y - h.r[1]) <= r) return 'r';
+    return null;
+  }
+  function stTwo(){ var k = Object.keys(stPtr.pts); return [stPtr.pts[k[0]], stPtr.pts[k[1]]]; }
+  function stStartPinch(it){
+    var q = stTwo(), g = itemGeom(it, base);
+    if(!g) return;
+    stPtr.pinch = {d0:Math.max(1, Math.hypot(q[1].x - q[0].x, q[1].y - q[0].y)), a0:Math.atan2(q[1].y - q[0].y, q[1].x - q[0].x),
+                   mx:(q[0].x + q[1].x) / 2, my:(q[0].y + q[1].y) / 2, w0:g.w, rot0:g.rot, x0:g.x, y0:g.y};
+    stPtr.mode = 'pinch';
+  }
+  stCv.addEventListener('pointerdown', function(e){
+    if(!st.open) return;
+    try{ stCv.setPointerCapture(e.pointerId); }catch(err){}
+    var p = stWorld(e);
+    stPtr.pts[e.pointerId] = p;
+    var count = Object.keys(stPtr.pts).length;
+    if(count === 1){
+      stPtr.down = {x:e.clientX, y:e.clientY}; stPtr.moved = false;
+      var it = selItem(), h = it && stHandle(it, p);
+      if(h === 'x') stPtr.mode = 'x';
+      else if(h === 'r'){
+        var g = itemGeom(it, base);
+        stPtr.mode = 'turn';
+        stPtr.grab = {w0:g.w, rot0:g.rot, d0:Math.max(1, Math.hypot(p.x - g.x, p.y - g.y)), a0:Math.atan2(p.y - g.y, p.x - g.x)};
+      } else {
+        var hit = stHit(p);
+        if(hit){
+          var gh = itemGeom(hit, base);
+          st.sel = hit.id; stPtr.mode = 'drag'; stPtr.grab = {dx:gh.x - p.x, dy:gh.y - p.y};
+          syncStudioUI();
+        } else stPtr.mode = 'empty';
+      }
+    } else if(count === 2 && selItem()) stStartPinch(selItem());
+    st.dirty = true;
+  });
+  stCv.addEventListener('pointermove', function(e){
+    if(!(e.pointerId in stPtr.pts)) return;
+    var p = stWorld(e);
+    stPtr.pts[e.pointerId] = p;
+    if(stPtr.down && Math.hypot(e.clientX - stPtr.down.x, e.clientY - stPtr.down.y) > 6) stPtr.moved = true;
+    var it = selItem();
+    if(!it) return;
+    if(stPtr.mode === 'drag') setItemCenter(it, base, p.x + stPtr.grab.dx, p.y + stPtr.grab.dy);
+    else if(stPtr.mode === 'turn'){
+      var g = itemGeom(it, base), G = stPtr.grab;
+      setItemWidth(it, base, G.w0 * Math.hypot(p.x - g.x, p.y - g.y) / G.d0);
+      setItemTurn(it, base, G.rot0 + Math.atan2(p.y - g.y, p.x - g.x) - G.a0);
+    } else if(stPtr.mode === 'pinch' && Object.keys(stPtr.pts).length >= 2){
+      var q = stTwo(), P = stPtr.pinch;
+      setItemWidth(it, base, P.w0 * Math.hypot(q[1].x - q[0].x, q[1].y - q[0].y) / P.d0);
+      setItemTurn(it, base, P.rot0 + Math.atan2(q[1].y - q[0].y, q[1].x - q[0].x) - P.a0);
+      setItemCenter(it, base, P.x0 + (q[0].x + q[1].x) / 2 - P.mx, P.y0 + (q[0].y + q[1].y) / 2 - P.my);
+      stPtr.moved = true;
+    } else return;
+    st.dirty = true;
+  });
+  function stPointerEnd(e){
+    if(!(e.pointerId in stPtr.pts)) return;
+    delete stPtr.pts[e.pointerId];
+    var left = Object.keys(stPtr.pts).length, tap = !stPtr.moved && e.type === 'pointerup', it = selItem();
+    if(stPtr.mode === 'x' && tap && it) removeSticker(it.id);
+    else if(stPtr.mode === 'empty' && tap && st.sel){ st.sel = null; syncStudioUI(); }
+    if(stPtr.mode === 'pinch' && left === 1 && it){
+      // one finger lifted: keep dragging with the other one, without a jump
+      var q = stPtr.pts[Object.keys(stPtr.pts)[0]], g = itemGeom(it, base);
+      stPtr.mode = 'drag'; stPtr.grab = {dx:g.x - q.x, dy:g.y - q.y};
+    } else if(!left){
+      if(it && stPtr.moved && /^(drag|pinch|turn)$/.test(stPtr.mode)){ reanchor(it); stickersChanged(); }
+      stPtr.mode = null; stPtr.down = null;
+    }
+    st.dirty = true;
+  }
+  stCv.addEventListener('pointerup', stPointerEnd);
+  stCv.addEventListener('pointercancel', stPointerEnd);
+  stCv.addEventListener('wheel', function(e){
+    var it = selItem(), g = it && itemGeom(it, base);
+    if(!g) return;
+    e.preventDefault();
+    // lines / pages → pixels; Shift+wheel arrives as deltaX in some browsers; ctrlKey = a touchpad pinch
+    var unit = e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 400 : 1, d = (e.deltaY || e.deltaX) * unit;
+    if(e.shiftKey) setItemTurn(it, base, g.rot + d * 0.003);
+    else setItemWidth(it, base, g.w * Math.exp(-d * (e.ctrlKey ? 0.012 : 0.0025)));
+    st.dirty = true;
+    clearTimeout(st.wheelT);
+    st.wheelT = setTimeout(stickersChanged, 250);
+  }, {passive:false});
+  // keyboard: Enter / Space picks the next sticker on this photo, arrows move it, + and − resize, Delete removes
+  stCv.addEventListener('keydown', function(e){
+    if(e.key === 'Enter' || e.key === ' '){
+      var mine = state.placed.filter(function(x){ return x.p === st.i; });
+      if(!mine.length) return;
+      e.preventDefault();
+      var at = mine.indexOf(selItem());
+      st.sel = mine[(at + 1) % mine.length].id;
+      syncStudioUI();
+      return;
+    }
+    var it = selItem(), g = it && itemGeom(it, base);
+    if(!g) return;
+    var step = e.shiftKey ? 24 : 6, used = true;
+    if(e.key === 'ArrowLeft') setItemCenter(it, base, g.x - step, g.y);
+    else if(e.key === 'ArrowRight') setItemCenter(it, base, g.x + step, g.y);
+    else if(e.key === 'ArrowUp') setItemCenter(it, base, g.x, g.y - step);
+    else if(e.key === 'ArrowDown') setItemCenter(it, base, g.x, g.y + step);
+    else if(e.key === '+' || e.key === '=') setItemWidth(it, base, g.w * 1.1);
+    else if(e.key === '-') setItemWidth(it, base, g.w / 1.1);
+    else if(e.key === 'Delete' || e.key === 'Backspace'){ e.preventDefault(); removeSticker(it.id); return; }
+    else used = false;
+    if(!used) return;
+    e.preventDefault();
+    stickersChanged();
+  });
+
+  /* ---- the three trays: Stickers · My images · Your words ---- */
+  function stickerTile(it, wide, label, onClick, color){
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'st-tile' + (wide ? ' wide' : '');
+    b.setAttribute('aria-label', label);
+    var c = document.createElement('canvas'), W = wide ? 152 : 80, H = 80;
+    c.width = W; c.height = H;
+    var asp = itemAspect(it) || 1, w = Math.min(W * 0.9, H * 0.9 / asp);
+    paintSticker(c.getContext('2d'), it, {x:W/2, y:H/2, w:w, h:w * asp, rot:0}, color, 1);
+    b.appendChild(c);
+    b.addEventListener('click', onClick);
+    return b;
+  }
+  function trayColor(){ return base ? base.accent : '#E14F7A'; }
+  function renderStudioTrays(){
+    var row = $('stTrayShapes'), color = trayColor();
+    row.innerHTML = '';
+    STICKERS.forEach(function(s){
+      row.appendChild(stickerTile({k:'st', key:s.id}, s.kind === 'word', 'Add ' + s.label, function(){ addSticker('st', s.id); }, color));
+    });
+    renderWordTiles();
+  }
+  function showStudioTray(name){
+    st.tray = name;
+    Array.prototype.forEach.call(document.querySelectorAll('.st-tab'), function(b){
+      var on = b.dataset.tray === name;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    $('stTrayShapes').hidden = name !== 'shapes';
+    $('stTrayImages').hidden = name !== 'images';
+    $('stTrayWords').hidden = name !== 'words';
+    if(name !== 'images') st.manage = false;
+    else renderImageTiles();
+    if(name === 'words') renderWordTiles();
+    syncStudioUI();   // (the hint says where My images are kept)
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.st-tab'), function(b){
+    b.addEventListener('click', function(){ showStudioTray(b.dataset.tray); });
+  });
+  // your own words: the last 8 are remembered on this device
+  var WORDS_KEY = 'oob-words';
+  function recentWords(){
+    try{
+      var a = JSON.parse(localStorage.getItem(WORDS_KEY) || '[]');
+      return Array.isArray(a) ? a.map(cleanWord).filter(Boolean).slice(0, 8) : [];
+    }catch(e){ return []; }
+  }
+  function rememberWord(w){
+    var a = recentWords().filter(function(x){ return x !== w; });
+    a.unshift(w);
+    try{ localStorage.setItem(WORDS_KEY, JSON.stringify(a.slice(0, 8))); }catch(e){}
+  }
+  // the Words tab is one row high like the others: your last words as tiles with "+ new words" first —
+  // or the box to type in (the first time, or after "+ new words")
+  function renderWordTiles(typing){
+    var row = $('stWordTiles'), color = trayColor(), words = recentWords();
+    typing = typing || !words.length;
+    $('stWordForm').hidden = !typing;
+    row.hidden = typing;
+    row.innerHTML = '';
+    if(typing) return;
+    var add = document.createElement('button');
+    add.type = 'button'; add.className = 'st-tile new-word'; add.textContent = '+ new words';
+    add.addEventListener('click', function(){
+      renderWordTiles(true);
+      try{ $('stWordInput').focus({preventScroll:true}); }catch(err){}
+    });
+    row.appendChild(add);
+    words.forEach(function(w){
+      row.appendChild(stickerTile({k:'word', key:w}, true, 'Add "' + w + '"', function(){ addSticker('word', w); }, color));
+    });
+  }
+  $('stWordForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var w = cleanWord($('stWordInput').value);
+    if(!w){ showToast('Type a word first ♡'); return; }
+    if(addSticker('word', w)){ rememberWord(w); renderWordTiles(); }
+    $('stWordInput').value = '';
+    $('stWordInput').blur();   // the phone keyboard closes, so the photo shows again
+  });
+  // My images: + adds from the gallery; "edit" shows ✕ on each picture to remove it from this device
+  function renderImageTiles(){
+    loadMyImages().then(function(list){
+      var row = $('stImageTiles');
+      row.innerHTML = '';
+      var add = document.createElement('button');
+      add.type = 'button'; add.className = 'st-tile add'; add.textContent = '+';
+      add.setAttribute('aria-label', 'Add a picture from your gallery');
+      add.addEventListener('click', function(){ $('stFile').click(); });
+      if(!st.manage) row.appendChild(add);
+      list.slice().reverse().forEach(function(rec){   // newest first
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'st-tile';
+        b.setAttribute('aria-label', st.manage ? 'Remove this picture from My images' : 'Add this picture');
+        loadStickerImg(rec.id, rec.blob).then(function(im){
+          var c = document.createElement('canvas'), k = Math.min(80 / im.w, 80 / im.h);
+          c.width = 80; c.height = 80;
+          c.getContext('2d').drawImage(im.img, (80 - im.w * k) / 2, (80 - im.h * k) / 2, im.w * k, im.h * k);
+          b.insertBefore(c, b.firstChild);
+        }).catch(function(){ b.remove(); });
+        if(st.manage){
+          var x = document.createElement('span');
+          x.className = 'st-del'; x.textContent = '✕'; x.setAttribute('aria-hidden', 'true');
+          b.appendChild(x);
+        }
+        b.addEventListener('click', function(){
+          if(st.manage){ askRemoveMyImage(rec.id); return; }
+          loadStickerImg(rec.id, rec.blob).then(function(){ addSticker('img', rec.id); }, function(){ showToast("Couldn't open that picture ♡"); });
+        });
+        row.appendChild(b);
+      });
+      if(list.length){
+        var edit = document.createElement('button');
+        edit.type = 'button'; edit.className = 'st-tile edit'; edit.textContent = st.manage ? 'done' : 'edit';
+        edit.setAttribute('aria-label', st.manage ? 'Done removing' : 'Remove pictures from My images');
+        edit.addEventListener('click', function(){ st.manage = !st.manage; renderImageTiles(); });
+        row.appendChild(edit);
+      } else st.manage = false;
+    });
+  }
+  function askRemoveMyImage(id){
+    confirmBox({title:'Remove this picture?', text:'It leaves My images on this device. Stickers already on your strip stay.', yes:'REMOVE', no:'KEEP'}).then(function(yes){
+      if(!yes) return;
+      removeMyImage(id).then(function(){ if(st.open) renderImageTiles(); });
+      showToast('Picture removed ♡');
+    });
+  }
+  $('stFile').addEventListener('change', function(){
+    var file = this.files && this.files[0];
+    this.value = '';
+    if(!file) return;
+    addMyImage(file).then(function(rec){
+      if(!st.open) return;
+      renderImageTiles();
+      addSticker('img', rec.id);
+    }, function(err){
+      showToast(err && err.message === 'full' ? 'My images holds ' + MY_IMAGES_MAX + ' pictures — remove one first ♡'
+                                               : "We couldn't read that picture. Try another one ♡");
+    });
+  });
+
+  /* ---- the editor's Stickers tab ---- */
+  var quickFor = null;   // the color the row below the button was drawn in
+  function renderStickerQuick(){
+    var color = trayColor();
+    if(quickFor === color) return;
+    quickFor = color;
+    var row = $('stickerChips');
+    row.innerHTML = '';
+    STICKERS.forEach(function(s){
+      row.appendChild(stickerTile({k:'st', key:s.id}, s.kind === 'word', 'Add ' + s.label, function(){
+        openStudio(st.last, {k:'st', key:s.id});
+      }, color));
+    });
+  }
+  function syncStickerButton(){
+    var n = state.placed.length;
+    $('stOpenBtn').textContent = '✋ PLACE & EDIT STICKERS' + (n ? ' (' + n + ')' : '');
+  }
+  // tap a photo in the editor's preview: the studio opens on that photo
+  $('previewCanvas').addEventListener('click', function(e){
+    if(state.currentStep !== 'customize' || !base || !base.rects.length) return;
+    var r = this.getBoundingClientRect();
+    openStudio(photoAt(base, (e.clientX - r.left) * base.w / r.width, (e.clientY - r.top) * base.h / r.height));
+  });
 
   /* ================= SEND MY DESIGN (live room) =================
      In a live room, "Send my design" sends your choices — frame, color, filter, stickers, text,
@@ -6242,14 +7437,15 @@
      Everything that arrives is checked first: only known ids, short texts, and real images of a
      sensible size, which we re-draw ourselves — a message can't make the app do anything else. */
   // (older pages ignore 'since' and turn the 'day' label into the plain date — nothing breaks)
-  var DESIGN_KEYS = ['templateId','colorId','showTitle','popout','filterId','stickers','customText','showDate','dateLabel','since','animated'];
+  // (v4.12) 'placed' = your placed stickers; pictures they use travel along as `imgs` (see FREE STICKERS)
+  var DESIGN_KEYS = ['templateId','colorId','showTitle','popout','filterId','stickers','placed','customText','showDate','dateLabel','since','animated'];
   var DATE_LABELS = ['date','Our Date','Love Day','Best Day','day'];
   var MAX_FRAME_IMG = 2*1024*1024, MAX_FRAME_TOTAL = 10*1024*1024;
   var designOffer = null;   // {design, rec, kind} waiting for USE THEIRS / KEEP MINE (or JOIN / NOT NOW)
   // Design together (below): on = in a session, inviting = waiting for an answer, last = the design both
   // phones agreed on (changes are measured from it), sentFrames = custom frames the other phone already has,
   // unsaved = their frames you're using but haven't saved, queue = incoming changes, handled in order
-  var together = {on:false, inviting:false, inviteTimer:0, inviteDesign:null, last:null, timer:0, sentFrames:{}, unsaved:{}, queue:Promise.resolve()};
+  var together = {on:false, inviting:false, inviteTimer:0, inviteDesign:null, last:null, timer:0, sentFrames:{}, sentImgs:{}, unsaved:{}, queue:Promise.resolve()};
   var INVITE_TIMEOUT = 45000;
 
   function copyStickers(src){
@@ -6259,7 +7455,7 @@
   }
   function currentDesign(){
     var d = {};
-    DESIGN_KEYS.forEach(function(k){ d[k] = k === 'stickers' ? copyStickers(state.stickers) : state[k]; });
+    DESIGN_KEYS.forEach(function(k){ d[k] = k === 'stickers' ? copyStickers(state.stickers) : k === 'placed' ? copyPlaced(state.placed) : state[k]; });
     return d;
   }
   function findCustomRec(test){
@@ -6279,8 +7475,8 @@
     if(!live.connected){ showToast("Your love isn't in the room right now ♡"); return; }
     var d = currentDesign(), t = templateById(d.templateId);
     btn.disabled = true;
-    (t.custom ? packFrame(t.rec) : Promise.resolve(null)).then(function(frame){
-      sendLive({type:'design', design:d, frame:frame});
+    Promise.all([t.custom ? packFrame(t.rec) : null, packStickerImgs(usedImgIds(d.placed))]).then(function(res){
+      sendLive({type:'design', design:partnerDesign(d), frame:res[0], imgs:res[1]});
       showToast('Sent to your love ♡');
     }).catch(function(){
       showToast("Couldn't send your design. Please try again ♡");
@@ -6310,6 +7506,7 @@
       popout: bool(raw.popout, true),
       filterId: FILTERS.some(function(f){ return f.id === raw.filterId; }) ? raw.filterId : 'original',
       stickers: copyStickers(raw.stickers),
+      placed: cleanPlaced(raw.placed),   // (pictures must already be here: unpackStickerImgs first)
       customText: typeof raw.customText === 'string' ? raw.customText.replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 40) : '',
       showDate: bool(raw.showDate, true),
       dateLabel: DATE_LABELS.indexOf(raw.dateLabel) !== -1 ? raw.dateLabel : 'date',
@@ -6352,7 +7549,18 @@
   }
   // kind: 'send' (Send my design) or 'invite' (Design together)
   function receiveDesign(msg, kind){
-    var d = cleanDesign(msg.design);
+    // the pictures its stickers use come first (cleanDesign keeps only stickers whose picture is here)
+    unpackStickerImgs(msg.imgs).then(function(){ receiveDesignNow(msg, kind); });
+  }
+  function receiveDesignNow(msg, kind){
+    var raw = msg.design;
+    if(raw && typeof raw === 'object' && raw.placed){
+      var mapped = {};
+      Object.keys(raw).forEach(function(k){ mapped[k] = raw[k]; });
+      mapped.placed = placedFromPartner(raw.placed);   // their photo order → yours
+      raw = mapped;
+    }
+    var d = cleanDesign(raw);
     if(!d) return;
     var ready;
     if(/^custom-/.test(d.templateId)){
@@ -6392,6 +7600,7 @@
       ctx.drawImage(b.canvas, 0, 0);
       drawDecorLayer(ctx, b, 0, false);
       drawStickerPicks(ctx, b.w, b.h, b.accent, '#fff', 0, false);
+      drawPlaced(ctx, b, 0, false, null);
       drawLabels(ctx, b);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
     });
@@ -6399,6 +7608,7 @@
   function forgetImages(rec){ rec.items.forEach(function(it){ delete customImages[it.id]; }); }
   function offerDesign(d, rec, kind){
     if(live.running){ setTimeout(function(){ offerDesign(d, rec, kind); }, 1000); return; }   // not during a countdown
+    closeStudio();   // (your stickers stay) — the question shows over the editor
     // a newer design replaces one that's still waiting (an unanswered invite gets a "not now")
     if(designOffer && designOffer.rec && designOffer.rec.srcId && designOffer.rec !== rec) forgetImages(designOffer.rec);
     if(designOffer && designOffer.kind === 'invite') sendLive({type:'together-reply', join:false});
@@ -6427,9 +7637,7 @@
       b.classList.toggle('active', on);
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
-    Array.prototype.forEach.call($('stickerChips').children, function(b, i){
-      b.classList.toggle('active', !!state.stickers[STICKERS[i].id]);
-    });
+    syncStickerButton();
     $('customText').value = state.customText;
     $('dateLabelSelect').value = state.dateLabel;
     syncSinceRow();
@@ -6460,7 +7668,7 @@
     var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
     DESIGN_KEYS.forEach(function(k){
       if(k === 'animated' && reduce) return;   // this phone asked for less motion: keep its own choice
-      state[k] = k === 'stickers' ? copyStickers(d.stickers) : d[k];
+      state[k] = k === 'stickers' ? copyStickers(d.stickers) : k === 'placed' ? copyPlaced(d.placed) : d[k];
     });
     if(!state.colorId) state.colorId = templateById(state.templateId).color;
     rememberSince();   // your love's "together since" (same couple, same day) — or your own, unchanged
@@ -6522,10 +7730,13 @@
     if(together.on || together.inviting) return;
     var d = currentDesign(), t = templateById(d.templateId);
     together.inviting = true; together.inviteDesign = d; syncLiveDesign();
-    (t.custom ? packFrame(t.rec) : Promise.resolve(null)).then(function(frame){
+    var imgIds = usedImgIds(d.placed);
+    Promise.all([t.custom ? packFrame(t.rec) : null, packStickerImgs(imgIds)]).then(function(res){
+      var frame = res[0];
       if(!together.inviting) return;
       if(t.custom) together.sentFrames[t.rec.id] = true;
-      sendLive({type:'together-invite', design:d, frame:frame});
+      imgIds.forEach(function(id){ together.sentImgs[id] = true; });
+      sendLive({type:'together-invite', design:partnerDesign(d), frame:frame, imgs:res[1]});
       showToast('Invite sent — waiting for your love ♡');
       clearTimeout(together.inviteTimer);
       together.inviteTimer = setTimeout(function(){
@@ -6567,7 +7778,7 @@
   function endTogether(){
     together.on = false; together.inviting = false; together.inviteDesign = null;
     clearTimeout(together.inviteTimer); clearTimeout(together.timer);
-    together.unsaved = {}; together.sentFrames = {};
+    together.unsaved = {}; together.sentFrames = {}; together.sentImgs = {};
     syncLiveDesign();
   }
   // a frame's id is the same on both phones: the maker's own id (a copy remembers it as srcId)
@@ -6595,15 +7806,31 @@
     var t = templateById(d.templateId);
     var custom = patch.templateId && t.custom;
     var needsFrame = custom && !together.sentFrames[t.rec.id];
-    (needsFrame ? packFrame(t.rec) : Promise.resolve(null)).then(function(frame){
+    // placed stickers: in your love's photo order, with any picture they don't have yet
+    var imgIds = patch.placed ? usedImgIds(patch.placed).filter(function(id){ return !together.sentImgs[id]; }) : [];
+    if(patch.placed) patch.placed = placedToPartner(patch.placed);
+    Promise.all([needsFrame ? packFrame(t.rec) : null, packStickerImgs(imgIds)]).then(function(res){
+      var frame = res[0];
       if(frame) together.sentFrames[t.rec.id] = true;
-      sendLive({type:'together-change', patch:patch, frameId:custom ? frameKey(t.rec) : null, frame:frame});
+      imgIds.forEach(function(id){ together.sentImgs[id] = true; });
+      sendLive({type:'together-change', patch:patch, frameId:custom ? frameKey(t.rec) : null, frame:frame, imgs:res[1]});
     }).catch(function(){ /* the next change sends everything that differs again */ });
   }
   function receiveTogetherChange(msg){
     if(!together.on || !msg.patch || typeof msg.patch !== 'object') return;
+    // pictures for their stickers first (cleanDesign keeps only stickers whose picture is here)
+    return unpackStickerImgs(msg.imgs).then(function(){ return applyTogetherChange(msg); });
+  }
+  function applyTogetherChange(msg){
+    if(!together.on) return;
     // start from what's on screen now and lay the (checked) changes on top
     var merged = currentDesign(), p = msg.patch, keys = [];
+    if(Array.isArray(p.placed)){
+      var own = {};
+      Object.keys(p).forEach(function(k){ own[k] = p[k]; });
+      own.placed = placedFromPartner(p.placed);   // their photo order → yours
+      p = own;
+    }
     DESIGN_KEYS.forEach(function(k){ if(Object.prototype.hasOwnProperty.call(p, k)){ merged[k] = p[k]; keys.push(k); } });
     if(!keys.length) return;
     var d = cleanDesign(merged);
@@ -6722,7 +7949,7 @@
     }
     return Promise.all(shots.map(blobsOf)).then(function(sets){
       if(gen !== session.gen || sets.some(function(b){ return !b[0]; })) return;
-      var rec = {v:1, saved:Date.now(), shotCount:count, design:design, shots:shots.map(function(c, i){
+      var rec = {v:1, saved:Date.now(), shotCount:count, design:design, stickerImgs:sessionStickerImgs(design.placed), shots:shots.map(function(c, i){
         var from = c.dataset.from === 'you' || c.dataset.from === 'duo' ? c.dataset.from : 'me';
         var s = {blob:sets[i][0], from:from, round:c.dataset.round || '', side:c.dataset.side || ''};
         if(sets[i][1] && sets[i][2]){ s.pairMine = sets[i][1]; s.pairTheirs = sets[i][2]; }
@@ -6772,7 +7999,10 @@
         if(r[1] && r[2]){ c.pairMine = r[1]; c.pairTheirs = r[2]; c.dataset.pair = 'code'; }
         return c;
       });
-    }));
+    })).then(function(canvases){
+      // (v4.12) the pictures your stickers use — ready before the design is read (sessionDesign)
+      return loadSessionStickerImgs(rec).then(function(){ return canvases; });
+    });
   }
   // the saved choices, checked like anything else we read back; a frame that's gone → Classic
   function sessionDesign(rec){
@@ -7115,6 +8345,7 @@
     ctx.drawImage(base.canvas, 0, 0, base.w, base.h);
     drawDecorLayer(ctx, base, t, state.animated);
     drawStickerPicks(ctx, base.w, base.h, base.accent, '#fff', t, state.animated);
+    drawPlaced(ctx, base, t, state.animated, null);
     drawLabels(ctx, base);
     ctx.setTransform(1,0,0,1,0,0);
   }
@@ -7464,6 +8695,8 @@
     clearTimeout(previewTimer);
     previewTimer = setTimeout(function(){
       buildBase(); textLimit.lane = null; syncTextLimit();
+      renderStickerQuick(); syncStickerButton();
+      if(st.open){ studioLayout(); syncStudioUI(); return; }   // the sticker studio covers the editor: it shows the change
       playAnim($('zoomModal').hidden ? $('previewCanvas') : $('zoomCanvas'));   // zoom open: the big view shows it
       syncZoomBtn();
     }, 60);
