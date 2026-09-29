@@ -315,6 +315,38 @@
   .timer-row .chip-label{font-size:.8rem; font-weight:600; color:var(--rose-800); margin-right:2px;}
   .timer-row .chip{min-width:48px; min-height:42px; padding:9px 10px;}
   .timer-row .chip[disabled]{opacity:.55;}
+  /* (v4.14) "pose with ★ my idol": a row under the timer + your picture on the camera (see POSE WITH A PICTURE) */
+  .idol-row{justify-content:center; align-items:center; gap:6px; margin:8px 0 0;}
+  .idol-row .chip-label{font-size:.8rem; font-weight:600; color:var(--rose-800); margin-right:2px;}
+  .idol-row .chip{min-height:42px; padding:9px 12px;}
+  .idol-row .chip[disabled]{opacity:.55;}
+  @media (max-width:340px){ .idol-row .chip{padding:9px 8px;} }   /* the row stays one line on the smallest phones */
+  .idol-canvas{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; display:none;}
+  /* split: your camera shows only its middle, in your half — exactly the part that's saved */
+  .camera-stage.idol-split video{position:absolute; top:0; left:0; width:50%; height:100%;}
+  .camera-stage.idol-split.idol-left video{left:50%;}
+  .idol-guide{position:absolute; top:0; left:0; width:50%; height:100%; pointer-events:none; display:none;}
+  .camera-stage.idol-left .idol-guide{left:50%;}
+  .idol-guide::after{content:''; position:absolute; left:50%; top:9%; width:68%; height:42%; transform:translateX(-50%); border:2px dashed rgba(255,255,255,.8); border-radius:50%;}
+  .idol-grab{position:absolute; z-index:2; touch-action:none; cursor:grab; display:none; outline-offset:-3px;}
+  .idol-grab:active{cursor:grabbing;}
+  /* the buttons sit in the picture side's BOTTOM corner: a picture's face is usually up top */
+  .idol-btn{position:absolute; z-index:3; bottom:10px; right:10px; min-width:44px; height:44px; padding:0; border:none; border-radius:999px;
+    background:rgba(255,255,255,.9); color:var(--rose-800); font-size:1.2rem; font-weight:600; display:none; align-items:center; justify-content:center;
+    box-shadow:0 4px 12px -4px rgba(59,22,38,.4);}
+  .idol-which{right:60px; padding:0 10px; font-size:.76rem; white-space:nowrap;}
+  .camera-stage.idol-left .idol-btn{right:auto; left:10px;}
+  .camera-stage.idol-left .idol-which{left:60px;}
+  .idol-hint{position:absolute; z-index:2; bottom:62px; left:75%; transform:translateX(-50%); max-width:46%; text-align:center;
+    background:rgba(59,22,38,.62); color:#fff; font-size:.72rem; font-weight:600; line-height:1.3; padding:5px 10px; border-radius:999px;
+    pointer-events:none; display:none;}
+  .camera-stage.idol-left .idol-hint{left:25%;}
+  .camera-stage.idol-on .idol-canvas, .camera-stage.idol-on .idol-guide, .camera-stage.idol-on .idol-grab, .camera-stage.idol-on .idol-hint{display:block;}
+  .camera-stage.idol-on .idol-btn{display:flex;}
+  .idol-btn[hidden], .idol-hint[hidden]{display:none !important;}
+  /* while the photos are being taken: no buttons or guides over you, and the picture stays put */
+  .camera-stage.shooting .idol-btn, .camera-stage.shooting .idol-hint, .camera-stage.shooting .idol-guide{display:none !important;}
+  .camera-stage.shooting .idol-grab{pointer-events:none;}
   .flash{position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none;}
   .flash.on{animation:flash-pop .38s ease;}
   @keyframes flash-pop{0%{opacity:0;}15%{opacity:.9;}100%{opacity:0;}}
@@ -329,6 +361,7 @@
     position:absolute; top:14px; left:14px; background:rgba(59,22,38,.55); color:#fff; font-size:.75rem;
     padding:6px 12px; border-radius:999px; letter-spacing:.04em; font-weight:600;
   }
+  .shot-indicator:empty{display:none;}   /* (v4.14) no empty little pill in the corner between photos */
   .camera-permission{
     position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center;
     text-align:center; padding:28px; background:linear-gradient(160deg,rgba(255,143,179,.94),rgba(147,38,79,.94)); color:#fff; gap:14px;
@@ -820,6 +853,18 @@
   .pose-ico span, .pose-ico svg{position:relative; z-index:1;}
   .pose-item b{display:block; font-size:.8rem;}
   .pose-item small{display:block; font-size:.7rem; color:var(--rose-800); line-height:1.3;}
+  /* (v4.14) "Pick your pictures ★" for posing with your idol: My images, numbered in the order you tap them */
+  .idol-card{max-width:440px;}
+  .idol-grid{display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; max-height:40vh; overflow-y:auto; padding:2px; -webkit-overflow-scrolling:touch;}
+  .idol-tile{position:relative; aspect-ratio:1/1; min-height:44px; padding:0; border-radius:12px; border:2px solid var(--blush-100); overflow:hidden;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:repeating-conic-gradient(#FFFFFF 0 25%, #F7E8EE 0 50%) 0 0/12px 12px;}   /* see-through parts show as squares */
+  .idol-tile canvas{width:100%; height:100%; display:block;}
+  .idol-tile.selected{border:3px solid var(--rose-600);}
+  .idol-tile.add{border:2px dashed var(--pink-300); background:var(--white); color:var(--rose-600); font-size:1.5rem; line-height:1;}
+  .idol-tile.add small{font-size:.66rem; font-weight:600; color:var(--rose-800); margin-top:2px;}
+  .code-card .idol-empty{margin:10px 0 0; font-size:.8rem;}
+  .code-card .idol-tip{font-size:.76rem; margin:12px 0;}
   .pose-num{position:absolute; top:5px; right:5px; width:20px; height:20px; border-radius:50%; background:var(--rose-600); color:#fff; font-size:.7rem; font-weight:700; display:flex; align-items:center; justify-content:center; z-index:2;}
   #poseDone{margin-top:12px; min-height:48px;}
   /* "where to next?" (← on the result page) */
@@ -973,6 +1018,19 @@
       <p class="pose-hint" id="poseHint"></p>
       <div class="pose-grid" id="poseGrid"></div>
       <button type="button" class="btn btn-primary btn-block" id="poseDone">DONE ♡</button>
+    </div>
+  </div>
+
+  <!-- (v4.14) posing with your idol: pick up to 4 of My images, in order (photo 1 gets picture 1…) -->
+  <div class="code-modal" id="idolSheet" role="dialog" aria-modal="true" aria-labelledby="idolTitle" hidden>
+    <div class="code-card idol-card">
+      <button type="button" class="x-btn" id="idolX" aria-label="Close">✕</button>
+      <h3 id="idolTitle">Pick your pictures ★</h3>
+      <p>Tap them in order: photo 1 gets picture 1, photo 2 picture 2… (up to 4).</p>
+      <div class="idol-grid" id="idolGrid"></div>
+      <p class="idol-empty" id="idolEmpty" hidden>Your pictures show up here — add one from your gallery ♡</p>
+      <p class="idol-tip">Any picture works — your idol, your love, your pet ♡ A cut-out picture (no background) stands right in your room. Your pictures stay on this device, in My images.</p>
+      <button type="button" class="btn btn-primary btn-block" id="idolUse">PICK A PICTURE ♡</button>
     </div>
   </div>
 
@@ -1269,7 +1327,7 @@
       </details>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.13</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.14</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -1314,8 +1372,15 @@
         <h2 class="camera-title">OUR LITTLE PHOTO BOOTH ♡</h2>
         <div class="camera-stage">
           <video id="video" playsinline autoplay muted aria-label="Camera preview"></video>
+          <canvas class="idol-canvas" id="idolCanvas" aria-hidden="true"></canvas>
           <canvas class="fx-canvas" id="fxCanvas" aria-hidden="true"></canvas>
           <canvas class="fx-canvas" id="frameOverlay" aria-hidden="true"></canvas>
+          <!-- (v4.14) posing with your idol: face guide on your side, the picture to drag, ⇄ and which picture -->
+          <div class="idol-guide" aria-hidden="true"></div>
+          <div class="idol-grab" id="idolGrab" tabindex="-1" role="group" aria-label="Your picture: drag to move it, pinch or scroll to resize (arrow keys and + − work too)"></div>
+          <button type="button" class="idol-btn" id="idolSwap" aria-label="Swap sides">⇄</button>
+          <button type="button" class="idol-btn idol-which" id="idolWhich" hidden></button>
+          <div class="idol-hint" id="idolHint" aria-hidden="true" hidden></div>
           <canvas class="mini-strip" id="miniStrip" aria-hidden="true"></canvas>
           <div class="flash" id="flash" aria-hidden="true"></div>
           <div class="countdown" id="countdown" aria-live="polite"></div>
@@ -1340,6 +1405,7 @@
           <button class="icon-btn" id="changeFrameFromCamera" aria-label="Choose a different frame">🖼</button>
         </div>
         <div class="chip-row timer-row" id="timerRow" role="group" aria-label="Timer for the first photo"></div>
+        <div class="chip-row idol-row" id="idolRow" role="group" aria-label="Pose with"></div>
         <div class="fx-row">
           <h3>Live effects ✨</h3>
           <div class="chip-row" id="fxChips" role="group" aria-label="Live camera effects"></div>
@@ -1381,6 +1447,7 @@
 
         <input type="file" id="cameraAppInput" accept="image/*" capture="user" class="sr-only" tabindex="-1" aria-hidden="true">
         <input type="file" id="galleryInput" accept="image/*" multiple class="sr-only" tabindex="-1" aria-hidden="true">
+        <input type="file" id="idolFile" accept="image/*" multiple class="sr-only" tabindex="-1" aria-hidden="true">
       </section>
 
       <!-- LIVE ROOM: two phones, one countdown -->
@@ -2294,7 +2361,7 @@
       $('toCameraBtn').textContent = done ? 'CONTINUE ♡' : 'START PHOTO BOOTH ♡';
       $('skipFrameBtn').hidden = done;
     }
-    if(step === 'camera'){ initCamera(); updateTray(); startFx(); startCamOverlay(); }
+    if(step === 'camera'){ initCamera(); updateTray(); startFx(); startCamOverlay(); syncIdolUI(); }
     if(step === 'live'){ enterLiveStep(); }
     if(step === 'customize'){ prepCustomizeDefaults(); showFrameTab(templateById(state.templateId).tab); renderPreview(); }
     if(step === 'result'){ renderResult(); }
@@ -2394,6 +2461,7 @@
     if(!$('zoomModal').hidden){ closeZoom(); history.pushState(appEntry(), ''); return; }
     if(!$('duoHelp').hidden){ closeDuoHelp(); history.pushState(appEntry(), ''); return; }
     if(!$('poseSheet').hidden){ closePoseSheet(); history.pushState(appEntry(), ''); return; }
+    if(!$('idolSheet').hidden){ closeIdolSheet(); history.pushState(appEntry(), ''); return; }
     if(!$('designModal').hidden){ history.pushState(appEntry(), ''); return; }   // answer your love first
     stepBack(true);
   });
@@ -2486,6 +2554,7 @@
     else if(!$('zoomModal').hidden) closeZoom();
     else if(!$('duoHelp').hidden) closeDuoHelp();
     else if(!$('poseSheet').hidden) closePoseSheet();
+    else if(!$('idolSheet').hidden) closeIdolSheet();
     else if(st.open){ if(st.draw) finishDrawing(); else if(st.sel){ st.sel = null; syncStudioUI(); } else closeStudio(); }   // first finish drawing / let go of the chosen sticker
     else if(!$('cfEditor').hidden) closeCfEditor();
     else closeLandingCard();
@@ -2825,13 +2894,18 @@
     c.getContext('2d').drawImage(source, sx, sy, size, size, 0, 0, 640, 640);
     return c;
   }
-  function fileToShot(file){
+  // make(source, w, h) turns the decoded picture into the photo: the middle square, or (v4.14) joined with
+  // your idol's picture (idolCompose)
+  function fileToShot(file, make){
+    make = make || squareCanvasFrom;
     return new Promise(function(resolve, reject){
       function viaImage(){
         var url = URL.createObjectURL(file);
         var img = new Image();
         img.onload = function(){
-          var c = squareCanvasFrom(img, img.naturalWidth, img.naturalHeight);
+          var c;
+          try{ c = make(img, img.naturalWidth, img.naturalHeight); }
+          catch(e){ URL.revokeObjectURL(url); reject(e); return; }
           URL.revokeObjectURL(url);
           resolve(c);
         };
@@ -2843,8 +2917,10 @@
         try{ p = createImageBitmap(file, {imageOrientation:'from-image'}); }
         catch(e){ viaImage(); return; }
         p.then(function(bmp){
-          resolve(squareCanvasFrom(bmp, bmp.width, bmp.height));
-          if(bmp.close) bmp.close();
+          var c;
+          try{ c = make(bmp, bmp.width, bmp.height); }
+          finally{ if(bmp.close) bmp.close(); }
+          resolve(c);
         }).catch(viaImage);
       } else {
         viaImage();
@@ -2867,9 +2943,12 @@
     // almost 1 GB of memory — enough for an iPhone to reload the page (and lose everything).
     // A photo that can't be read is skipped; the others still come in
     var canvases = [], failed = 0;
+    // (v4.14) posing with your idol: your own photos get their pictures too (photo n → picture n)
+    var first = state.shots.length, joined = idolActive();
     files.reduce(function(prev, f){
       return prev.then(function(){
-        return fileToShot(f).then(function(c){ canvases.push(c); }, function(){ failed++; });
+        var make = joined ? function(src, w, h){ return idolCompose(src, w, h, false, first + canvases.length); } : null;
+        return fileToShot(f, make).then(function(c){ canvases.push(c); }, function(){ failed++; });
       });
     }, Promise.resolve()).then(function(){
       if($('app').dataset.view !== 'app') return;   // you went home meanwhile: that emptied the strip on purpose
@@ -2912,6 +2991,7 @@
     $('tray').hidden = state.shots.length === 0;
     syncShutterLabel();   // "tap to start ♡" or, with the strip full, "tap for new photos"
     if(state.currentStep === 'camera') drawMiniStrip();   // the little strip in the corner fills up as you go
+    idolNextPhoto();     // (v4.14) posing with your idol: the camera shows the picture for the next photo
     saveSessionSoon();   // a photo was added or removed
   }
   $('useCameraAppBtn').addEventListener('click', function(){ $('cameraAppInput').click(); });
@@ -3178,7 +3258,10 @@
     return c;
   }
   function captureShot(){
-    var c = captureVideo(video, state.facingMode === 'user');
+    var mirror = state.facingMode === 'user';
+    // (v4.14) posing with your idol: this photo's picture joins you (see "POSE WITH A PICTURE")
+    var c = idolActive() ? idolCompose(video, video.videoWidth || 640, video.videoHeight || 640, mirror, state.shots.length)
+                         : captureVideo(video, mirror);
     var cx = c.getContext('2d');
     if(state.fxId !== 'none'){
       // bake the live effect into the photo — un-mirrored, so hearts don't flip
@@ -3241,8 +3324,9 @@
     }
     booting = true;
     $('takePhotoBtn').disabled = true;
+    idolShooting(true);
     var runId = ++boothRun;
-    runBooth(runId).then(function(){ if(runId === boothRun) booting = false; });
+    runBooth(runId).then(function(){ if(runId === boothRun){ booting = false; idolShooting(false); } });
   });
   function runBooth(runId){
     function stillHere(){ return runId === boothRun && state.currentStep === 'camera'; }
@@ -3260,6 +3344,7 @@
           goToStep('customize');
         });
       }
+      idolShowFor(state.shots.length);   // (v4.14) the picture this photo gets, while you count down
       setShotIndicator('SHOT ' + (state.shots.length+1) + ' / ' + state.shotCount);
       var secs = first ? state.timer : 3;
       first = false;
@@ -3308,6 +3393,8 @@
     boothRun++;
     camRequest++;   // a camera still starting up is switched off when it arrives
     booting = false;
+    idolShooting(false);
+    closeIdolSheet();
     stopFx();
     stopCamOverlay();
     hideTransition();
@@ -5508,8 +5595,459 @@
   function removeMyImage(id){
     myImages.list = (myImages.list || []).filter(function(r){ return r.id !== id; });
     syncBackupRow();
+    idolForget(id);   // (v4.14) no longer one of the pictures you pose with
     return stickerDbRun('readwrite', function(store){ return store.delete(id); });
   }
+
+  /* ================= POSE WITH A PICTURE — "★ my idol" (v4.14) =================
+     On the camera page, "pose with ★ my idol" puts one of your own pictures (My images — the same ones you use
+     as stickers) next to you WHILE you pose, so you can lean in, make half a heart… Up to 4 pictures, in the
+     order you picked them: photo 1 gets picture 1, photo 2 picture 2, and so on (fewer pictures start over).
+     Each picture decides by itself how it joins you:
+       • a normal picture (it has a background) → split in two like a live Together photo: the middle of your
+         camera on one half, the picture filling the other half, a thin white line between;
+       • a cut-out (see-through around the person, e.g. from the phone gallery's "remove background") → your
+         whole camera, and the picture stands on its side of the photo: "in your room".
+     ⇄ swaps the sides; drag / pinch (computers: drag / scroll) lines the picture up with you. Positions are in
+     photo units (the photo = 640 x 640). The pictures stay in My images, the choice + positions in this browser
+     (oob-idol); nothing is uploaded. Every page starts with "just me". The result is an ordinary square photo
+     of yours ('me'): frames, stickers, filters, codes, printing and the video work as before. Not in the live
+     room (there, Together is for the two of you). */
+  var IDOL_MAX = 4, IDOL_KEY = 'oob-idol', IDOL_ID = /^[a-z0-9]{4,32}$/;
+  var idol = {on:false, ids:[], pics:[], side:'right', pos:{}, view:0, hinted:false, raf:0, saveT:0};
+  (function(){
+    try{
+      var o = JSON.parse(localStorage.getItem(IDOL_KEY) || 'null');
+      if(!o || typeof o !== 'object') return;
+      if(Array.isArray(o.ids)) o.ids.forEach(function(id){
+        if(typeof id === 'string' && IDOL_ID.test(id) && idol.ids.indexOf(id) === -1 && idol.ids.length < IDOL_MAX) idol.ids.push(id);
+      });
+      if(o.side === 'left') idol.side = 'left';
+      if(o.pos && typeof o.pos === 'object') Object.keys(o.pos).slice(0, MY_IMAGES_MAX).forEach(function(id){
+        var p = o.pos[id], q = {};
+        if(!IDOL_ID.test(id) || !p || typeof p !== 'object') return;
+        ['x', 'y', 'b', 's'].forEach(function(k){ if(typeof p[k] === 'number' && isFinite(p[k])) q[k] = clamp(p[k], -2000, 2000); });
+        idol.pos[id] = q;
+      });
+    }catch(e){}
+  })();
+  function idolSave(){
+    clearTimeout(idol.saveT);
+    idol.saveT = setTimeout(function(){
+      var pos = {};
+      idol.ids.concat(Object.keys(idol.pos).filter(function(id){ return idol.ids.indexOf(id) === -1; }))
+        .slice(0, MY_IMAGES_MAX).forEach(function(id){ if(idol.pos[id]) pos[id] = idol.pos[id]; });
+      try{ localStorage.setItem(IDOL_KEY, JSON.stringify({ids:idol.ids, side:idol.side, pos:pos})); }catch(e){}
+    }, 300);
+  }
+  // (guarded: some of these run from code that can be reached while the page is still starting up)
+  function idolActive(){ return !!(idol && idol.on && idol.pics.length); }
+  function idolShown(){ return idolActive() ? idol.pics[idol.view % idol.pics.length] : null; }
+  function idolStage(){ return document.querySelector('#step-camera .camera-stage'); }
+  // a cut-out = clearly see-through somewhere (a normal photo has no see-through pixels at all: My images keeps
+  // pictures trimmed to their visible part). Checked once per picture, on a small copy
+  function idolIsCutout(im){
+    if(typeof im.cutout !== 'boolean'){
+      try{
+        var c = document.createElement('canvas'), n = 48;
+        c.width = n; c.height = n;
+        var cx = c.getContext('2d');
+        cx.drawImage(im.img, 0, 0, n, n);
+        var d = cx.getImageData(0, 0, n, n).data, clear = 0;
+        for(var i = 3; i < d.length; i += 4) if(d[i] < 40) clear++;
+        im.cutout = clear / (n * n) > 0.06;
+      }catch(e){ im.cutout = false; }
+    }
+    return im.cutout;
+  }
+  // where a picture sits, kept inside sensible limits (a split picture always fills its half)
+  function idolNum(v, lo, hi, def){ return typeof v === 'number' && isFinite(v) ? clamp(v, lo, Math.max(lo, hi)) : def; }
+  function idolPos(p){
+    var im = p.im, q = idol.pos[p.id] || (idol.pos[p.id] = {});
+    if(p.room){
+      // s = its height (1 = the photo's height), x = from the middle of its side towards the middle line,
+      // b = where its feet are (640 = the photo's bottom edge: standing next to you)
+      q.s = idolNum(q.s, 0.25, 1.3, clamp(Math.min(0.88, 0.62 * im.h / im.w), 0.25, 1.3));
+      var h = q.s * 640;
+      q.x = idolNum(q.x, -140, 460, 0);
+      q.b = idolNum(q.b, 0.3 * h, 640 + 0.7 * h, 640);
+    } else {
+      // s = zoom (1 = just fills the half), x / y = its middle from the half's middle
+      q.s = idolNum(q.s, 1, 3, 1);
+      var k = Math.max(320 / im.w, 640 / im.h) * q.s, ew = (im.w * k - 320) / 2, eh = (im.h * k - 640) / 2;
+      q.x = idolNum(q.x, -ew, ew, 0);
+      q.y = idolNum(q.y, -eh, eh, eh);   // a new, very tall picture shows its top (faces are up there)
+    }
+    return q;
+  }
+  function idolGeom(p){
+    var im = p.im, q = idolPos(p), left = idol.side === 'left';
+    if(p.room){
+      var h = q.s * 640, w = h * im.w / im.h, cx = left ? 160 + q.x : 480 - q.x;
+      return {x:cx - w / 2, y:q.b - h, w:w, h:h};
+    }
+    var bx = left ? 0 : 320, k = Math.max(320 / im.w, 640 / im.h) * q.s, ww = im.w * k, hh = im.h * k;
+    return {x:bx + 160 + q.x - ww / 2, y:320 + q.y - hh / 2, w:ww, h:hh, clip:[bx, 0, 320, 640]};
+  }
+  function idolPaint(ctx, p){
+    var g = idolGeom(p);
+    ctx.save();
+    if(g.clip){ ctx.beginPath(); ctx.rect(g.clip[0], g.clip[1], g.clip[2], g.clip[3]); ctx.clip(); }
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(p.im.img, g.x, g.y, g.w, g.h);
+    ctx.restore();
+  }
+  function idolSeam(ctx){ ctx.fillStyle = 'rgba(255,255,255,0.95)'; ctx.fillRect(318.5, 0, 3, 640); }
+  // photo number n (0 = the first) from a camera frame or a gallery photo `src` (w x h): you + its picture
+  function idolCompose(src, w, h, mirror, n){
+    var p = idolActive() ? idol.pics[n % idol.pics.length] : null;
+    var c = document.createElement('canvas');
+    c.width = 640; c.height = 640;
+    var ctx = c.getContext('2d');
+    ctx.save();
+    if(p && !p.room){
+      // your half: the tall middle of the camera (like a Together photo), mirrored like a selfie on the front camera
+      var sw = Math.min(w, h / 2), sh = sw * 2, x0 = idol.side === 'left' ? 320 : 0;
+      if(mirror){ ctx.translate(2 * x0 + 320, 0); ctx.scale(-1, 1); }
+      ctx.drawImage(src, (w - sw) / 2, (h - sh) / 2, sw, sh, x0, 0, 320, 640);
+    } else {
+      var size = Math.min(w, h);   // the whole camera, square — exactly like a normal photo
+      if(mirror){ ctx.translate(640, 0); ctx.scale(-1, 1); }
+      ctx.drawImage(src, (w - size) / 2, (h - size) / 2, size, size, 0, 0, 640, 640);
+    }
+    ctx.restore();
+    if(p){
+      idolPaint(ctx, p);
+      if(!p.room){ idolSeam(ctx); c.dataset.seam = '1'; }   // (drawn again after filters on the strip: drawPhotoInto)
+    }
+    return c;
+  }
+
+  /* ---- on the camera ---- */
+  function idolDraw(){
+    if(!idol || idol.raf) return;
+    idol.raf = requestAnimationFrame(function(){
+      idol.raf = 0;
+      var cv = $('idolCanvas'), W = idolStage().clientWidth, p = idolShown();
+      if(!p || !W){ cv.getContext('2d').clearRect(0, 0, cv.width, cv.height); return; }
+      var dpr = window.devicePixelRatio || 1, size = Math.round(W * dpr);
+      if(cv.width !== size || cv.height !== size){ cv.width = size; cv.height = size; }
+      var ctx = cv.getContext('2d');
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, size, size);
+      ctx.setTransform(size / 640, 0, 0, size / 640, 0, 0);
+      idolPaint(ctx, p);
+      if(!p.room) idolSeam(ctx);
+      // the area you can grab: the picture's half (split) or the picture itself (cut-out), never too small
+      var k = W / 640, box;
+      if(!p.room) box = [idol.side === 'left' ? 0 : 320, 0, 320, 640];
+      else {
+        var g = idolGeom(p), x0 = Math.max(0, g.x), y0 = Math.max(0, g.y), mn = 64 / k;
+        box = [x0, y0, Math.max(0, Math.min(640, g.x + g.w) - x0), Math.max(0, Math.min(640, g.y + g.h) - y0)];
+        if(box[2] < mn){ box[0] = clamp(box[0] + box[2] / 2 - mn / 2, 0, 640 - mn); box[2] = mn; }
+        if(box[3] < mn){ box[1] = clamp(box[1] + box[3] / 2 - mn / 2, 0, 640 - mn); box[3] = mn; }
+      }
+      var gs = $('idolGrab').style;
+      gs.left = box[0] * k + 'px'; gs.top = box[1] * k + 'px'; gs.width = box[2] * k + 'px'; gs.height = box[3] * k + 'px';
+    });
+  }
+  function syncIdolUI(){
+    if(!idol) return;
+    var p = idolShown(), on = !!p, stage = idolStage(), n = idol.pics.length;
+    stage.classList.toggle('idol-on', on);
+    stage.classList.toggle('idol-room', on && p.room);
+    stage.classList.toggle('idol-split', on && !p.room);
+    stage.classList.toggle('idol-left', idol.side === 'left');
+    $('miniStrip').hidden = on;   // (the little strip in the corner would sit on your idol's head)
+    $('idolWhich').hidden = !on || n < 2;
+    if(on && n > 1){
+      var at = idol.view % n + 1;
+      $('idolWhich').textContent = '★ ' + at + ' / ' + n + ' ›';
+      $('idolWhich').setAttribute('aria-label', 'Showing picture ' + at + ' of ' + n + ' — show the next one');
+    }
+    $('idolHint').hidden = !on || idol.hinted;
+    $('idolGrab').tabIndex = on ? 0 : -1;
+    renderIdolRow();
+    idolDraw();
+  }
+  // the camera shows the picture that photo n will get: while counting down to it, and after each photo
+  function idolShowFor(n){ if(idolActive()){ idol.view = n % idol.pics.length; syncIdolUI(); } }
+  function idolNextPhoto(){ if(idolActive() && state.currentStep === 'camera') idolShowFor(state.shots.length); }
+  function idolShooting(on){
+    if(!idol) return;
+    idolStage().classList.toggle('shooting', on);
+    renderIdolRow();
+  }
+  // "pose with: just me ♡ | ★ my idol" (on: "★ 3 pictures ✎" — tap it to change them)
+  function renderIdolRow(){
+    var row = $('idolRow'), on = idolActive(), n = idol.pics.length;
+    var had = Array.prototype.indexOf.call(row.children, document.activeElement);
+    row.innerHTML = '';
+    var lab = document.createElement('span');
+    lab.className = 'chip-label'; lab.textContent = 'pose with'; lab.setAttribute('aria-hidden', 'true');
+    row.appendChild(lab);
+    function chip(text, active, label, fn){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip' + (active ? ' active' : ''); b.textContent = text;
+      b.setAttribute('aria-label', label);
+      b.setAttribute('aria-pressed', active ? 'true' : 'false');
+      b.disabled = booting;   // not while the photos are being taken
+      b.addEventListener('click', fn);
+      row.appendChild(b);
+    }
+    chip('just me ♡', !on, 'Pose just you', function(){ if(idol.on){ idol.on = false; syncIdolUI(); } });
+    chip(on ? '★ ' + n + (n === 1 ? ' picture' : ' pictures') + ' ✎' : '★ my idol', on,
+         on ? 'Change the pictures you pose with' : 'Pose with a picture of your idol',
+         function(){ if(idolActive()) openIdolSheet(); else idolStart(); });
+    if(had > 0 && row.children[had]) row.children[had].focus();   // a keyboard user stays on the chip
+  }
+  // your pictures from last time (the ones still in My images), ready to draw
+  function idolLoadPics(){
+    return loadMyImages().then(function(list){
+      var recs = [];
+      idol.ids.forEach(function(id){ for(var i = 0; i < list.length; i++) if(list[i].id === id){ recs.push(list[i]); return; } });
+      return Promise.all(recs.map(function(r){
+        return loadStickerImg(r.id, r.blob).then(function(im){ return {id:r.id, im:im, room:idolIsCutout(im)}; }, function(){ return null; });
+      }));
+    }).then(function(arr){
+      idol.pics = arr.filter(Boolean);
+      idol.ids = idol.pics.map(function(p){ return p.id; });
+      if(!idol.pics.length) idol.on = false;
+      return idol.pics;
+    });
+  }
+  // "★ my idol": straight on with the pictures you picked last time — or pick them first
+  function idolStart(){
+    if(booting) return;
+    idolLoadPics().then(function(pics){
+      if(state.currentStep !== 'camera' || booting) return;
+      if(!pics.length){ openIdolSheet(); return; }
+      idol.on = true;
+      idol.view = state.shots.length % pics.length;
+      syncIdolUI();
+    });
+  }
+  // a picture removed from My images (sticker studio) stops being one you pose with
+  function idolForget(id){
+    delete idol.pos[id];
+    idolPick = idolPick.filter(function(x){ return x !== id; });
+    if(idol.ids.indexOf(id) !== -1){
+      idol.ids = idol.ids.filter(function(x){ return x !== id; });
+      idol.pics = idol.pics.filter(function(p){ return p.id !== id; });
+      if(!idol.pics.length) idol.on = false;
+      idol.view = 0;
+      syncIdolUI();
+    }
+    idolSave();
+  }
+  $('idolSwap').addEventListener('click', function(){
+    if(booting) return;
+    idol.side = idol.side === 'left' ? 'right' : 'left';
+    idolSave();
+    syncIdolUI();
+  });
+  // "★ 2 / 3 ›": look at (and line up) your other pictures; each photo still gets its own picture
+  $('idolWhich').addEventListener('click', function(){
+    if(booting || idol.pics.length < 2) return;
+    idol.view = (idol.view + 1) % idol.pics.length;
+    syncIdolUI();
+  });
+
+  /* ---- lining the picture up: 1 finger / the mouse drags, 2 fingers pinch, the wheel resizes ---- */
+  var ip = {pts:{}, mode:null, from:null, m0:null, d0:1};
+  var idolGrab = $('idolGrab');
+  function idolPt(e){
+    var r = idolStage().getBoundingClientRect(), k = 640 / (r.width || 1);
+    return {x:(e.clientX - r.left) * k, y:(e.clientY - r.top) * k};
+  }
+  // (re)start from where the fingers are now — so lifting one finger of a pinch doesn't make it jump
+  function idolBegin(){
+    var p = idolShown(), keys = Object.keys(ip.pts);
+    ip.mode = null;
+    if(!p || !keys.length) return;
+    var q = idolPos(p);
+    ip.from = {x:q.x, y:q.y, b:q.b, s:q.s};
+    if(keys.length >= 2){
+      var a = ip.pts[keys[0]], c = ip.pts[keys[1]];
+      ip.mode = 'pinch';
+      ip.d0 = Math.max(8, Math.hypot(c.x - a.x, c.y - a.y));
+      ip.m0 = {x:(a.x + c.x) / 2, y:(a.y + c.y) / 2};
+    } else { ip.mode = 'drag'; ip.m0 = ip.pts[keys[0]]; }
+  }
+  function idolMoveBy(p, q, dx, dy){
+    if(p.room){ q.x = ip.from.x + (idol.side === 'left' ? dx : -dx); q.b = ip.from.b + dy; }   // (x counts towards the middle)
+    else { q.x = ip.from.x + dx; q.y = ip.from.y + dy; }
+  }
+  function idolChanged(){
+    if(!idol.hinted){ idol.hinted = true; $('idolHint').hidden = true; }   // they found out how it works
+    idolDraw();
+  }
+  idolGrab.addEventListener('pointerdown', function(e){
+    if(!idolActive() || booting) return;
+    e.preventDefault();
+    try{ idolGrab.setPointerCapture(e.pointerId); }catch(err){}
+    ip.pts[e.pointerId] = idolPt(e);
+    idolBegin();
+  });
+  idolGrab.addEventListener('pointermove', function(e){
+    if(!(e.pointerId in ip.pts)) return;
+    ip.pts[e.pointerId] = idolPt(e);
+    var p = idolShown(), keys = Object.keys(ip.pts);
+    if(!p || !ip.mode || booting) return;
+    var q = idolPos(p);
+    if(ip.mode === 'pinch' && keys.length >= 2){
+      var a = ip.pts[keys[0]], c = ip.pts[keys[1]];
+      q.s = ip.from.s * Math.hypot(c.x - a.x, c.y - a.y) / ip.d0;   // (a cut-out keeps its feet where they are)
+      idolMoveBy(p, q, (a.x + c.x) / 2 - ip.m0.x, (a.y + c.y) / 2 - ip.m0.y);
+    } else if(ip.mode === 'drag'){
+      var m = ip.pts[keys[0]];
+      idolMoveBy(p, q, m.x - ip.m0.x, m.y - ip.m0.y);
+    } else return;
+    idolChanged();
+  });
+  function idolPointerEnd(e){
+    if(!(e.pointerId in ip.pts)) return;
+    delete ip.pts[e.pointerId];
+    idolBegin();
+    if(!ip.mode) idolSave();
+  }
+  idolGrab.addEventListener('pointerup', idolPointerEnd);
+  idolGrab.addEventListener('pointercancel', idolPointerEnd);
+  idolGrab.addEventListener('wheel', function(e){
+    var p = !booting && idolShown();
+    if(!p) return;
+    e.preventDefault();
+    // lines / pages → pixels; ctrlKey = a touchpad pinch (same feel as the sticker studio)
+    var unit = e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 400 : 1, d = (e.deltaY || e.deltaX) * unit, q = idolPos(p);
+    q.s *= Math.exp(-d * (e.ctrlKey ? 0.012 : 0.0025));
+    idolChanged();
+    idolSave();
+  }, {passive:false});
+  // keyboard: arrows move it (Shift = further), + and − resize
+  idolGrab.addEventListener('keydown', function(e){
+    var p = !booting && idolShown();
+    if(!p) return;
+    var q = idolPos(p), step = e.shiftKey ? 24 : 6, dx = 0, dy = 0;
+    if(e.key === 'ArrowLeft') dx = -step;
+    else if(e.key === 'ArrowRight') dx = step;
+    else if(e.key === 'ArrowUp') dy = -step;
+    else if(e.key === 'ArrowDown') dy = step;
+    else if(e.key === '+' || e.key === '=') q.s *= 1.1;
+    else if(e.key === '-') q.s /= 1.1;
+    else return;
+    e.preventDefault();
+    ip.from = {x:q.x, y:q.y, b:q.b, s:q.s};
+    if(dx || dy) idolMoveBy(p, q, dx, dy);
+    idolChanged();
+    idolSave();
+  });
+
+  /* ---- "Pick your pictures ★": My images, numbered in the order you tap them. USE = pose with them;
+     ✕ / back / Escape = nothing changes ---- */
+  var idolPick = [];
+  function openIdolSheet(){
+    if(booting) return;
+    idolPick = idol.ids.slice();
+    $('idolGrid').innerHTML = '';
+    $('idolSheet').hidden = false;
+    renderIdolSheet();
+  }
+  function closeIdolSheet(){ $('idolSheet').hidden = true; }
+  function renderIdolSheet(){
+    loadMyImages().then(function(list){
+      if($('idolSheet').hidden) return;
+      var grid = $('idolGrid');
+      idolPick = idolPick.filter(function(id){ return list.some(function(r){ return r.id === id; }); });
+      grid.innerHTML = '';
+      var add = document.createElement('button');
+      add.type = 'button'; add.className = 'idol-tile add';
+      add.setAttribute('aria-label', 'Add pictures from your gallery');
+      add.appendChild(document.createTextNode('+'));
+      var small = document.createElement('small'); small.textContent = 'add'; add.appendChild(small);
+      add.addEventListener('click', function(){ $('idolFile').click(); });
+      grid.appendChild(add);
+      list.slice().reverse().forEach(function(rec){   // newest first
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'idol-tile'; b.dataset.id = rec.id;
+        loadStickerImg(rec.id, rec.blob).then(function(im){
+          var c = document.createElement('canvas'), k = Math.min(96 / im.w, 96 / im.h);
+          c.width = 96; c.height = 96;
+          c.getContext('2d').drawImage(im.img, (96 - im.w * k) / 2, (96 - im.h * k) / 2, im.w * k, im.h * k);
+          b.insertBefore(c, b.firstChild);
+        }).catch(function(){ b.remove(); });
+        b.addEventListener('click', function(){ idolToggle(rec.id); });
+        grid.appendChild(b);
+      });
+      $('idolEmpty').hidden = list.length > 0;
+      syncIdolTiles();
+    });
+  }
+  function idolToggle(id){
+    var i = idolPick.indexOf(id);
+    if(i !== -1) idolPick.splice(i, 1);
+    else if(idolPick.length < IDOL_MAX) idolPick.push(id);
+    else { showToast('Up to ' + IDOL_MAX + ' pictures — ' + TAP + ' one to remove it ♡'); return; }
+    syncIdolTiles();
+  }
+  // numbers + the button's words, without redrawing the pictures
+  function syncIdolTiles(){
+    Array.prototype.forEach.call($('idolGrid').querySelectorAll('.idol-tile[data-id]'), function(b){
+      var at = idolPick.indexOf(b.dataset.id), num = b.querySelector('.pose-num');
+      b.classList.toggle('selected', at !== -1);
+      b.setAttribute('aria-pressed', at !== -1 ? 'true' : 'false');
+      b.setAttribute('aria-label', at !== -1 ? 'Picture ' + (at + 1) + ' — ' + TAP + ' to take it out' : 'Pose with this picture');
+      if(at === -1){ if(num) num.remove(); return; }
+      if(!num){ num = document.createElement('span'); num.className = 'pose-num'; b.appendChild(num); }
+      num.textContent = String(at + 1);
+    });
+    var n = idolPick.length;
+    $('idolUse').textContent = !n ? 'PICK A PICTURE ♡' : n === 1 ? 'USE THIS PICTURE ♡' : 'USE ' + n + ' PICTURES ♡';
+  }
+  // new pictures from the gallery go into My images (like in the sticker studio) and are picked right away
+  $('idolFile').addEventListener('change', function(){
+    var files = Array.prototype.slice.call(this.files || []).filter(function(f){ return f && f.type && f.type.indexOf('image/') === 0; });
+    this.value = '';
+    if(!files.length) return;
+    var full = false, bad = 0;
+    files.slice(0, IDOL_MAX).reduce(function(prev, f){
+      return prev.then(function(){
+        if(full) return;
+        return addMyImage(f).then(function(rec){
+          if(idolPick.length < IDOL_MAX) idolPick.push(rec.id);
+        }, function(err){ if(err && err.message === 'full') full = true; else bad++; });
+      });
+    }, Promise.resolve()).then(function(){
+      if(full) showToast('My images holds ' + MY_IMAGES_MAX + ' pictures — remove one in the sticker studio first ♡');
+      else if(bad) showToast("We couldn't read " + (bad === 1 ? 'that picture' : bad + ' pictures') + '. Try another one ♡');
+      renderIdolSheet();
+    });
+  });
+  $('idolUse').addEventListener('click', function(){
+    if(!idolPick.length){ showToast('Pick a picture first ♡'); return; }
+    var was = idol.ids, wasOn = idol.on;
+    idol.ids = idolPick.slice();
+    idolLoadPics().then(function(pics){
+      if(!pics.length){
+        showToast("We couldn't open those pictures. Try another one ♡");
+        idol.ids = was;   // (the pictures you had stay as they were)
+        idolLoadPics().then(function(old){ idol.on = wasOn && old.length > 0; syncIdolUI(); });
+        return;
+      }
+      closeIdolSheet();
+      if(state.currentStep !== 'camera') return;
+      idol.on = true;
+      idol.view = state.shots.length % pics.length;
+      idolSave();
+      syncIdolUI();
+    });
+  });
+  $('idolX').addEventListener('click', closeIdolSheet);
+  $('idolSheet').addEventListener('click', function(e){ if(e.target === this) closeIdolSheet(); });
+  $('idolHint').textContent = IS_PHONE ? 'drag · pinch ♡' : 'drag · scroll to resize ♡';
+  // the camera square changed size (phone turned, window resized…): redraw sharp, move the grab area along
+  window.addEventListener('resize', function(){ if(idolActive()) idolDraw(); });
+  if(window.ResizeObserver) new ResizeObserver(function(){ if(idolActive()) idolDraw(); }).observe(idolStage());
+  syncIdolUI();
 
   /* ---- stickers from before v4.12 (automatic spots) become placed ones, at the same spots ---- */
   var LEGACY_SPOTS = [
@@ -8478,6 +9016,7 @@
         var from = c.dataset.from === 'you' || c.dataset.from === 'duo' ? c.dataset.from : 'me';
         var s = {blob:sets[i][0], from:from, round:c.dataset.round || '', side:c.dataset.side || ''};
         if(sets[i][1] && sets[i][2]){ s.pairMine = sets[i][1]; s.pairTheirs = sets[i][2]; }
+        if(c.dataset.seam === '1') s.seam = true;   // (v4.14) split with your idol's picture: the white middle line
         return s;
       })};
       session.savedThisPage = true;
@@ -8522,6 +9061,7 @@
         if(s.round) c.dataset.round = String(s.round);
         if(s.side === 'left' || s.side === 'right') c.dataset.side = s.side;   // Together: which half is you
         if(r[1] && r[2]){ c.pairMine = r[1]; c.pairTheirs = r[2]; c.dataset.pair = 'code'; }
+        if(s.seam === true) c.dataset.seam = '1';
         return c;
       });
     })).then(function(canvases){
@@ -9075,7 +9615,8 @@
     if(shotCanvas){
       drawFiltered(ctx, shotCanvas, x, y, w, h, filter);
       // a Together photo: a thin white line where your two halves meet (drawn after the filter, so it stays white)
-      if(isDuoShot(shotCanvas)){
+      // — (v4.14) and a photo split with your idol's picture (seam '1')
+      if(isDuoShot(shotCanvas) || shotCanvas.dataset.seam === '1'){
         ctx.fillStyle = 'rgba(255,255,255,0.95)';
         ctx.fillRect(x + w/2 - 1.5, y, 3, h);
       }
