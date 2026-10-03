@@ -729,6 +729,7 @@
   .ldr-older{display:block; margin:10px auto 0; min-height:44px; padding:10px 12px; background:none; border:none;
     color:var(--rose-800); font-size:.76rem; text-decoration:underline; opacity:.9;}
   .js-older{margin-top:4px;}
+  .ldr-tip{font-size:.74rem; color:var(--rose-800); line-height:1.5; text-align:center; margin:10px 2px 0;}   /* (v4.15.1) where their file is */
   .love-note{font-size:.8rem !important; margin:10px 0 0 !important;}
   #sendLoveModal .switch-row + .switch-row, #openLoveModal .switch-row{margin-top:6px;}
   #openLoveModal .code-style{margin:4px 0 6px;}
@@ -1383,7 +1384,7 @@
       </details>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.15</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.15.1</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -1500,6 +1501,7 @@
             <li>One of you taps "Send to my love" and picks WhatsApp — it arrives as a file.</li>
             <li>The other taps "Open from my love" and picks that file — one strip, two people ♡</li>
           </ol>
+          <p class="ldr-tip js-love-tip"></p>
           <button type="button" class="ldr-older js-older-toggle" aria-expanded="false">older way: copy / paste a code</button>
           <div class="fallback-buttons js-older" hidden>
             <button class="btn btn-ghost js-copy-code" id="copyMyCodeBtn">COPY MY PHOTO CODE</button>
@@ -1683,6 +1685,7 @@
                 <button class="btn btn-primary js-send-love">SEND TO MY LOVE ♡</button>
                 <button class="btn btn-secondary js-open-love">OPEN FROM MY LOVE</button>
               </div>
+              <p class="ldr-tip js-love-tip"></p>
               <button type="button" class="ldr-older js-older-toggle" aria-expanded="false">older way: copy / paste a code</button>
               <div class="fallback-buttons js-older" hidden>
                 <button class="btn btn-ghost js-copy-code">COPY MY PHOTO CODE</button>
@@ -8953,6 +8956,28 @@
       showToast("Couldn't make the file. Please try again ♡");
     });
   }
+  // (v4.15.1) the file travels with a short message, so your love knows what to do with it (WhatsApp shows it
+  // as the file's caption or right next to it). Apps that won't take a message with a file get the file alone
+  function shareLove(f){
+    var file;
+    try{ file = new File([f.blob], f.name, {type:f.blob.type}); }catch(e){ return Promise.reject(e); }
+    var withText = {files:[file], text:'Open it in our booth ♡ ' + siteUrl() + ' → "Open from my love"'};
+    try{
+      if(navigator.canShare && navigator.share && navigator.canShare(withText)){
+        return navigator.share(withText).catch(function(err){
+          if(err && err.name === 'TypeError') return shareFile(f.blob, f.name, false);   // (the message wasn't accepted)
+          throw err;
+        });
+      }
+    }catch(e){}
+    return shareFile(f.blob, f.name, false);
+  }
+  // (v4.15.1) under OPEN FROM MY LOVE: where the file from WhatsApp is, for this device
+  Array.prototype.forEach.call(document.querySelectorAll('.js-love-tip'), function(p){
+    p.textContent = IS_IOS ? 'Got their file in WhatsApp? Open it → Share → Save to Files. Then tap "Open from my love" and pick it in Files.'
+      : IS_ANDROID ? 'Got their file in WhatsApp? Tap it once so it downloads. Then tap "Open from my love" — it\'s under Recent (or Downloads).'
+      : 'Got their file in WhatsApp Web? Download it first, then click "Open from my love" and pick it.';
+  });
   $('sendLovePhotos').addEventListener('change', prepareLove);
   $('sendLoveDesign').addEventListener('change', prepareLove);
   $('sendLoveGo').addEventListener('click', function(){
@@ -8961,7 +8986,7 @@
     if(!f){ if(loveSend.failed) prepareLove(); return; }   // (still being made: the button says so)
     if(!IS_PHONE){ saveBlob(f.blob, f.name); closeSendLove(); return; }
     // the file is ready, so the share menu opens straight from this tap
-    shareFile(f.blob, f.name, false).then(function(){
+    shareLove(f).then(function(){
       closeSendLove();
       showToast('Sent ♡ Your love opens it with "Open from my love"');
     }, function(err){
