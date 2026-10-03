@@ -725,6 +725,20 @@
   .style-ico i{flex:1; border-radius:4px; background:var(--pink-300);}
   .code-actions{display:flex; gap:10px; margin-top:14px;}
   .code-actions .btn{flex:1; font-size:.8rem; padding:13px 12px;}
+  /* (v4.15) send to / open from my love: one file instead of a long code */
+  .ldr-older{display:block; margin:10px auto 0; min-height:44px; padding:10px 12px; background:none; border:none;
+    color:var(--rose-800); font-size:.76rem; text-decoration:underline; opacity:.9;}
+  .js-older{margin-top:4px;}
+  .love-note{font-size:.8rem !important; margin:10px 0 0 !important;}
+  #sendLoveModal .switch-row + .switch-row, #openLoveModal .switch-row{margin-top:6px;}
+  #openLoveModal .code-style{margin:4px 0 6px;}
+  /* short phones: a smaller preview, so OPEN fits on the screen with all the choices */
+  @media (max-height:700px){
+    #openLoveModal .design-preview canvas{max-height:28vh;}
+    #openLoveModal .style-opt{padding:6px; min-height:44px;}
+    #openLoveModal .style-ico{display:none;}
+  }
+  .switch-row input:disabled + span{opacity:.55;}
   .camera-permission .permission-actions{display:flex; flex-direction:column; gap:8px; width:100%; max-width:260px;}
   .camera-permission .btn{width:100%; font-size:.78rem; padding:13px 14px; min-height:46px;}
 
@@ -1074,6 +1088,8 @@
     </div>
   </div>
   <input type="file" id="cfImportInput" accept=".json,application/json" class="sr-only" tabindex="-1" aria-hidden="true">
+  <!-- (v4.15) "Open from my love": the file your love sent (camera page + editor) -->
+  <input type="file" id="loveFile" accept=".txt,text/plain" class="sr-only" tabindex="-1" aria-hidden="true">
 
   <!-- "zoom" in the editor: the whole strip as big as the screen allows (scroll to see it all) -->
   <div class="code-modal zoom-modal" id="zoomModal" role="dialog" aria-modal="true" aria-label="Your strip, bigger" hidden>
@@ -1092,6 +1108,46 @@
       <div class="code-actions">
         <button class="btn btn-ghost" id="designKeep">KEEP MINE</button>
         <button class="btn btn-primary" id="designUse">USE THEIRS ♡</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- (v4.15) "Send to my love": your photos and/or your design as ONE file, for WhatsApp (see SEND TO MY LOVE) -->
+  <div class="code-modal design-modal" id="sendLoveModal" role="dialog" aria-modal="true" aria-labelledby="sendLoveTitle" hidden>
+    <div class="code-card">
+      <button type="button" class="x-btn" id="sendLoveX" aria-label="Close">✕</button>
+      <h3 id="sendLoveTitle">Send to my love ♡</h3>
+      <label class="switch-row"><input type="checkbox" id="sendLovePhotos" checked><span id="sendLovePhotosText">My photos</span></label>
+      <label class="switch-row"><input type="checkbox" id="sendLoveDesign" checked><span id="sendLoveDesignText">My design</span></label>
+      <p class="love-note" id="sendLoveNote"></p>
+      <div class="code-actions">
+        <button class="btn btn-ghost" id="sendLoveCancel">Cancel</button>
+        <button class="btn btn-primary" id="sendLoveGo">SEND ♡</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- (v4.15) the file your love sent: shown on your photos first; you choose what to take -->
+  <div class="code-modal design-modal" id="openLoveModal" role="dialog" aria-modal="true" aria-labelledby="openLoveTitle" hidden>
+    <div class="code-card">
+      <button type="button" class="x-btn" id="openLoveX" aria-label="Not now">✕</button>
+      <h3 id="openLoveTitle">From your love ♡</h3>
+      <div class="design-preview"><canvas id="openLoveCanvas" width="10" height="10"></canvas></div>
+      <label class="switch-row" id="openLovePhotosRow"><input type="checkbox" id="openLovePhotos" checked><span id="openLovePhotosText">Add their photos</span></label>
+      <div class="code-style" id="openLoveStyle" role="radiogroup" aria-label="How their photos join yours">
+        <button type="button" class="style-opt" role="radio" data-style="side">
+          <span class="style-ico side" aria-hidden="true"><i></i><i></i></span><b>Side by side ♡</b><small>one photo, you on the left</small>
+        </button>
+        <button type="button" class="style-opt" role="radio" data-style="stack">
+          <span class="style-ico stack" aria-hidden="true"><i></i><i></i></span><b>Stacked</b><small>one below the other</small>
+        </button>
+      </div>
+      <label class="switch-row" id="openLoveDesignRow"><input type="checkbox" id="openLoveDesign" checked><span>Use their design</span></label>
+      <label class="switch-row" id="openLoveSaveRow" hidden><input type="checkbox" id="openLoveSave" checked><span id="openLoveSaveText">Also save their frame to my frames</span></label>
+      <p class="love-note" id="openLoveNote" hidden></p>
+      <div class="code-actions">
+        <button class="btn btn-ghost" id="openLoveKeep">NOT NOW</button>
+        <button class="btn btn-primary" id="openLoveGo">OPEN ♡</button>
       </div>
     </div>
   </div>
@@ -1327,7 +1383,7 @@
       </details>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.14</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.15</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -1433,16 +1489,22 @@
           <p class="ldr-title">Long distance ♡</p>
           <p class="ldr-hint">Want to see each other while you pose? Open a live room together.</p>
           <button class="btn btn-primary btn-block js-go-live">GO LIVE TOGETHER ♡</button>
-          <p class="ldr-hint" style="margin-top:16px;">Not online at the same time? Take your own shots, then swap codes — you'll end up on the same strip.</p>
+          <p class="ldr-hint" style="margin-top:16px;">Not online at the same time? Take your own shots, then send them to your love as one little file — you'll end up on the same strip.</p>
+          <!-- (v4.15) photos + design travel as ONE file (WhatsApp etc.); the old text codes are the "older way" -->
           <div class="fallback-buttons">
-            <button class="btn btn-secondary js-copy-code" id="copyMyCodeBtn">COPY MY PHOTO CODE</button>
-            <button class="btn btn-ghost js-paste-code" id="pasteCodeBtn">PASTE THEIR CODE</button>
+            <button class="btn btn-primary js-send-love">SEND TO MY LOVE ♡</button>
+            <button class="btn btn-secondary js-open-love">OPEN FROM MY LOVE</button>
           </div>
           <ol class="ldr-steps">
             <li>Each of you takes 2 photos here, on your own phone (one strip holds 4).</li>
-            <li>One of you taps "Copy my photo code" and sends it by WhatsApp.</li>
-            <li>The other taps "Paste their code" — one strip, two people ♡</li>
+            <li>One of you taps "Send to my love" and picks WhatsApp — it arrives as a file.</li>
+            <li>The other taps "Open from my love" and picks that file — one strip, two people ♡</li>
           </ol>
+          <button type="button" class="ldr-older js-older-toggle" aria-expanded="false">older way: copy / paste a code</button>
+          <div class="fallback-buttons js-older" hidden>
+            <button class="btn btn-ghost js-copy-code" id="copyMyCodeBtn">COPY MY PHOTO CODE</button>
+            <button class="btn btn-ghost js-paste-code" id="pasteCodeBtn">PASTE THEIR CODE</button>
+          </div>
         </div>
 
         <input type="file" id="cameraAppInput" accept="image/*" capture="user" class="sr-only" tabindex="-1" aria-hidden="true">
@@ -1614,11 +1676,16 @@
                 <button type="button" class="btn-text" id="togetherStop">Stop designing together</button>
               </div>
             </div>
-            <button type="button" class="ldr-toggle" id="ldrToggle" aria-expanded="false">♡ Long distance — swap photo codes</button>
+            <button type="button" class="ldr-toggle" id="ldrToggle" aria-expanded="false">♡ Long distance — send to your love</button>
             <div class="ldr-row" id="ldrCustomize" hidden>
-              <p class="ldr-hint">Send your photos to your love, or add theirs to this strip.</p>
+              <p class="ldr-hint">Send your photos and your design to your love as one little file — or open the one they sent you.</p>
               <div class="fallback-buttons">
-                <button class="btn btn-secondary js-copy-code">COPY MY PHOTO CODE</button>
+                <button class="btn btn-primary js-send-love">SEND TO MY LOVE ♡</button>
+                <button class="btn btn-secondary js-open-love">OPEN FROM MY LOVE</button>
+              </div>
+              <button type="button" class="ldr-older js-older-toggle" aria-expanded="false">older way: copy / paste a code</button>
+              <div class="fallback-buttons js-older" hidden>
+                <button class="btn btn-ghost js-copy-code">COPY MY PHOTO CODE</button>
                 <button class="btn btn-ghost js-paste-code">PASTE THEIR CODE</button>
               </div>
             </div>
@@ -2344,6 +2411,8 @@
     closeStudio(true);   // (e.g. your love pressed the heart for new photos while you were placing stickers)
     closeHoldSheet();
     closePrintSheet();
+    if(!$('sendLoveModal').hidden) closeSendLove();   // (v4.15)
+    if(!$('openLoveModal').hidden) closeOpenLove();
     state.currentStep = step;
     closeZoom();         // (after the step changes, so it doesn't restart the editor's animation elsewhere)
     if(step === 'camera' || step === 'live') state.captureStep = step;   // where ← from the editor goes back to
@@ -2462,6 +2531,8 @@
     if(!$('duoHelp').hidden){ closeDuoHelp(); history.pushState(appEntry(), ''); return; }
     if(!$('poseSheet').hidden){ closePoseSheet(); history.pushState(appEntry(), ''); return; }
     if(!$('idolSheet').hidden){ closeIdolSheet(); history.pushState(appEntry(), ''); return; }
+    if(!$('sendLoveModal').hidden){ closeSendLove(); history.pushState(appEntry(), ''); return; }
+    if(!$('openLoveModal').hidden){ closeOpenLove(); history.pushState(appEntry(), ''); return; }
     if(!$('designModal').hidden){ history.pushState(appEntry(), ''); return; }   // answer your love first
     stepBack(true);
   });
@@ -2555,6 +2626,8 @@
     else if(!$('duoHelp').hidden) closeDuoHelp();
     else if(!$('poseSheet').hidden) closePoseSheet();
     else if(!$('idolSheet').hidden) closeIdolSheet();
+    else if(!$('sendLoveModal').hidden) closeSendLove();
+    else if(!$('openLoveModal').hidden) closeOpenLove();
     else if(st.open){ if(st.draw) finishDrawing(); else if(st.sel){ st.sel = null; syncStudioUI(); } else closeStudio(); }   // first finish drawing / let go of the chosen sticker
     else if(!$('cfEditor').hidden) closeCfEditor();
     else closeLandingCard();
@@ -3156,6 +3229,7 @@
     return {shots:out, keepMine:keepMine, keepTheirs:keepTheirs, trimmed:(mine.length - keepMine) + (theirs.length - keepTheirs)};
   }
   function applyPartnerShots(merged){
+    state.placed = remapOwnPlaced(state.placed, state.shots, merged.shots);   // (v4.15) your stickers stay on your photos
     state.shots = merged.shots;
     state.shotCount = merged.shots.length;
     updateTray();
@@ -8775,6 +8849,373 @@
       else if(saving) showToast('Their frame is saved in your frames ♡');
     });
   }
+
+  /* ================= SEND TO MY LOVE — one file (v4.15) =================
+     Long distance without a live room: your photos and/or your design (frame, colour, filter, stickers, drawings,
+     text) go to your love as ONE small text file — shared to WhatsApp & co. (it arrives as a document), or saved
+     on a computer. Nothing long to select and copy any more; the old text codes stay as "the older way".
+     The file starts with a few words for anyone who opens it by accident, then LOVE_MARK and the data as JSON
+     (pictures as base64). It's a .txt because phones' share menus accept text files (not .json).
+     OPEN FROM MY LOVE checks everything exactly like a design from the live room (known ids, short texts, real
+     pictures of a sensible size, re-drawn by us), shows it on your own photos first, and you choose what to take.
+     The file is made BEFORE you tap SEND: phones only open the share menu right after a tap. */
+  var LOVE_MARK = 'OLB1:', LOVE_MAX_FILE = 30 * 1024 * 1024, LOVE_MAX_PHOTO = 4 * 1024 * 1024;
+  var loveSend = {job:null, file:null, failed:false};
+  var loveOffer = null;   // the file being looked at in "From your love"
+  // ArrayBuffer → base64, in slices (one huge String.fromCharCode call can run out of stack)
+  function b64Of(buf){
+    var bytes = new Uint8Array(buf), out = '', step = 0x8000;
+    for(var i = 0; i < bytes.length; i += step) out += String.fromCharCode.apply(null, bytes.subarray(i, i + step));
+    return btoa(out);
+  }
+  // base64 → bytes (null when it isn't base64 at all)
+  function bytesOf(b64){
+    if(typeof b64 !== 'string' || !b64.length || !/^[A-Za-z0-9+\/]+={0,2}$/.test(b64)) return null;
+    try{
+      var s = atob(b64), out = new Uint8Array(s.length);
+      for(var i = 0; i < s.length; i++) out[i] = s.charCodeAt(i);
+      return out;
+    }catch(e){ return null; }
+  }
+
+  /* ---- sending ---- */
+  // the file: { blob, name }. Photos = your own (like the old code: not the ones your love sent you, and not
+  // live Together photos, which are on both phones already). Each sticker also says which photo IN THIS FILE it
+  // sits on (f), so your love's phone puts it on exactly that photo, however their strip is arranged
+  function makeLove(withPhotos, withDesign){
+    var sent = withPhotos ? myOwnShots() : [];
+    var d = withDesign ? currentDesign() : null, t = d && templateById(d.templateId);
+    return Promise.all([
+      Promise.all(sent.map(function(c){
+        return shotBlob(c).then(function(b){ if(!b) throw new Error('photo'); return b.arrayBuffer(); });
+      })),
+      d && t.custom ? packFrame(t.rec) : null,
+      d ? packStickerImgs(usedImgIds(d.placed)) : []
+    ]).then(function(res){
+      var data = {v:1, ver:APP_VERSION, photos:res[0].map(b64Of)};
+      if(d){
+        var design = partnerDesign(d);
+        design.placed = design.placed.map(function(it, i){
+          var c = state.shots[d.placed[i].p], at = c ? sent.indexOf(c.pairMine || c) : -1;
+          if(at !== -1) it.f = at;
+          return it;
+        });
+        data.design = design;
+        if(res[1]) data.frame = {id:res[1].id, name:res[1].name, baseId:res[1].baseId, colorId:res[1].colorId, wiggle:res[1].wiggle,
+          items:res[1].items.map(function(it){ return {pos:it.pos, size:it.size, v:it.v, b64:b64Of(it.buf)}; })};
+        data.imgs = res[2].map(function(x){ return {id:x.id, b64:b64Of(x.buf)}; });
+        data.draws = packDraws(usedDrawIds(d.placed));
+      }
+      var n = data.photos.length;
+      var what = (n ? n + (n === 1 ? ' photo' : ' photos') : '') + (n && d ? ' + ' : '') + (d ? 'a design' : '');
+      var text = 'Our Little Photo Booth ♡ ' + what + ' from your love.\n' +
+                 'Open this file in the booth: ' + siteUrl() + ' → OPEN FROM MY LOVE\n' +
+                 "(It's just for the two of you — please don't forward it.)\n\n" + LOVE_MARK + JSON.stringify(data);
+      var name = 'our-little-booth-' + (n ? n + '-photo' + (n === 1 ? '' : 's') : '') + (n && d ? '-and-' : '') + (d ? 'design' : '') + '-' + todayIso() + '.txt';
+      return {blob:new Blob([text], {type:'text/plain'}), name:name};
+    });
+  }
+  function openSendLove(){
+    var n = myOwnShots().length, together = state.shots.some(function(c){ return isDuoShot(c) && !c.pairMine; });
+    var t = templateById(state.templateId);
+    $('sendLovePhotos').disabled = !n;
+    $('sendLovePhotos').checked = n > 0;
+    $('sendLovePhotosText').textContent = n ? 'My photos (' + n + ')'
+      : together ? 'My photos — your Together photos are already with both of you' : 'My photos — take some first';
+    $('sendLoveDesign').checked = true;
+    $('sendLoveDesignText').textContent = 'My design — ' + (t.custom ? 'my frame "' + t.rec.name + '"' : 'the ' + t.name + ' frame') +
+                                          ', colour, filter, stickers, drawings, text';
+    $('sendLoveNote').textContent = IS_PHONE
+      ? "Your share menu opens — pick WhatsApp, then your love. It arrives as a file; they open it here with \"Open from my love\"."
+      : 'The file is saved on this computer — send it to your love as a document (e.g. in WhatsApp Web: 📎 → Document).';
+    $('sendLoveModal').hidden = false;
+    $('sendLoveModal').scrollTop = 0;
+    prepareLove();
+  }
+  function closeSendLove(){
+    $('sendLoveModal').hidden = true;
+    loveSend.job = null; loveSend.file = null; loveSend.failed = false;
+  }
+  function prepareLove(){
+    var p = $('sendLovePhotos').checked && !$('sendLovePhotos').disabled, d = $('sendLoveDesign').checked, go = $('sendLoveGo');
+    loveSend.file = null; loveSend.failed = false; loveSend.job = null;
+    if(!p && !d){ go.disabled = false; go.textContent = 'PICK SOMETHING ♡'; return; }
+    go.disabled = true; go.textContent = 'MAKING YOUR FILE…';
+    var job = loveSend.job = makeLove(p, d).then(function(f){
+      if(loveSend.job !== job) return;
+      loveSend.file = f;
+      go.disabled = false;
+      go.textContent = IS_PHONE ? 'SEND ♡' : 'SAVE THE FILE ♡';
+    }, function(){
+      if(loveSend.job !== job) return;
+      loveSend.failed = true;
+      go.disabled = false; go.textContent = 'TRY AGAIN';
+      showToast("Couldn't make the file. Please try again ♡");
+    });
+  }
+  $('sendLovePhotos').addEventListener('change', prepareLove);
+  $('sendLoveDesign').addEventListener('change', prepareLove);
+  $('sendLoveGo').addEventListener('click', function(){
+    if(!$('sendLovePhotos').checked && !$('sendLoveDesign').checked){ showToast('Tick your photos or your design first ♡'); return; }
+    var f = loveSend.file;
+    if(!f){ if(loveSend.failed) prepareLove(); return; }   // (still being made: the button says so)
+    if(!IS_PHONE){ saveBlob(f.blob, f.name); closeSendLove(); return; }
+    // the file is ready, so the share menu opens straight from this tap
+    shareFile(f.blob, f.name, false).then(function(){
+      closeSendLove();
+      showToast('Sent ♡ Your love opens it with "Open from my love"');
+    }, function(err){
+      var why = err && err.name;
+      if(why === 'AbortError') return;   // you closed the menu: SEND again, or Cancel
+      if(why === 'NotAllowedError'){ showToast('Tap SEND again ♡'); return; }
+      // no share menu in this browser: the file is saved instead — send it from your files
+      saveBlob(f.blob, f.name);
+      closeSendLove();
+    });
+  });
+  $('sendLoveCancel').addEventListener('click', closeSendLove);
+  $('sendLoveX').addEventListener('click', closeSendLove);
+  $('sendLoveModal').addEventListener('click', function(e){ if(e.target === this) closeSendLove(); });
+
+  /* ---- opening the file your love sent ---- */
+  function readTextFile(file){
+    return new Promise(function(resolve, reject){
+      var r = new FileReader();
+      r.onload = function(){ resolve(String(r.result || '')); };
+      r.onerror = function(){ reject(new Error('read')); };
+      r.readAsText(file);
+    });
+  }
+  // → {theirs: their photos in file order (null = couldn't be read), photos: the ones that could,
+  //    design: {raw, templateId} or null, rec: their custom frame (not saved yet) or null, notes: […]}
+  function readLove(text){
+    var at = text.indexOf(LOVE_MARK);
+    if(at === -1){
+      // an old photo code saved in a file still opens (photos only)
+      if(text.indexOf('LB1|') !== -1) return unpackCode(text).then(function(cs){ return {theirs:cs, photos:cs, design:null, rec:null, notes:[]}; });
+      return Promise.reject(new Error('format'));
+    }
+    var data;
+    try{ data = JSON.parse(text.slice(at + LOVE_MARK.length)); }catch(e){ return Promise.reject(new Error('format')); }
+    if(!data || typeof data !== 'object') return Promise.reject(new Error('format'));
+    if(data.v !== 1) return Promise.reject(new Error(typeof data.v === 'number' && data.v > 1 ? 'newer' : 'format'));
+    var notes = [];
+    var photos = (Array.isArray(data.photos) ? data.photos : []).slice(0, MAX_SHOTS);
+    return Promise.all(photos.map(function(b64){
+      var bytes = bytesOf(b64);
+      if(!bytes || bytes.byteLength > LOVE_MAX_PHOTO) return null;
+      // re-drawn by us as a 640 x 640 photo, whatever the picture was
+      return loadImage(new Blob([bytes], {type:'image/jpeg'})).then(function(img){
+        var c = squareCanvasFrom(img, img.naturalWidth || img.width, img.naturalHeight || img.height);
+        freeImage(img);
+        c.dataset.from = 'you';
+        return c;
+      }, function(){ return null; });
+    })).then(function(theirs){
+      var ok = theirs.filter(Boolean);
+      if(ok.length < theirs.length) notes.push("We couldn't read " + (theirs.length - ok.length === 1 ? 'one of their photos' : (theirs.length - ok.length) + ' of their photos') + '.');
+      var o = {theirs:theirs, photos:ok, design:null, rec:null, notes:notes};
+      var raw = data.design;
+      if(!raw || typeof raw !== 'object' || !cleanDesign(raw)) return o;
+      // the pictures and drawings its stickers use come first (cleanDesign keeps only stickers whose picture is here)
+      var imgs = (Array.isArray(data.imgs) ? data.imgs : []).slice(0, 12).map(function(x){
+        return {id:x && x.id, buf:x && bytesOf(x.b64)};
+      });
+      return unpackStickerImgs(imgs).then(function(){
+        unpackDraws(data.draws);
+        var tid = typeof raw.templateId === 'string' ? raw.templateId : '';
+        if(/^custom-/.test(tid)){
+          var f = data.frame;
+          var frame = f && typeof f === 'object' && Array.isArray(f.items) ? {id:f.id, name:f.name, baseId:f.baseId, colorId:f.colorId, wiggle:f.wiggle,
+            items:f.items.slice(0, 13).map(function(it){ return {pos:it && it.pos, size:it && it.size, v:it && it.v, buf:it && bytesOf(it.b64)}; })} : null;
+          return unpackFrame(frame).then(function(rec){
+            o.design = {raw:raw, templateId:'custom-' + rec.id};
+            o.rec = rec;
+            return o;
+          }, function(){
+            notes.push("Their frame couldn't be opened.");
+            return o;
+          });
+        }
+        if(TEMPLATES.some(function(t){ return t.id === tid && !t.custom; })) o.design = {raw:raw, templateId:tid};
+        else notes.push("Their frame needs a newer page — reload this page to see it.");   // (sent from a newer version)
+        return o;
+      });
+    });
+  }
+  // a sticker from your love's strip → the photo it's on in the strip `state.shots`: their photos from this file
+  // (alone, or inside a side-by-side pair); anything else is found like a design from the live room
+  function placedFromLove(list, theirs){
+    if(!Array.isArray(list)) return list;
+    var mapped = placedFromPartner(list);
+    return mapped.map(function(it, i){
+      var src = list[i], c = src && typeof src.f === 'number' ? theirs[src.f] : null;
+      if(!c) return it;
+      for(var k = 0; k < state.shots.length; k++){
+        var s = state.shots[k];
+        if(s === c || s.pairTheirs === c){
+          var out = {};
+          Object.keys(it).forEach(function(key){ out[key] = it[key]; });
+          out.p = k;
+          return out;
+        }
+      }
+      return it;
+    });
+  }
+  // your own stickers stay on their photos when the strip is put together again (their photos joining yours)
+  function remapOwnPlaced(list, oldShots, newShots){
+    return copyPlaced(list).map(function(it){
+      var c = oldShots[it.p];
+      if(!c) return it;
+      var mine = c.pairMine || c;
+      for(var k = 0; k < newShots.length; k++){
+        var s = newShots[k];
+        if(s === c || s === mine || s.pairMine === mine){ it.p = k; break; }
+      }
+      return it;
+    });
+  }
+  // what OPEN would make, with the ticks as they are now
+  function loveMerge(o){
+    if(!o.photos.length || !$('openLovePhotos').checked) return null;
+    return mergePartnerShots(o.photos, codeStyle);
+  }
+  function loveDesign(o, shots){
+    if(!o.design || !$('openLoveDesign').checked) return null;
+    var keep = state.shots;
+    state.shots = shots;
+    try{
+      var raw = {};
+      Object.keys(o.design.raw).forEach(function(k){ raw[k] = o.design.raw[k]; });
+      raw.placed = placedFromLove(o.design.raw.placed, o.theirs);
+      var d = cleanDesign(raw);
+      if(d) d.templateId = o.design.templateId;
+      return d;
+    } finally { state.shots = keep; }
+  }
+  function syncOpenLove(){
+    var o = loveOffer;
+    if(!o) return;
+    var n = o.photos.length, addPhotos = n > 0 && $('openLovePhotos').checked;
+    $('openLovePhotosRow').hidden = !n;
+    $('openLovePhotosText').textContent = 'Add their ' + (n === 1 ? 'photo' : n + ' photos');
+    $('openLoveStyle').hidden = !addPhotos;
+    Array.prototype.forEach.call($('openLoveStyle').children, function(b){
+      b.setAttribute('aria-checked', b.dataset.style === codeStyle ? 'true' : 'false');
+    });
+    $('openLoveDesignRow').hidden = !o.design;
+    var theirFrame = !!(o.rec && o.rec.srcId);
+    $('openLoveSaveRow').hidden = !theirFrame;
+    if(theirFrame) $('openLoveSaveText').textContent = 'Also save their frame "' + o.rec.name + '" to my frames';
+    // the preview: your strip as it would be after OPEN
+    var m = addPhotos ? loveMerge(o) : null, shots = m ? m.shots : state.shots;
+    var d = loveDesign(o, shots), t;
+    if(d) t = o.rec ? customTemplate(o.rec) : templateById(d.templateId);
+    else { d = currentDesign(); d.placed = remapOwnPlaced(state.placed, state.shots, shots); t = templateById(d.templateId); }
+    var keep = state.shots;
+    state.shots = shots;
+    try{ drawDesignInto($('openLoveCanvas'), d, t); } finally { state.shots = keep; }
+    var notes = o.notes.slice();
+    if(m && m.trimmed) notes.push('One strip holds ' + MAX_SHOTS + ' photos — we keep ' + m.keepMine + ' of yours and ' + m.keepTheirs + ' of theirs.');
+    $('openLoveNote').textContent = notes.join(' ');
+    $('openLoveNote').hidden = !notes.length;
+  }
+  function offerLove(o){
+    if(!o.photos.length && !o.design){
+      showToast(o.notes.length ? o.notes.join(' ') + ' ♡' : "There's nothing in that file to open ♡");
+      if(o.rec) forgetImages(o.rec);
+      return;
+    }
+    closeStudio();   // (your stickers stay) — the question shows over the editor
+    if(loveOffer && loveOffer.rec && loveOffer.rec !== o.rec && loveOffer.rec.srcId) forgetImages(loveOffer.rec);
+    loveOffer = o;
+    $('openLovePhotos').checked = true;
+    $('openLoveDesign').checked = true;
+    $('openLoveSave').checked = true;
+    $('openLoveModal').hidden = false;
+    $('openLoveModal').scrollTop = 0;
+    syncOpenLove();
+  }
+  // NOT NOW / ✕ / back: nothing changes (their frame's pictures are let go)
+  function closeOpenLove(){
+    var o = loveOffer;
+    loveOffer = null;
+    $('openLoveModal').hidden = true;
+    if(o && o.rec && o.rec.srcId) forgetImages(o.rec);
+  }
+  function openLove(){
+    var o = loveOffer;
+    if(!o) return;
+    var addPhotos = o.photos.length > 0 && $('openLovePhotos').checked;
+    var useDesign = !!(o.design && $('openLoveDesign').checked);
+    var theirFrame = !!(o.rec && o.rec.srcId), saving = theirFrame && $('openLoveSave').checked;
+    if(!addPhotos && !useDesign && !saving){ showToast('Tick what you want to open ♡'); return; }
+    var oldShots = state.shots.slice();
+    var m = addPhotos ? loveMerge(o) : null;
+    var d = useDesign ? loveDesign(o, m ? m.shots : state.shots) : null;
+    loveOffer = null;
+    $('openLoveModal').hidden = true;
+    // their frame first (the design may use it): saved, or kept until the page closes, or let go
+    var saved = saving ? saveReceivedFrame(o.rec) : Promise.resolve(false);
+    if(theirFrame && !saving){ if(useDesign) registerCustom(o.rec); else forgetImages(o.rec); }
+    if(m){
+      state.placed = remapOwnPlaced(state.placed, oldShots, m.shots);
+      state.shots = m.shots;
+      state.shotCount = m.shots.length;
+      updateTray();
+    }
+    if(d){ applyDesign(d); if(state.currentStep === 'camera') startCamOverlay(); }
+    var said = m ? 'Their photos are in — you are on one strip now ♡' : d ? "Using your love's design ♡" : '';
+    saved.then(function(ok){
+      if(saving && !ok) showToast("Couldn't save their frame on this device — it works until you close the page");
+      else if(said) showToast(said + (saving ? ' Their frame is in your frames' : ''));
+      else if(saving) showToast('Their frame is saved in your frames ♡');
+    });
+    if(m){
+      // like a pasted code: on to the editor (or just redraw it)
+      setTimeout(function(){
+        if(state.currentStep === 'customize'){ prepCustomizeDefaults(); fillThumbs($('framePickRow'), 0.14); renderPreview(); }
+        else if(state.currentStep !== 'live') goToStep('customize');
+      }, 800);
+    }
+  }
+  $('loveFile').addEventListener('change', function(){
+    var file = this.files && this.files[0];
+    this.value = '';
+    if(!file) return;
+    if(file.size > LOVE_MAX_FILE){ showToast("That file is too big to be from the booth ♡"); return; }
+    readTextFile(file).then(readLove).then(offerLove, function(err){
+      var why = err && err.message;
+      showToast(why === 'newer' ? "Your love's page is newer — reload this page, then open the file again ♡"
+                                : "That file doesn't look like one from the booth. Pick the file your love sent ♡");
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.js-send-love'), function(b){ b.addEventListener('click', openSendLove); });
+  Array.prototype.forEach.call(document.querySelectorAll('.js-open-love'), function(b){
+    b.addEventListener('click', function(){ $('loveFile').value = ''; $('loveFile').click(); });
+  });
+  // "older way: copy / paste a code" shows the old buttons
+  Array.prototype.forEach.call(document.querySelectorAll('.js-older-toggle'), function(b){
+    b.addEventListener('click', function(){
+      var box = b.nextElementSibling, open = box.hidden;
+      box.hidden = !open;
+      b.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+  });
+  $('openLovePhotos').addEventListener('change', syncOpenLove);
+  $('openLoveDesign').addEventListener('change', syncOpenLove);
+  Array.prototype.forEach.call($('openLoveStyle').children, function(b){
+    b.addEventListener('click', function(){
+      codeStyle = b.dataset.style;   // (shared with the photo codes, remembered)
+      try{ localStorage.setItem('oob-code-style', codeStyle); }catch(e){}
+      syncOpenLove();
+    });
+  });
+  $('openLoveGo').addEventListener('click', openLove);
+  $('openLoveKeep').addEventListener('click', closeOpenLove);
+  $('openLoveX').addEventListener('click', closeOpenLove);
+  $('openLoveModal').addEventListener('click', function(e){ if(e.target === this) closeOpenLove(); });
 
   /* ================= DESIGN TOGETHER (live room) =================
      One of you invites, the other taps JOIN and starts from the inviter's design. From then on,
