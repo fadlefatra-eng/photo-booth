@@ -616,6 +616,13 @@
     font-size:.82rem; font-weight:500; color:var(--plum-900);
   }
   .chip.active{background:var(--rose-600); border-color:var(--rose-600); color:#fff;}
+  /* (v4.18) Layout: Strip / Grid — under the frame tabs */
+  .layout-row{justify-content:center; align-items:center; gap:8px; margin:12px 0 0;}
+  .tool-panel .layout-row{justify-content:flex-start; margin:0 0 10px;}
+  .layout-row[hidden]{display:none;}
+  .layout-row .chip-label{font-size:.8rem; font-weight:600; color:var(--rose-800); margin-right:2px;}
+  .layout-row .chip{display:inline-flex; align-items:center; gap:7px; min-height:42px; padding:9px 15px; font-weight:600;}
+  .layout-row .chip svg{flex:none;}
   input[type="text"], input[type="date"], select{
     width:100%; padding:13px 16px; border-radius:12px; border:1.5px solid var(--blush-100);
     font-family:inherit; font-size:.95rem; background:var(--white); color:var(--plum-900); min-height:48px;
@@ -708,6 +715,7 @@
   .zoom-btn{position:absolute; left:calc(100% + 8px); bottom:6px; white-space:nowrap; min-height:44px; padding:0 14px;
     border-radius:999px; border:1.5px solid var(--pink-300); background:var(--white); color:var(--rose-800);
     font-size:.78rem; font-weight:600; box-shadow:var(--shadow-soft);}
+  .zoom-btn.inside{left:auto; right:6px;}   /* (v4.18) no room beside a wide grid preview: on its corner instead */
   .zoom-modal{overflow-y:auto; align-items:flex-start; padding:62px 16px 28px;}
   .zoom-modal canvas{width:min(100%, 440px); height:auto; margin:0 auto; border-radius:14px; box-shadow:0 30px 70px -20px rgba(59,22,38,.5);}
   .zoom-x{position:fixed; top:calc(env(safe-area-inset-top, 0px) + 10px); right:10px; z-index:1; background:var(--white); box-shadow:var(--shadow-soft);}
@@ -1427,7 +1435,7 @@
       </details>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.17</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.18</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -1454,6 +1462,8 @@
         <h2>Choose Frame</h2>
         <p class="step-sub">You'll see its decorations while you pose — and you can still change it after.</p>
         <div class="frame-tabs" id="frameTabsStep" role="tablist" aria-label="Frame types"></div>
+        <!-- (v4.18) Strip or Grid 2×2 — only on the tabs with decorated frames, and with 2 photos or more -->
+        <div class="chip-row layout-row js-layout-row" role="group" aria-label="Photo layout" hidden></div>
         <div class="frame-grid" id="frameGrid" role="group" aria-label="Choose a frame"></div>
         <button type="button" class="btn-text cf-edit-btn js-cf-edit" hidden>✎ Edit this custom frame</button>
         <div class="cf-backup js-cf-backup" hidden>
@@ -1665,6 +1675,7 @@
             </div>
             <div class="tool-panel" data-panel="frame" role="tabpanel">
               <div class="frame-tabs" id="frameTabsCustomize" role="tablist" aria-label="Frame types"></div>
+              <div class="chip-row layout-row js-layout-row" role="group" aria-label="Photo layout" hidden></div>
               <div class="frame-pick-row" id="framePickRow" role="group" aria-label="Choose a frame"></div>
               <button type="button" class="btn-text cf-edit-btn js-cf-edit" hidden>✎ Edit this custom frame</button>
               <div class="cf-backup js-cf-backup" hidden>
@@ -1692,8 +1703,8 @@
               <label class="switch-row" id="titleToggleRow" hidden><input type="checkbox" id="titleToggle" checked><span>Show frame title</span></label>
               <input type="text" id="customText" maxlength="40" placeholder="Forever &amp; Always" aria-label="Your text" aria-describedby="textLimit">
               <p class="text-limit" id="textLimit" hidden></p>
-              <label class="switch-row"><input type="checkbox" id="showDateToggle" checked><span>Show date on photo</span></label>
-              <select id="dateLabelSelect" aria-label="Date label">
+              <select id="dateLabelSelect" aria-label="Date on the photo">
+                <option value="none">No date</option>
                 <option value="date">Just the date</option>
                 <option value="Our Date">Our Date</option>
                 <option value="Love Day">Love Day</option>
@@ -1934,6 +1945,7 @@
     showDate: true,
     dateLabel: 'date',
     since: '',         // "Day N together": the day you got together, 'YYYY-MM-DD' ('' = not set)
+    layout: 'strip',   // (v4.18) decorated frames: 'strip' (one below the other) or 'grid' (2 per row) — see canGrid
     timer: 3,          // seconds before the FIRST photo (3 / 5 / 10); the rest always count 3
     facingMode: 'user',
     shots: [],
@@ -1948,6 +1960,7 @@
   var TIMERS = [3, 5, 10];
   try{ var savedTimer = +localStorage.getItem('oob-timer'); if(TIMERS.indexOf(savedTimer) !== -1) state.timer = savedTimer; }catch(e){}
   try{ state.since = cleanSince(localStorage.getItem('oob-since')); }catch(e){}
+  try{ if(localStorage.getItem('oob-layout') === 'grid') state.layout = 'grid'; }catch(e){}   // your last choice (like the timer)
   if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) state.animated = false;
 
   // phones & tablets get phone wording; laptops/PCs get computer wording (see .phone-only / .desktop-only)
@@ -2180,12 +2193,12 @@
      Every thumbnail is the real strip, drawn by the same code as the final photo
      (just smaller), so what you pick is exactly what you get. Before any photos
      exist, pink placeholders stand in for them. */
-  function fillThumbs(container, scale, n){
+  function fillThumbs(container, scale, n, layout){   // layout: see makeBase
     Array.prototype.forEach.call(container.children, function(card){
       if(card.hidden || !card.dataset.template) return;   // skip headings, and cards in a closed tab
       var box = card.querySelector('.frame-thumb, .gallery-thumb');
       box.innerHTML = '';
-      box.appendChild(makeBase(templateById(card.dataset.template), null, scale, n).canvas);
+      box.appendChild(makeBase(templateById(card.dataset.template), null, scale, n, layout).canvas);
     });
   }
   (function buildGallery(){
@@ -2213,7 +2226,7 @@
     });
     // wait for the web fonts, otherwise the canvas draws headers in a fallback font
     var fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
-    fontsReady.then(function(){ fillThumbs(grid, 0.2, 2); });   // 2 photos: big enough to show off each frame's drawings
+    fontsReady.then(function(){ fillThumbs(grid, 0.2, 2, 'strip'); });   // 2 photos: big enough to show off each frame's drawings (always as a strip here)
   })();
 
   /* ---------------- build step-count ---------------- */
@@ -2362,9 +2375,49 @@
       b.setAttribute('aria-label', momentsNow.length ? 'Moments — some are in season now' : 'Moments');
     });
   }
+  /* ---- (v4.18) Layout: Strip / Grid — a row under the frame tabs (frame step + editor). It shows on the tabs
+     with decorated frames when there are 2 photos or more; your last choice is remembered (localStorage
+     'oob-layout'), and it travels with your design like the color does. ---- */
+  var LAYOUT_ICONS = {
+    strip: '<svg width="12" height="20" viewBox="0 0 12 20" aria-hidden="true"><rect x="1" y="1" width="10" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M1 7h10M1 13h10" stroke="currentColor" stroke-width="2"/></svg>',
+    grid: '<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><rect x="1" y="1" width="16" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 1v16M1 9h16" stroke="currentColor" stroke-width="2"/></svg>'
+  };
+  Array.prototype.forEach.call(document.querySelectorAll('.js-layout-row'), function(row){
+    var lbl = document.createElement('span');
+    lbl.className = 'chip-label'; lbl.textContent = 'Layout';
+    row.appendChild(lbl);
+    [['strip', 'Strip'], ['grid', 'Grid']].forEach(function(o){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip'; b.dataset.layout = o[0];
+      b.innerHTML = LAYOUT_ICONS[o[0]] + '<span>' + o[1] + '</span>';
+      b.addEventListener('click', function(){ chooseLayout(o[0]); });
+      row.appendChild(b);
+    });
+  });
+  function layoutCount(){ return state.currentStep === 'customize' && state.shots.length ? state.shots.length : state.shotCount; }
+  function syncLayoutRows(){
+    var show = ['illustrated', 'characters', 'moments'].indexOf(state.frameTab) !== -1 && layoutCount() >= 2;
+    Array.prototype.forEach.call(document.querySelectorAll('.js-layout-row'), function(row){
+      row.hidden = !show;
+      Array.prototype.forEach.call(row.querySelectorAll('[data-layout]'), function(b){
+        var on = b.dataset.layout === state.layout;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    });
+  }
+  function chooseLayout(v){
+    if(state.layout === v) return;
+    state.layout = v;
+    try{ localStorage.setItem('oob-layout', v); }catch(e){}
+    syncLayoutRows();
+    if(state.currentStep === 'frame') fillThumbs($('frameGrid'), 0.2);
+    if(state.currentStep === 'customize'){ fillThumbs($('framePickRow'), 0.14); renderPreview(); }
+  }
   function showFrameTab(tabId){
     syncMoments();
     state.frameTab = tabId;
+    syncLayoutRows();   // (v4.18) the Strip / Grid row belongs to the tabs with decorated frames
     ['frameTabsStep','frameTabsCustomize'].forEach(function(id){
       Array.prototype.forEach.call($(id).children, function(b){
         var on = b.dataset.tab === tabId;
@@ -2469,14 +2522,14 @@
       syncTextLimit();   // the counter updates while you type
       renderPreview();
     });
-    $('showDateToggle').addEventListener('change', function(){
-      state.showDate = this.checked;
-      renderPreview();
-    });
     $('dateLabelSelect').addEventListener('change', function(){
-      state.dateLabel = this.value;
-      // choosing a date label means you want the date line: "Show date" turns on (it did nothing while off)
-      if(!state.showDate){ state.showDate = true; $('showDateToggle').checked = true; }
+      // (v4.18) "No date" replaces the old "Show date on photo" switch; the label you had stays for when you switch back
+      if(this.value === 'none') state.showDate = false;
+      else {
+        state.dateLabel = this.value;
+        state.showDate = true;   // choosing a date label means you want the date line
+      }
+      syncDateMenu();
       syncSinceRow();
       renderPreview();
     });
@@ -2932,8 +2985,7 @@
     $('popoutToggleRow').hidden = !t.decor;
     $('titleToggle').checked = state.showTitle;
     $('popoutToggle').checked = state.popout;
-    $('showDateToggle').checked = state.showDate;
-    $('dateLabelSelect').value = state.dateLabel;
+    syncDateMenu();
     syncSinceRow();
     renderFilterThumbs();
   }
@@ -6424,6 +6476,8 @@
      Anything drawn here goes through the stencil in drawDecorLayer, so it can sit right on a
      photo's edge but never covers the middle (faces). All motion repeats once per LOOP. */
   function corners(r){ return rectCorners(r, 0); }
+  // one photo's width: on a grid (v4.18) a box stands for a whole row, so "20% along the edge" stays near the corner
+  function photoW(r){ return Math.min(r.w, r.h); }
   function sway(e, cycles, phase, amount){ return e.moving ? wave(e.t, cycles, phase) * amount : 0; }
   // a spin that loops seamlessly for a shape with `k`-fold symmetry (a 5-petal flower needs only 1/5 turn)
   function spin(e, k, dir){ return e.moving ? (dir || 1) * (e.t / LOOP) * (Math.PI * 2 / k) : 0; }
@@ -6650,7 +6704,7 @@
     e.rects.forEach(function(r, i){
       var c = corners(r);
       [[c[0][0] + 2, c[0][1] + r.h*0.35], [c[1][0] - 2, c[1][1] + r.h*0.62],
-       [c[3][0] + r.w*0.2, c[3][1] - 2], [c[2][0] - r.w*0.12, c[2][1] - 8]].forEach(function(p, j){
+       [c[3][0] + photoW(r)*0.2, c[3][1] - 2], [c[2][0] - photoW(r)*0.12, c[2][1] - 8]].forEach(function(p, j){
         var k = i*4 + j;
         var glow = e.moving ? 0.5 + 0.5*(wave(e.t, 2, k*1.7)*0.5 + 0.5) : 0.95;
         drawStar5(ctx, p[0], p[1], 20 + (k % 3)*9, '#FFE9A8', glow, 0);
@@ -6751,7 +6805,7 @@
     drawMoon(ctx, A[1][0] - 48, A[1][1] + 24 + sway(e, 1, 1, 5), 74, '#F5C542');
     e.rects.forEach(function(r, i){
       var c = corners(r);
-      [[c[1][0] - 4, c[1][1] + r.h*0.55], [c[3][0] + r.w*0.16, c[3][1] - 4], [c[0][0] + 2, c[0][1] + r.h*0.7]].forEach(function(p, j){
+      [[c[1][0] - 4, c[1][1] + r.h*0.55], [c[3][0] + photoW(r)*0.16, c[3][1] - 4], [c[0][0] + 2, c[0][1] + r.h*0.7]].forEach(function(p, j){
         var k = i*3 + j;
         drawStar5(ctx, p[0], p[1], 20 + (k % 3)*8, '#F5C542', e.moving ? 0.5 + 0.5*(wave(e.t, 2, k)*0.5 + 0.5) : 0.95, 0);
       });
@@ -8248,7 +8302,7 @@
       var card = document.createElement('button');
       card.type = 'button'; card.className = 'frame-card'; card.dataset.base = id;
       var thumb = document.createElement('div'); thumb.className = 'frame-thumb';
-      thumb.appendChild(makeBase(t, null, 0.12, 2).canvas);
+      thumb.appendChild(makeBase(t, null, 0.12, 2, 'strip').canvas);   // custom frames are always strips
       card.appendChild(thumb);
       var label = document.createElement('span'); label.textContent = t.name; card.appendChild(label);
       card.addEventListener('click', function(){ cf.draft.baseId = id; cf.draft.colorId = t.color; renderCf(); });
@@ -9355,7 +9409,7 @@
      sensible size, which we re-draw ourselves — a message can't make the app do anything else. */
   // (older pages ignore 'since' and turn the 'day' label into the plain date — nothing breaks)
   // (v4.12) 'placed' = your placed stickers; pictures they use travel along as `imgs` (see FREE STICKERS)
-  var DESIGN_KEYS = ['templateId','colorId','showTitle','popout','filterId','stickers','placed','customText','showDate','dateLabel','since','animated'];
+  var DESIGN_KEYS = ['templateId','colorId','showTitle','popout','filterId','stickers','placed','customText','showDate','dateLabel','since','layout','animated'];
   var DATE_LABELS = ['date','Our Date','Love Day','Best Day','day'];
   var MAX_FRAME_IMG = 2*1024*1024, MAX_FRAME_TOTAL = 10*1024*1024;
   var designOffer = null;   // {design, rec, kind} waiting for USE THEIRS / KEEP MINE (or JOIN / NOT NOW)
@@ -9428,6 +9482,7 @@
       showDate: bool(raw.showDate, true),
       dateLabel: DATE_LABELS.indexOf(raw.dateLabel) !== -1 ? raw.dateLabel : 'date',
       since: cleanSince(raw.since) || state.since,   // a design without one (older page) keeps yours
+      layout: raw.layout === 'grid' || raw.layout === 'strip' ? raw.layout : state.layout,   // (v4.18) same: none = keep yours
       animated: bool(raw.animated, true)
     };
   }
@@ -9557,19 +9612,22 @@
     });
     syncStickerButton();
     $('customText').value = state.customText;
-    $('dateLabelSelect').value = state.dateLabel;
+    syncDateMenu();
     syncSinceRow();
     $('animToggle').checked = state.animated;
-    $('showDateToggle').checked = state.showDate;
     $('titleToggle').checked = state.showTitle;
     $('popoutToggle').checked = state.popout;
     syncFrameSelection();
     syncColorUI();
   }
   // "Day N together": the date field shows only for that label
+  // the date menu reads "No date" while the date is off (showDate false; dateLabel keeps your last label)
+  function syncDateMenu(){
+    $('dateLabelSelect').value = state.showDate ? state.dateLabel : 'none';
+  }
   function syncSinceRow(){
     syncMoments();   // the Anniversary frame's "✨ now" follows your day
-    var on = state.dateLabel === 'day';
+    var on = state.showDate && state.dateLabel === 'day';
     $('sinceRow').hidden = !on;
     if(!on) return;
     $('sinceInput').max = todayIso();
@@ -9587,6 +9645,7 @@
     var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
     DESIGN_KEYS.forEach(function(k){
       if(k === 'animated' && reduce) return;   // this phone asked for less motion: keep its own choice
+      if(k === 'layout' && d.layout !== 'grid' && d.layout !== 'strip') return;   // (v4.18) a design from before has none: keep yours
       state[k] = k === 'stickers' ? copyStickers(d.stickers) : k === 'placed' ? copyPlaced(d.placed) : d[k];
     });
     if(!state.colorId) state.colorId = templateById(state.templateId).color;
@@ -10994,7 +11053,12 @@
 
   // draws template `t` into a new canvas; `scale` < 1 gives a small thumbnail of the exact same design
   // `n` (optional) forces the number of photo slots, e.g. the full count while you're still shooting
-  function makeBase(t, colorId, scale, n){
+  // (v4.18) the decorated frames (Illustrated, Characters, Moments) can also lay 2+ photos out as a grid
+  function canGrid(t){
+    return !!t.decor && !t.custom && t.layout === 'strip' && (t.tab === 'illustrated' || t.tab === 'characters' || t.tab === 'moments');
+  }
+  // `layout` (optional): 'strip' / 'grid' instead of your choice — the home page gallery and custom-frame bases stay strips
+  function makeBase(t, colorId, scale, n, layout){
     colorId = colorId || t.color;
     var hex = colorHex(colorId);
     var dark = isDarkHex(hex);
@@ -11012,9 +11076,10 @@
       rects: []                                    // where each photo landed: {cx, cy, w, h, rot}
     };
     var canvas = document.createElement('canvas');
-    var size = (LAYOUTS[t.layout] || drawStripLayout)(canvas, look);
+    var grid = (layout || state.layout) === 'grid' && look.n >= 2 && canGrid(t);
+    var size = (grid ? drawDecoGridLayout : (LAYOUTS[t.layout] || drawStripLayout))(canvas, look);
     var b = {canvas:canvas, w:size.w, h:size.h, t:t, hex:hex, dark:dark,
-             accent:look.accent, textColor:look.textColor, rects:look.rects};
+             accent:look.accent, textColor:look.textColor, rects:look.rects, decoRects:look.decoRects || null};
     // thumbnails are static pictures, so they get their decorations baked in right away
     if(scale && scale < 1 && t.decor){
       var ctx = canvas.getContext('2d');
@@ -11049,7 +11114,9 @@
      (v4.11) Your own images on a custom frame (overDecor) skip the middle rule — their size decides. */
   function drawDecorLayer(ctx, b, t, moving){
     if(!b.t.decor) return;
-    var e = {w:b.w, h:b.h, rects:b.rects, t:t, moving:moving, accent:b.accent,
+    // a grid gives the drawings one box per row (decoRects), so they decorate its outer corners and edges;
+    // the stencil below still protects the middle of every real photo
+    var e = {w:b.w, h:b.h, rects:b.decoRects || b.rects, t:t, moving:moving, accent:b.accent,
              textColor:b.textColor, hex:b.hex, dark:b.dark, popout:state.popout};
     ctx.save();
     clipOutPhotos(ctx, b, state.popout ? SAFE_INSET : 0);
@@ -11229,6 +11296,37 @@
     var e = {w:W, h:H, rects:L.rects};
     drawHeader(ctx, L.title, W, L.textColor, titleLane(L.t, e));
     drawFooter(ctx, W, headerH + L.n*CELL + (L.n-1)*GAP + 46, L.textColor, textLane(L.t, e));
+    return {w:W, h:H};
+  }
+
+  /* (v4.18) "Grid" for the decorated frames: the same big 640px photos as their strip, 2 per row (an odd last
+     photo sits in the middle) — so 4 photos make an almost square picture. The drawings see each row as one
+     box as wide as the whole block (L.decoRects): their corners are the outer corners, their side bits sit on
+     the outer edges, and with 3 photos the bottom corners stay out in the free space beside the last photo.
+     Checked like the strips: nothing in a photo's middle or the text (28 frames × 2/3/4 photos). */
+  function drawDecoGridLayout(canvas, L){
+    var PAD = 40, CELL = 640, GAP = 26, cols = 2;
+    var rows = Math.ceil(L.n / cols), blockW = cols*CELL + (cols-1)*GAP;
+    var headerH = 96, footerH = 130;   // decorated frames: room above and below the photos for their drawings
+    var W = PAD*2 + blockW;
+    var H = headerH + rows*CELL + (rows-1)*GAP + footerH + PAD;
+    var ctx = prepCanvas(canvas, W, H, L.scale);
+    paintBackground(ctx, W, H, L.hex, L.isWhite);
+    if(L.t.pattern) L.t.pattern(ctx, W, H, L);
+    drawBorder(ctx, W, H, L.accent, L.t.thin);
+    L.decoRects = [];
+    for(var r=0; r<rows; r++){
+      var inRow = Math.min(cols, L.n - r*cols), rowW = inRow*CELL + (inRow-1)*GAP, y = headerH + r*(CELL+GAP);
+      for(var c=0; c<inRow; c++){
+        var x = (W - rowW)/2 + c*(CELL+GAP), i = r*cols + c;
+        drawPhotoInto(ctx, i, x, y, CELL, CELL, L.filter, 16);
+        L.rects.push({cx:x + CELL/2, cy:y + CELL/2, w:CELL, h:CELL, rot:0});
+      }
+      L.decoRects.push({cx:W/2, cy:y + CELL/2, w:blockW, h:CELL, rot:0});
+    }
+    var e = {w:W, h:H, rects:L.rects};
+    drawHeader(ctx, L.title, W, L.textColor, titleLane(L.t, e));
+    drawFooter(ctx, W, headerH + rows*CELL + (rows-1)*GAP + 46, L.textColor, textLane(L.t, e));
     return {w:W, h:H};
   }
 
@@ -11471,7 +11569,7 @@
     saveSessionSoon();    // remember the new design for "continue your last photos"
     clearTimeout(previewTimer);
     previewTimer = setTimeout(function(){
-      buildBase(); textLimit.lane = null; syncTextLimit();
+      buildBase(); textLimit.lane = null; syncTextLimit(); syncLayoutRows();
       renderStickerQuick(); syncStickerButton();
       if(st.open){ studioLayout(); syncStudioUI(); return; }   // the sticker studio covers the editor: it shows the change
       playAnim($('zoomModal').hidden ? $('previewCanvas') : $('zoomCanvas'));   // zoom open: the big view shows it
@@ -11482,8 +11580,12 @@
      the button shows it as big as the screen allows. The one animation loop moves over to the
      big view while it's open (the small preview pauses), so it costs nothing extra. ---- */
   function syncZoomBtn(){
-    var w = $('previewCanvas').getBoundingClientRect().width;
-    $('zoomBtn').hidden = !(w > 0 && w < 170);
+    var w = $('previewCanvas').getBoundingClientRect().width, btn = $('zoomBtn');
+    btn.hidden = !(w > 0 && w < 170);
+    if(btn.hidden) return;
+    // (v4.18) a grid preview is wider: when the button wouldn't fit beside it, it sits on its bottom corner
+    btn.classList.remove('inside');
+    btn.classList.toggle('inside', btn.getBoundingClientRect().right > document.documentElement.clientWidth - 4);
   }
   function openZoom(){
     $('zoomModal').hidden = false;
