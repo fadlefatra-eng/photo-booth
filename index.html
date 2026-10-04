@@ -285,6 +285,15 @@
   .frame-pick-row .frame-thumb{height:110px; padding:4px;}
   .frame-pick-row .frame-card span{display:block; font-size:.68rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .frame-card span{font-size:.76rem; font-weight:600; color:var(--rose-800);}
+  /* (v4.17) "✨ now" on Moments frames that are in season, and a dot on the Moments tab */
+  .frame-card.is-now{position:relative;}
+  .frame-card span.now-badge, .frame-pick-row .frame-card span.now-badge{
+    position:absolute; top:5px; left:5px; display:inline-block; white-space:nowrap; pointer-events:none;
+    background:#FFF3C4; color:#7A4B00; font-size:.64rem; font-weight:700; line-height:1.4; padding:1px 7px;
+    border-radius:999px; box-shadow:0 2px 6px rgba(0,0,0,.14);
+  }
+  .frame-pick-row .frame-card span.now-badge{top:3px; left:3px; font-size:.58rem; padding:1px 5px;}
+  .frame-tab.has-now::after{content:''; display:inline-block; width:7px; height:7px; border-radius:50%; background:#F5B83D; margin-left:6px; vertical-align:1px;}
 
   /* camera */
   .camera-title{font-size:1.15rem !important; margin:6px 0 14px;}
@@ -1418,7 +1427,7 @@
       </details>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.16</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.17</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -1824,6 +1833,7 @@
     {id:'plain', label:'Plain'},
     {id:'illustrated', label:'Illustrated'},
     {id:'characters', label:'Characters'},
+    {id:'moments', label:'Moments'},   // (v4.17) a time of year or a special day; "✨ now" marks the ones in season
     {id:'custom', label:'Custom'}   // your own frames — always shown, so you can make the first one
   ];
   var TEMPLATES = [
@@ -1867,6 +1877,36 @@
     if(t.band) t.pattern = patternBand;
     TEMPLATES.push(t);
   });
+  // Moments (v4.17): the drawings live in the MOMENTS section further down. Same rules as the themes.
+  [
+    {id:'halloween', name:'Halloween', color:'lavender', colors:['lavender','midnight','peach','navy'], title:'trick or treat ♡', labelAt:'br', decor:decorHalloween},
+    {id:'winter', name:'Snow & Christmas', color:'cherry', colors:['cherry','navy','sky','mint'], title:'merry & bright ♡', decor:decorWinter},
+    {id:'newyear', name:'New Year', color:'midnight', colors:['midnight','navy','lavender'], title:newYearTitle(), decor:decorNewYear},
+    {id:'lunar', name:'Lunar New Year', color:'butter', colors:['butter','cream','cherry','peach'], title:'gong xi fa cai ♡', decor:decorLunar},
+    {id:'ramadan', name:'Ramadan', color:'navy', colors:['navy','midnight','mint'], title:'Ramadan Kareem ♡', decor:decorRamadan},
+    {id:'anniv', name:'Anniversary', color:'cream', colors:['cream','baby','rose','white'], title:'happy anniversary ♡', decor:decorAnniv},
+    {id:'birthday', name:'Birthday', color:'baby', colors:['baby','butter','sky','lavender'], title:'happy birthday ♡', labelAt:'br', decor:decorBirthday},
+    {id:'rainy', name:'Rainy Days', color:'sky', colors:['sky','lavender','mint','navy'], title:'rain or shine ♡', decor:decorRainy},
+    {id:'grad', name:'Graduation', color:'peach', colors:['peach','cream','navy','sky'], title:'so proud of you ♡', decor:decorGrad}
+  ].forEach(function(t){
+    t.tab = 'moments'; t.layout = 'strip'; t.animated = true;
+    TEMPLATES.push(t);
+  });
+  // Valentine and Lebaran moved from Illustrated to Moments; custom frames built on them must keep working (cfBase)
+  ['valentine', 'lebaran'].forEach(function(id){ var t = templateById(id); t.tab = 'moments'; t.cfBase = true; });
+  // the order inside Moments: around the year, then the days that can happen any time
+  var MOMENTS_ORDER = ['halloween','winter','newyear','lunar','valentine','ramadan','lebaran','anniv','birthday','rainy','grad'];
+  // keep every tab's frames together (the gallery puts a heading before each group), Moments in its own order
+  (function(){
+    var rank = {};
+    FRAME_TABS.forEach(function(tab, i){ rank[tab.id] = i; });
+    var keyed = TEMPLATES.map(function(t, i){ return {t:t, a:rank[t.tab], b:t.tab === 'moments' ? MOMENTS_ORDER.indexOf(t.id) : 0, i:i}; });
+    keyed.sort(function(x, y){ return x.a - y.a || x.b - y.b || x.i - y.i; });
+    TEMPLATES.length = 0;
+    keyed.forEach(function(k){ TEMPLATES.push(k.t); });
+  })();
+  // a custom frame can sit on a plain base (CF_BASES) or on an Illustrated theme — plus Valentine and Lebaran (see above)
+  function isDecoBase(t){ return t.tab === 'illustrated' || !!t.cfBase; }
   var FX_OPTIONS = [
     {id:'none', label:'None'},
     {id:'hearts', label:'♡ Hearts'},
@@ -2249,7 +2289,81 @@
   }
   buildFrameTabs('frameTabsStep');
   buildFrameTabs('frameTabsCustomize');
+  /* ---- "✨ now" (v4.17): Moments frames whose time of year it is ----
+     A badge on the card, a dot on the Moments tab, and those cards first in the tab. Nothing is picked for you.
+     Lunar New Year and Ramadan / Lebaran move every year: the browser's own Chinese and Islamic (Umm al-Qura)
+     calendars tell where we are. A browser without them gets no badge for those three (never a wrong one). */
+  var momentsNow = [];
+  var calFormats = {};
+  function calendarDay(cal, d){   // {month, day} in that calendar, or null
+    try{
+      var f = calFormats[cal] || (calFormats[cal] = new Intl.DateTimeFormat('en-u-ca-' + cal, {month:'numeric', day:'numeric'}));
+      if(f.resolvedOptions().calendar !== cal) return null;   // not supported here: it fell back to the usual calendar
+      var m = 0, day = 0;
+      f.formatToParts(d).forEach(function(p){
+        if(p.type === 'month') m = parseInt(p.value, 10);   // a leap month reads like "6bis" → 6
+        if(p.type === 'day') day = parseInt(p.value, 10);
+      });
+      return m && day ? {month:m, day:day} : null;
+    }catch(err){ return null; }
+  }
+  // within 3 days of the day you got together, in any year after the first (Feb 29 → Feb 28 in other years)
+  function nearAnniversary(since, d){
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(since || '');
+    if(!m || dayNumber(since) < 300) return false;
+    var today = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+    return [-1, 0, 1].some(function(dy){
+      var y = d.getFullYear() + dy, mo = +m[2] - 1, dd = +m[3];
+      if(mo === 1 && dd === 29 && new Date(y, 1, 29).getMonth() !== 1) dd = 28;
+      return Math.abs(Date.UTC(y, mo, dd) - today) <= 3 * 86400000;
+    });
+  }
+  function momentNow(id, d){
+    var m = d.getMonth() + 1, day = d.getDate(), c;
+    switch(id){
+      case 'halloween': return m === 10;
+      case 'winter': return m === 12 && day <= 26;
+      case 'newyear': return (m === 12 && day >= 27) || (m === 1 && day <= 7);
+      case 'valentine': return m === 2 && day <= 14;
+      case 'rainy': return m >= 11 || m <= 3;
+      case 'lunar': c = calendarDay('chinese', d); return !!c && ((c.month === 12 && c.day >= 16) || (c.month === 1 && c.day <= 15));   // ~2 weeks before, to Cap Go Meh
+      case 'ramadan': c = calendarDay('islamic-umalqura', d); return !!c && c.month === 9;
+      case 'lebaran': c = calendarDay('islamic-umalqura', d); return !!c && c.month === 10 && c.day <= 14;
+      case 'anniv': return nearAnniversary(state.since, d);
+    }
+    return false;
+  }
+  function syncMoments(){
+    var d = new Date();
+    momentsNow = MOMENTS_ORDER.filter(function(id){ return momentNow(id, d); });
+    function rank(card){
+      var id = card.dataset.template, n = momentsNow.indexOf(id);
+      return n !== -1 ? n : 100 + MOMENTS_ORDER.indexOf(id);
+    }
+    ['frameGrid','framePickRow'].forEach(function(boxId){
+      var box = $(boxId), cards = [];
+      Array.prototype.forEach.call(box.children, function(c){ if(c.dataset.tab === 'moments') cards.push(c); });
+      var before = cards.slice();
+      cards.sort(function(a, b){ return rank(a) - rank(b); });
+      cards.forEach(function(c){
+        var now = momentsNow.indexOf(c.dataset.template) !== -1, badge = c.querySelector('.now-badge');
+        if(now && !badge){
+          badge = document.createElement('span'); badge.className = 'now-badge'; badge.textContent = '✨ now';
+          c.appendChild(badge);
+        }
+        if(!now && badge) c.removeChild(badge);
+        c.classList.toggle('is-now', now);
+      });
+      // move them only when the order changed (a tab or the card's focus is never disturbed for nothing)
+      if(cards.some(function(c, i){ return c !== before[i]; })) cards.forEach(function(c){ box.appendChild(c); });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.frame-tab[data-tab="moments"]'), function(b){
+      b.classList.toggle('has-now', momentsNow.length > 0);
+      b.setAttribute('aria-label', momentsNow.length ? 'Moments — some are in season now' : 'Moments');
+    });
+  }
   function showFrameTab(tabId){
+    syncMoments();
     state.frameTab = tabId;
     ['frameTabsStep','frameTabsCustomize'].forEach(function(id){
       Array.prototype.forEach.call($(id).children, function(b){
@@ -6664,6 +6778,625 @@
     });
   }
 
+  /* ================= MOMENTS (v4.17) =================
+     Frames for a time of year or a special day. Same rules as the themes above: full-size strip units,
+     drawn through the stencil (a photo's middle stays clear), every movement loops once per LOOP.
+     Checked with the text audit: nothing in the title box or the 440 text lane (1/2/4 photos, 14 moments). */
+  function newYearTitle(){   // "hello 2027 ♡" — from July on, it greets the coming year
+    var d = new Date();
+    return 'hello ' + (d.getFullYear() + (d.getMonth() >= 6 ? 1 : 0)) + ' ♡';
+  }
+  function seeded(k){ var s = Math.sin(k * 12.9898 + 78.233) * 43758.5453; return s - Math.floor(s); }   // 0..1, always the same for k
+  // little things that fall a short way and fade in/out, each on its own beat, so the loop joins up seamlessly.
+  // They stay in the two side lanes (strip edge + the outer ring of the photos): never over the title or the text.
+  function fallers(ctx, e, n, seed, dist, pad, draw){   // pad = half the size of a piece
+    for(var k=0;k<n;k++){
+      var h1 = seeded(seed + k), h2 = seeded(seed + k + 50), h3 = seeded(seed + k + 99);
+      // lanes from the strip edge to 128px in (piece + sway included): clear of the photo middles (136) and the text (140)
+      var span = 116 - 2*pad, x = h1 < 0.5 ? pad + 4 + h1*2*span : e.w - pad - 4 - (h1 - 0.5)*2*span;
+      var y0 = -20 + h2 * (e.h - dist);
+      var p = e.moving ? ((e.t / LOOP) + h3) % 1 : h3;
+      draw(x + (e.moving ? Math.sin((p*2 + k) * Math.PI) * 8 : 0), y0 + p*dist, Math.sin(p*Math.PI), k, p);
+    }
+  }
+  function twinkle(e, k, cycles){ return e.moving ? 0.45 + 0.55*(wave(e.t, cycles || 2, k*1.7)*0.5 + 0.5) : 0.95; }
+
+  /* ---- Halloween (cute, not scary) ---- */
+  function drawPumpkin(ctx, x, y, r, glow, rot){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0);
+    ctx.fillStyle = '#6B8E3A'; roundRect(ctx, -r*0.1, -r*1.02, r*0.2, r*0.34, r*0.07); ctx.fill();
+    ctx.strokeStyle = '#6B8E3A'; ctx.lineWidth = r*0.07; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(r*0.06, -r*0.86); ctx.quadraticCurveTo(r*0.5, -r*1.12, r*0.42, -r*0.78); ctx.stroke();
+    ctx.fillStyle = '#F08A2C'; ctx.strokeStyle = '#C9661C'; ctx.lineWidth = r*0.05;
+    [[-0.4,0.6],[0.4,0.6],[0,0.66]].forEach(function(l){ ctx.beginPath(); ctx.ellipse(l[0]*r, 0, r*l[1], r*0.8, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke(); });
+    // carved face, glowing softly
+    ctx.fillStyle = 'rgba(255,214,92,' + (0.7 + 0.3*glow) + ')'; ctx.strokeStyle = '#8A3F0C'; ctx.lineWidth = r*0.04;
+    [-1, 1].forEach(function(d){
+      ctx.beginPath(); ctx.moveTo(d*r*0.3, -r*0.32); ctx.lineTo(d*r*0.46, -r*0.04); ctx.lineTo(d*r*0.14, -r*0.04); ctx.closePath(); ctx.fill(); ctx.stroke();
+    });
+    ctx.beginPath(); ctx.moveTo(-r*0.42, r*0.14); ctx.quadraticCurveTo(0, r*0.62, r*0.42, r*0.14);
+    ctx.quadraticCurveTo(0, r*0.36, -r*0.42, r*0.14); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,120,150,.45)';
+    [-1, 1].forEach(function(d){ ctx.beginPath(); ctx.ellipse(d*r*0.62, r*0.12, r*0.12, r*0.07, 0, 0, Math.PI*2); ctx.fill(); });
+    ctx.restore();
+  }
+  function drawGhost(ctx, x, y, s, open, tilt){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(tilt || 0);
+    ctx.fillStyle = '#FFFFFF'; ctx.strokeStyle = 'rgba(59,22,38,.22)'; ctx.lineWidth = s*0.035;
+    ctx.beginPath(); ctx.moveTo(-s*0.46, s*0.5); ctx.lineTo(-s*0.46, -s*0.05); ctx.arc(0, -s*0.05, s*0.46, Math.PI, 0); ctx.lineTo(s*0.46, s*0.5);
+    for(var i=0;i<3;i++){ var x0 = s*0.46 - i*s*0.92/3; ctx.quadraticCurveTo(x0 - s*0.153, s*0.7, x0 - s*0.307, s*0.5); }   // wavy hem
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(-s*0.5, s*0.12, s*0.1, s*0.06, 0.6, 0, Math.PI*2); ctx.fill(); ctx.stroke();   // little arms
+    ctx.beginPath(); ctx.ellipse(s*0.5, s*0.12, s*0.1, s*0.06, -0.6, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#3B1626';
+    [-1, 1].forEach(function(d){ ctx.beginPath(); ctx.ellipse(d*s*0.16, -s*0.04, s*0.055, s*0.07*open, 0, 0, Math.PI*2); ctx.fill(); });
+    ctx.fillStyle = 'rgba(255,130,165,.55)';
+    [-1, 1].forEach(function(d){ ctx.beginPath(); ctx.ellipse(d*s*0.28, s*0.08, s*0.07, s*0.04, 0, 0, Math.PI*2); ctx.fill(); });
+    ctx.fillStyle = '#3B1626'; ctx.beginPath(); ctx.ellipse(0, s*0.11, s*0.04, s*0.05, 0, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  function drawBat(ctx, x, y, s, flap){   // flap -1..1 = wings down..up
+    ctx.save(); ctx.translate(x, y); ctx.fillStyle = '#7A4FA8';
+    var wy = -s*0.32*flap;
+    [-1, 1].forEach(function(d){
+      ctx.beginPath(); ctx.moveTo(d*s*0.1, -s*0.06);
+      ctx.quadraticCurveTo(d*s*0.45, wy - s*0.26, d*s*0.92, wy);
+      ctx.quadraticCurveTo(d*s*0.8, wy + s*0.08, d*s*0.68, wy + s*0.18);
+      ctx.quadraticCurveTo(d*s*0.56, wy + s*0.06, d*s*0.44, wy + s*0.2);
+      ctx.quadraticCurveTo(d*s*0.3, s*0.06, d*s*0.1, s*0.12);
+      ctx.closePath(); ctx.fill();
+    });
+    ctx.beginPath(); ctx.ellipse(0, 0, s*0.17, s*0.2, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-s*0.14, -s*0.1); ctx.lineTo(-s*0.1, -s*0.3); ctx.lineTo(-s*0.02, -s*0.16);
+    ctx.moveTo(s*0.14, -s*0.1); ctx.lineTo(s*0.1, -s*0.3); ctx.lineTo(s*0.02, -s*0.16); ctx.fill();
+    ctx.fillStyle = '#FFFFFF';
+    [-1, 1].forEach(function(d){ ctx.beginPath(); ctx.arc(d*s*0.07, -s*0.03, s*0.045, 0, Math.PI*2); ctx.fill(); });
+    ctx.restore();
+  }
+  function drawCandy(ctx, x, y, s, rot, c1, c2){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0); ctx.fillStyle = c1;
+    [-1, 1].forEach(function(d){ ctx.beginPath(); ctx.moveTo(d*s*0.4, 0); ctx.lineTo(d*s*0.95, -s*0.32); ctx.lineTo(d*s*0.95, s*0.32); ctx.closePath(); ctx.fill(); });
+    ctx.beginPath(); ctx.arc(0, 0, s*0.46, 0, Math.PI*2); ctx.fill();
+    ctx.save(); ctx.clip(); ctx.strokeStyle = c2; ctx.lineWidth = s*0.14;
+    for(var i=-2;i<=2;i++){ ctx.beginPath(); ctx.moveTo(i*s*0.3 - s*0.5, -s*0.5); ctx.lineTo(i*s*0.3 + s*0.5, s*0.5); ctx.stroke(); }
+    ctx.restore(); ctx.restore();
+  }
+  function drawCandyCorn(ctx, x, y, s, rot){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0);
+    ctx.beginPath(); ctx.moveTo(0, -s*0.6); ctx.quadraticCurveTo(s*0.5, s*0.3, s*0.46, s*0.42); ctx.quadraticCurveTo(0, s*0.56, -s*0.46, s*0.42); ctx.quadraticCurveTo(-s*0.5, s*0.3, 0, -s*0.6); ctx.closePath();
+    ctx.save(); ctx.clip();
+    ctx.fillStyle = '#FFD45C'; ctx.fillRect(-s, s*0.12, s*2, s);
+    ctx.fillStyle = '#F08A2C'; ctx.fillRect(-s, -s*0.2, s*2, s*0.32);
+    ctx.fillStyle = '#FFFFFF'; ctx.fillRect(-s, -s, s*2, s*0.8);
+    ctx.restore(); ctx.restore();
+  }
+
+  /* ---- Snow & Christmas ---- */
+  function drawFlake(ctx, x, y, r, rot, alpha){
+    ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.rotate(rot);
+    ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = Math.max(2, r*0.16); ctx.lineCap = 'round';
+    for(var i=0;i<6;i++){
+      ctx.rotate(Math.PI/3);
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -r);
+      ctx.moveTo(0, -r*0.55); ctx.lineTo(r*0.24, -r*0.78); ctx.moveTo(0, -r*0.55); ctx.lineTo(-r*0.24, -r*0.78); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  function drawBauble(ctx, ax, ay, len, r, color, angle){   // hangs from (ax, ay)
+    ctx.save(); ctx.translate(ax, ay); ctx.rotate(angle);
+    ctx.strokeStyle = '#F5C542'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, len); ctx.stroke();
+    ctx.translate(0, len);
+    ctx.fillStyle = '#F5C542'; roundRect(ctx, -r*0.28, 0, r*0.56, r*0.3, 3); ctx.fill();
+    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(0, r*1.2, r, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = r*0.12;
+    ctx.beginPath(); ctx.moveTo(-r*0.95, r*1.15); ctx.quadraticCurveTo(0, r*1.45, r*0.95, r*1.15); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.beginPath(); ctx.ellipse(-r*0.38, r*0.82, r*0.2, r*0.12, -0.6, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  function drawHolly(ctx, x, y, s, rot){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0);
+    // three spiky holly leaves: points around the edge, joined by curves that bite inwards
+    var L = s*0.62, W = s*0.3, pts = [[0,0],[0.28,-0.5],[0.62,-0.5],[1,0],[0.62,0.5],[0.28,0.5]];
+    [-0.35, 0.55, 2.7].forEach(function(a, i){
+      ctx.save(); ctx.rotate(a); ctx.fillStyle = i === 1 ? '#3E9B5F' : '#2F7F4C';
+      ctx.beginPath(); ctx.moveTo(0, 0);
+      for(var k=1;k<=6;k++){
+        var p = pts[k % 6], q = pts[k - 1], mx = (p[0] + q[0])/2*L, my = (p[1] + q[1])/2*W;
+        ctx.quadraticCurveTo(mx, my * 0.35, p[0]*L, p[1]*W);
+      }
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = Math.max(2, s*0.025);
+      ctx.beginPath(); ctx.moveTo(L*0.08, 0); ctx.lineTo(L*0.9, 0); ctx.stroke();
+      ctx.restore();
+    });
+    ctx.fillStyle = '#E0314B';
+    [[-s*0.08, s*0.08], [s*0.12, s*0.1], [s*0.02, -s*0.08]].forEach(function(b){ ctx.beginPath(); ctx.arc(b[0], b[1], s*0.12, 0, Math.PI*2); ctx.fill(); });
+    ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.beginPath(); ctx.arc(-s*0.11, s*0.05, s*0.035, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  function drawCandyCane(ctx, x, y, s, rot){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0); ctx.lineCap = 'round';
+    function path(){ ctx.beginPath(); ctx.moveTo(0, s*0.6); ctx.lineTo(0, -s*0.25); ctx.arc(-s*0.2, -s*0.25, s*0.2, 0, Math.PI, true); }
+    ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = s*0.16; path(); ctx.stroke();
+    ctx.strokeStyle = '#E0314B'; ctx.setLineDash([s*0.1, s*0.12]); path(); ctx.stroke(); ctx.setLineDash([]);
+    ctx.restore();
+  }
+  function drawSnowman(ctx, x, y, s, e){   // (x, y) = bottom middle
+    ctx.save(); ctx.translate(x, y); ctx.rotate(sway(e, 1, 0.4, 0.04));
+    ctx.strokeStyle = '#6B4A3A'; ctx.lineWidth = s*0.05; ctx.lineCap = 'round';   // twig arms
+    ctx.beginPath(); ctx.moveTo(-s*0.36, -s*0.62); ctx.lineTo(-s*0.66, -s*0.86); ctx.moveTo(-s*0.56, -s*0.78); ctx.lineTo(-s*0.6, -s*0.92);
+    ctx.moveTo(s*0.36, -s*0.62); ctx.lineTo(s*0.5, -s*0.92); ctx.stroke();
+    ctx.fillStyle = '#FFFFFF'; ctx.strokeStyle = 'rgba(59,22,38,.15)'; ctx.lineWidth = s*0.03;
+    ctx.beginPath(); ctx.arc(0, -s*0.42, s*0.42, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, -s*1.08, s*0.3, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#3B1626'; [-0.3, -0.48].forEach(function(b){ ctx.beginPath(); ctx.arc(0, s*b, s*0.035, 0, Math.PI*2); ctx.fill(); });
+    var o = blinkOpen(e, 0.6);
+    [-1, 1].forEach(function(d){ ctx.beginPath(); ctx.ellipse(d*s*0.1, -s*1.13, s*0.035, s*0.035*o, 0, 0, Math.PI*2); ctx.fill(); });
+    ctx.fillStyle = '#F08A2C'; ctx.beginPath(); ctx.moveTo(0, -s*1.08); ctx.lineTo(s*0.24, -s*1.03); ctx.lineTo(0, -s*1.02); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(255,130,165,.5)'; [-1, 1].forEach(function(d){ ctx.beginPath(); ctx.ellipse(d*s*0.19, -s*1.0, s*0.06, s*0.035, 0, 0, Math.PI*2); ctx.fill(); });
+    ctx.fillStyle = '#2F7F4C'; roundRect(ctx, -s*0.3, -s*0.86, s*0.6, s*0.11, s*0.05); ctx.fill();   // scarf
+    ctx.save(); ctx.translate(s*0.16, -s*0.8); ctx.rotate(0.15 + sway(e, 2, 0, 0.12)); roundRect(ctx, -s*0.05, 0, s*0.11, s*0.3, s*0.04); ctx.fill(); ctx.restore();
+    ctx.fillStyle = '#E0314B'; ctx.beginPath(); ctx.arc(0, -s*1.24, s*0.27, Math.PI, 0); ctx.closePath(); ctx.fill();   // beanie
+    ctx.fillStyle = '#FFFFFF'; roundRect(ctx, -s*0.29, -s*1.27, s*0.58, s*0.08, s*0.04); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, -s*1.53, s*0.07, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  function drawTree(ctx, x, y, h, e){   // (x, y) = bottom middle
+    ctx.save(); ctx.translate(x, y);
+    ctx.fillStyle = '#8B5A3C'; ctx.fillRect(-h*0.05, -h*0.1, h*0.1, h*0.1);
+    [[0.1, 0.26, 0.42], [0.36, 0.21, 0.36], [0.6, 0.15, 0.3]].forEach(function(t, i){
+      var base = -h*t[0], half = h*t[1], tall = h*t[2];
+      ctx.fillStyle = i % 2 ? '#3E9B5F' : '#2F8352';
+      ctx.beginPath(); ctx.moveTo(-half, base); ctx.quadraticCurveTo(0, base + h*0.05, half, base); ctx.lineTo(0, base - tall); ctx.closePath(); ctx.fill();
+    });
+    var cols = ['#FFD45C','#FF8FB3','#8FC8FF','#FFFFFF'];
+    [[-0.14,-0.16],[0.12,-0.2],[-0.05,-0.32],[0.1,-0.42],[-0.09,-0.5],[0.04,-0.62],[-0.03,-0.74]].forEach(function(p, k){
+      ctx.fillStyle = cols[k % 4]; ctx.globalAlpha = twinkle(e, k, 2);
+      ctx.beginPath(); ctx.arc(p[0]*h, p[1]*h, h*0.028, 0, Math.PI*2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    drawStar5(ctx, 0, -h*0.94, h*0.085 * (1 + sway(e, 2, 0, 0.12)), '#FFD45C', 1, 0);
+    ctx.restore();
+  }
+
+  /* ---- New Year ---- */
+  var FIREWORK_COLORS = ['#FFD45C','#FF8FB3','#8FE3C6','#8FC8FF','#FFFFFF'];
+  function drawBurst(ctx, x, y, R, p, color){   // p 0..1 through one firework: rocket, burst, fade
+    ctx.save(); ctx.lineCap = 'round';
+    if(p < 0.16){   // the rocket going up
+      var q = p / 0.16; ctx.strokeStyle = rgba('#FFFFFF', 0.8); ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(x, y + R*1.2*(1 - q) + 30); ctx.lineTo(x, y + R*1.2*(1 - q)); ctx.stroke();
+      ctx.restore(); return;
+    }
+    var q2 = (p - 0.16) / 0.84, ease = 1 - Math.pow(1 - q2, 3), a = q2 < 0.6 ? 1 : 1 - (q2 - 0.6) / 0.4;
+    ctx.globalAlpha = a; ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 6;
+    for(var i=0;i<16;i++){   // outer ring: rays with a dot at the tip
+      var ang = i * Math.PI / 8, r1 = R*ease*0.45, r2 = R*ease, fall = q2*10;
+      ctx.beginPath(); ctx.moveTo(x + Math.cos(ang)*r1, y + Math.sin(ang)*r1 + fall); ctx.lineTo(x + Math.cos(ang)*r2, y + Math.sin(ang)*r2 + fall); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x + Math.cos(ang)*(r2 + 8), y + Math.sin(ang)*(r2 + 8) + fall*1.4, 4.5, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.fillStyle = '#FFFFFF';   // inner ring of white sparks
+    for(i=0;i<8;i++){ var b = i * Math.PI / 4 + 0.2; ctx.beginPath(); ctx.arc(x + Math.cos(b)*R*ease*0.3, y + Math.sin(b)*R*ease*0.3, 4, 0, Math.PI*2); ctx.fill(); }
+    ctx.restore();
+  }
+  function drawConfetti(ctx, x, y, s, rot, color, alpha){
+    ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.rotate(rot); ctx.scale(1, Math.cos(rot*1.7));   // flips as it turns
+    ctx.fillStyle = color; ctx.fillRect(-s*0.3, -s*0.5, s*0.6, s); ctx.restore();
+  }
+  function drawClock(ctx, x, y, r, e){   // an alarm clock at midnight that rings at the start of every loop
+    var p = e.moving ? (e.t / LOOP) % 1 : 0.5, ring = p < 0.35 ? Math.sin(p * 60) * 0.12 * (1 - p/0.35) : 0;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(ring);
+    ctx.fillStyle = '#FFD45C';
+    [-1, 1].forEach(function(d){ ctx.beginPath(); ctx.arc(d*r*0.62, -r*0.86, r*0.32, Math.PI*1.05, Math.PI*1.95 + 0.3); ctx.closePath(); ctx.fill(); });
+    ctx.strokeStyle = '#E8A93A'; ctx.lineWidth = r*0.1; ctx.lineCap = 'round';
+    [-1, 1].forEach(function(d){ ctx.beginPath(); ctx.moveTo(d*r*0.55, r*0.8); ctx.lineTo(d*r*0.72, r*1.08); ctx.stroke(); });
+    ctx.fillStyle = '#FF8FB3'; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#FFF6E5'; ctx.beginPath(); ctx.arc(0, 0, r*0.8, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#3B1626';
+    for(var i=0;i<12;i++){ var a = i*Math.PI/6; ctx.beginPath(); ctx.arc(Math.cos(a)*r*0.66, Math.sin(a)*r*0.66, i % 3 ? r*0.025 : r*0.05, 0, Math.PI*2); ctx.fill(); }
+    ctx.strokeStyle = '#3B1626'; ctx.lineWidth = r*0.08;
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(r*0.04, -r*0.42); ctx.moveTo(0, 0); ctx.lineTo(-r*0.03, -r*0.6); ctx.stroke();
+    ctx.restore();
+  }
+  function drawPopper(ctx, x, y, s, e){   // party popper: cone at the bottom, streamers out of the top
+    ctx.save(); ctx.translate(x, y); ctx.rotate(-0.4);
+    ctx.lineCap = 'round'; ctx.lineWidth = s*0.05;
+    ['#FF8FB3','#8FC8FF','#FFD45C'].forEach(function(c, i){
+      var w = sway(e, 2, i*2, s*0.08);
+      ctx.strokeStyle = c; ctx.beginPath(); ctx.moveTo((i - 1)*s*0.08, -s*0.5);
+      ctx.bezierCurveTo((i - 1)*s*0.3 + w, -s*0.8, (i - 1)*s*0.05 - w, -s*0.95, (i - 1)*s*0.25 + w, -s*1.15); ctx.stroke();
+    });
+    ctx.beginPath(); ctx.moveTo(-s*0.24, -s*0.5); ctx.lineTo(s*0.24, -s*0.5); ctx.lineTo(0, s*0.32); ctx.closePath();
+    ctx.fillStyle = '#B98AF0'; ctx.fill();
+    ctx.save(); ctx.clip(); ctx.strokeStyle = '#FFD45C'; ctx.lineWidth = s*0.08;
+    for(var k=0;k<4;k++){ ctx.beginPath(); ctx.moveTo(-s*0.3, -s*0.36 + k*s*0.2); ctx.lineTo(s*0.3, -s*0.46 + k*s*0.2); ctx.stroke(); }
+    ctx.restore();
+    ctx.fillStyle = '#FFF6E5'; ctx.beginPath(); ctx.ellipse(0, -s*0.5, s*0.24, s*0.06, 0, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  /* ---- Lunar New Year ---- */
+  function drawRedLantern(ctx, ax, ay, len, s, angle){   // hangs from (ax, ay)
+    ctx.save(); ctx.translate(ax, ay); ctx.rotate(angle);
+    ctx.strokeStyle = '#C9A13A'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, len); ctx.stroke();
+    ctx.translate(0, len);
+    ctx.fillStyle = '#E0B23D'; roundRect(ctx, -s*0.24, 0, s*0.48, s*0.12, 3); ctx.fill();
+    var cy = s*0.12 + s*0.4;
+    ctx.fillStyle = '#D7263D'; ctx.beginPath(); ctx.ellipse(0, cy, s*0.5, s*0.4, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#A8172C'; ctx.lineWidth = Math.max(2, s*0.035);
+    [0.18, 0.36].forEach(function(f){ ctx.beginPath(); ctx.ellipse(0, cy, s*f, s*0.4, 0, 0, Math.PI*2); ctx.stroke(); });
+    ctx.fillStyle = 'rgba(255,214,92,.35)'; ctx.beginPath(); ctx.ellipse(-s*0.18, cy - s*0.12, s*0.1, s*0.16, 0.2, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#E0B23D'; roundRect(ctx, -s*0.24, cy + s*0.36, s*0.48, s*0.12, 3); ctx.fill();
+    ctx.strokeStyle = '#E0B23D'; ctx.lineWidth = Math.max(2, s*0.03);
+    for(var i=-2;i<=2;i++){ ctx.beginPath(); ctx.moveTo(i*s*0.04, cy + s*0.48); ctx.lineTo(i*s*0.06, cy + s*0.86); ctx.stroke(); }   // tassel
+    ctx.restore();
+  }
+  function drawPetal(ctx, x, y, s, rot, alpha){
+    ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.rotate(rot); ctx.fillStyle = '#FFB7C9';
+    ctx.beginPath(); ctx.moveTo(0, -s*0.5); ctx.quadraticCurveTo(s*0.5, -s*0.1, 0, s*0.5); ctx.quadraticCurveTo(-s*0.5, -s*0.1, 0, -s*0.5); ctx.fill(); ctx.restore();
+  }
+  function drawAngpao(ctx, x, y, w, h, rot){   // a red envelope with a gold flower (no writing)
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    ctx.fillStyle = '#D7263D'; roundRect(ctx, -w/2, -h/2, w, h, 8); ctx.fill();
+    ctx.strokeStyle = '#E0B23D'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(-w/2 + 4, -h/2 + 6); ctx.lineTo(0, -h*0.12); ctx.lineTo(w/2 - 4, -h/2 + 6); ctx.stroke();
+    ctx.fillStyle = '#E0B23D'; ctx.beginPath(); ctx.arc(0, h*0.1, w*0.24, 0, Math.PI*2); ctx.fill();
+    drawBloom(ctx, 0, h*0.1, w*0.14, '#D7263D', '#E0B23D', 0);
+    ctx.restore();
+  }
+  function drawCoin(ctx, x, y, r){
+    ctx.save(); ctx.fillStyle = '#F2C14E'; ctx.strokeStyle = '#C99A2E'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.strokeRect(x - r*0.28, y - r*0.28, r*0.56, r*0.56); ctx.restore();
+  }
+
+  /* ---- Ramadan ---- */
+  function drawFanous(ctx, ax, ay, len, s, angle, glow){   // a lantern hanging from (ax, ay); len 0 = standing
+    ctx.save(); ctx.translate(ax, ay); ctx.rotate(angle);
+    ctx.strokeStyle = '#D9A93B'; ctx.lineWidth = 3;
+    if(len > 0){ ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, len); ctx.stroke(); }
+    ctx.translate(0, len);
+    ctx.beginPath(); ctx.arc(0, s*0.06, s*0.06, 0, Math.PI*2); ctx.stroke();
+    ctx.fillStyle = '#D9A93B';
+    ctx.beginPath(); ctx.moveTo(-s*0.2, s*0.3); ctx.quadraticCurveTo(0, s*0.02, s*0.2, s*0.3); ctx.closePath(); ctx.fill();
+    var pts = [[-0.22,0.3],[0.22,0.3],[0.32,0.56],[0.22,0.84],[-0.22,0.84],[-0.32,0.56]];
+    ctx.save(); ctx.shadowColor = 'rgba(255,214,92,.9)'; ctx.shadowBlur = s*0.35*glow;
+    ctx.fillStyle = 'rgba(255,220,120,' + (0.65 + 0.35*glow) + ')';
+    ctx.beginPath(); pts.forEach(function(p, i){ ctx[i ? 'lineTo' : 'moveTo'](p[0]*s, p[1]*s); }); ctx.closePath(); ctx.fill(); ctx.restore();
+    ctx.strokeStyle = '#B8862A'; ctx.lineWidth = Math.max(2, s*0.04);
+    ctx.beginPath(); pts.forEach(function(p, i){ ctx[i ? 'lineTo' : 'moveTo'](p[0]*s, p[1]*s); }); ctx.closePath(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, s*0.3); ctx.lineTo(0, s*0.84); ctx.moveTo(-s*0.32, s*0.56); ctx.lineTo(s*0.32, s*0.56); ctx.stroke();
+    ctx.fillStyle = '#D9A93B'; ctx.beginPath(); ctx.moveTo(-s*0.18, s*0.84); ctx.lineTo(s*0.18, s*0.84); ctx.lineTo(0, s*1.02); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+  function drawDates(ctx, x, y, s){   // a little bowl of dates
+    ctx.save(); ctx.translate(x, y);
+    [[-0.26,-0.12,0.3],[0.02,-0.18,-0.2],[0.28,-0.1,0.5],[-0.12,-0.3,-0.6],[0.16,-0.32,0.1]].forEach(function(d){
+      ctx.save(); ctx.translate(d[0]*s, d[1]*s); ctx.rotate(d[2]); ctx.fillStyle = '#7A3B1E';
+      ctx.beginPath(); ctx.ellipse(0, 0, s*0.16, s*0.09, 0, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.beginPath(); ctx.ellipse(-s*0.04, -s*0.03, s*0.07, s*0.025, 0, 0, Math.PI*2); ctx.fill(); ctx.restore();
+    });
+    ctx.fillStyle = '#FFFFFF'; ctx.strokeStyle = '#D9A93B'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.ellipse(0, 0, s*0.5, s*0.14, 0, 0, Math.PI); ctx.lineTo(-s*0.5, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
+
+  /* ---- Anniversary ---- */
+  function drawRose(ctx, x, y, r, rot, color){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0);
+    drawLeaf(ctx, -r*0.45, r*0.55, r*1.1, 2.4, '#5E9C5A'); drawLeaf(ctx, r*0.45, r*0.55, r*1.0, 0.7, '#6FAE63');
+    // layers of round petals, darker towards the middle, with a light edge on each petal
+    var light = shade(color, 0.12), mid = shade(color, -0.08), deep = shade(color, -0.18);
+    function petals(n, dist, rad, fill, turn){
+      for(var i=0;i<n;i++){
+        var a = turn + i*Math.PI*2/n, px = Math.cos(a)*dist, py = Math.sin(a)*dist;
+        ctx.fillStyle = fill; ctx.beginPath(); ctx.arc(px, py, rad, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = light; ctx.lineWidth = Math.max(2, r*0.06);
+        ctx.beginPath(); ctx.arc(px, py, rad*0.92, a - 0.9, a + 0.9); ctx.stroke();
+      }
+    }
+    petals(5, r*0.5, r*0.52, color, -Math.PI/2);
+    petals(3, r*0.24, r*0.4, mid, -Math.PI/6);
+    ctx.fillStyle = deep; ctx.beginPath(); ctx.arc(0, 0, r*0.26, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = shade(color, -0.3); ctx.lineWidth = Math.max(2, r*0.07); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(r*0.03, r*0.02, r*0.13, Math.PI*1.1, Math.PI*2.5); ctx.stroke();
+    ctx.restore();
+  }
+  function drawRings(ctx, x, y, r, e){   // two wedding rings, a sparkle on the diamond
+    ctx.save(); ctx.translate(x, y); ctx.rotate(-0.15);
+    ctx.lineWidth = r*0.24; ctx.strokeStyle = '#E8B93E';
+    ctx.beginPath(); ctx.arc(-r*0.55, 0, r, 0, Math.PI*2); ctx.stroke();
+    ctx.strokeStyle = '#F3CF6A'; ctx.beginPath(); ctx.arc(r*0.55, r*0.15, r, 0, Math.PI*2); ctx.stroke();
+    ctx.fillStyle = '#DDF3FF'; ctx.strokeStyle = '#8FC8FF'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(r*0.55, -r*1.5); ctx.lineTo(r*0.85, -r*1.2); ctx.lineTo(r*0.55, -r*0.95); ctx.lineTo(r*0.25, -r*1.2); ctx.closePath(); ctx.fill(); ctx.stroke();
+    drawStar(ctx, r*1.0, -r*1.55, r*0.5 * twinkle(e, 3, 2), '#FFFFFF', twinkle(e, 3, 2));
+    ctx.restore();
+  }
+  function drawRibbonBow(ctx, x, y, s, e, color){   // a big bow with swaying tails (the sticker "Bow" is drawBow)
+    ctx.save(); ctx.translate(x, y);
+    ctx.fillStyle = shade(color, -0.12);
+    [-1, 1].forEach(function(d, i){
+      ctx.save(); ctx.rotate(d*0.3 + sway(e, 1, i*2, 0.08));
+      ctx.beginPath(); ctx.moveTo(d*s*0.06, s*0.05); ctx.lineTo(d*s*0.2, s*0.75); ctx.lineTo(d*s*0.08, s*0.66); ctx.lineTo(d*s*0.02, s*0.78); ctx.lineTo(-d*s*0.04, s*0.08); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    });
+    ctx.fillStyle = color;
+    [-1, 1].forEach(function(d){
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.bezierCurveTo(d*s*0.2, -s*0.45, d*s*0.62, -s*0.28, d*s*0.5, 0); ctx.bezierCurveTo(d*s*0.62, s*0.28, d*s*0.2, s*0.36, 0, 0); ctx.fill();
+    });
+    ctx.fillStyle = shade(color, -0.12); ctx.beginPath(); ctx.ellipse(0, 0, s*0.1, s*0.12, 0, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  /* ---- Birthday ---- */
+  function drawBalloon(ctx, x, y, r, color, rot){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0);
+    ctx.strokeStyle = 'rgba(59,22,38,.45)'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(0, r*1.18); ctx.bezierCurveTo(-r*0.3, r*1.6, r*0.3, r*1.9, -r*0.05, r*2.4); ctx.stroke();
+    ctx.fillStyle = color; ctx.beginPath(); ctx.ellipse(0, 0, r*0.86, r, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(0, r*0.96); ctx.lineTo(-r*0.12, r*1.18); ctx.lineTo(r*0.12, r*1.18); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.ellipse(-r*0.32, -r*0.4, r*0.14, r*0.24, 0.4, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  function drawCake(ctx, x, y, w, e){   // (x, y) = bottom middle of the plate
+    ctx.save(); ctx.translate(x, y);
+    ctx.fillStyle = '#FFFFFF'; ctx.beginPath(); ctx.ellipse(0, 0, w*0.56, w*0.08, 0, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#F7C6A3'; roundRect(ctx, -w*0.5, -w*0.42, w, w*0.42, 10); ctx.fill();
+    ctx.fillStyle = '#FF8FB3'; roundRect(ctx, -w*0.36, -w*0.74, w*0.72, w*0.34, 10); ctx.fill();
+    function drips(top, half, color){
+      ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(-half, top);
+      for(var i=0;i<5;i++){ var x0 = -half + i*half*0.4; ctx.quadraticCurveTo(x0 + half*0.1, top + w*0.13, x0 + half*0.2, top + w*0.04); ctx.quadraticCurveTo(x0 + half*0.3, top + w*0.08, x0 + half*0.4, top); }
+      ctx.lineTo(half, top - w*0.04); ctx.lineTo(-half, top - w*0.04); ctx.closePath(); ctx.fill();
+    }
+    drips(-w*0.38, w*0.5, '#FFF6E5'); drips(-w*0.7, w*0.36, '#FFFFFF');
+    [[-0.2,'#8FC8FF'],[0,'#FFD45C'],[0.2,'#8FE3C6']].forEach(function(c, i){   // candles, flames flicker
+      ctx.fillStyle = c[1]; ctx.fillRect(c[0]*w - w*0.03, -w*0.98, w*0.06, w*0.24);
+      var f = e.moving ? 1 + wave(e.t, 6, i*2.1)*0.18 : 1;
+      ctx.fillStyle = '#FFB347'; ctx.beginPath(); ctx.ellipse(c[0]*w, -w*1.04, w*0.045*f, w*0.08*f, 0, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#FFE9A8'; ctx.beginPath(); ctx.ellipse(c[0]*w, -w*1.02, w*0.02*f, w*0.04*f, 0, 0, Math.PI*2); ctx.fill();
+    });
+    ctx.restore();
+  }
+  function drawPartyHat(ctx, x, y, s, rot){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    ctx.beginPath(); ctx.moveTo(-s*0.38, s*0.45); ctx.lineTo(s*0.38, s*0.45); ctx.lineTo(0, -s*0.55); ctx.closePath();
+    ctx.fillStyle = '#8FC8FF'; ctx.fill();
+    ctx.save(); ctx.clip(); ctx.fillStyle = '#FFFFFF';
+    [[0,-0.1],[-0.15,0.22],[0.15,0.22],[0,0.38],[0.05,-0.32]].forEach(function(d){ ctx.beginPath(); ctx.arc(d[0]*s, d[1]*s, s*0.06, 0, Math.PI*2); ctx.fill(); });
+    ctx.restore();
+    ctx.fillStyle = '#FF8FB3'; roundRect(ctx, -s*0.42, s*0.4, s*0.84, s*0.12, s*0.06); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, -s*0.58, s*0.1, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  /* ---- Rainy days ---- */
+  function drawUmbrella(ctx, x, y, s, rot){   // (x, y) = middle of the canopy's bottom edge
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    ctx.strokeStyle = '#6B4A3A'; ctx.lineWidth = s*0.05; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(0, -s*0.05); ctx.lineTo(0, s*0.62); ctx.arc(-s*0.1, s*0.62, s*0.1, 0, Math.PI); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-s*0.5, 0); ctx.arc(0, 0, s*0.5, Math.PI, 0);
+    for(var i=0;i<4;i++){ var x0 = s*0.5 - i*s*0.25; ctx.quadraticCurveTo(x0 - s*0.125, -s*0.1, x0 - s*0.25, 0); }
+    ctx.closePath(); ctx.save(); ctx.clip();
+    ['#FF8FB3','#FFFFFF','#FF8FB3','#FFFFFF'].forEach(function(c, i){
+      ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(0, -s*0.02); ctx.arc(0, -s*0.02, s*0.6, Math.PI + i*Math.PI/4, Math.PI + (i + 1)*Math.PI/4); ctx.closePath(); ctx.fill();
+    });
+    ctx.restore();
+    ctx.strokeStyle = '#E36F96'; ctx.lineWidth = s*0.025;
+    ctx.beginPath(); ctx.moveTo(-s*0.5, 0); ctx.arc(0, 0, s*0.5, Math.PI, 0); ctx.stroke();
+    ctx.fillStyle = '#6B4A3A'; ctx.beginPath(); ctx.arc(0, -s*0.52, s*0.03, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  function drawDrop(ctx, x, y, s, color, alpha){
+    ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = color; ctx.translate(x, y);
+    ctx.beginPath(); ctx.moveTo(0, -s*0.6); ctx.quadraticCurveTo(s*0.45, s*0.05, 0, s*0.4); ctx.quadraticCurveTo(-s*0.45, s*0.05, 0, -s*0.6); ctx.fill(); ctx.restore();
+  }
+
+  /* ---- Graduation ---- */
+  function drawCap(ctx, x, y, s, rot, e, k){   // mortarboard with a swinging tassel
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    ctx.fillStyle = '#26324F'; ctx.beginPath(); ctx.moveTo(-s*0.3, s*0.04); ctx.lineTo(-s*0.3, s*0.26); ctx.quadraticCurveTo(0, s*0.38, s*0.3, s*0.26); ctx.lineTo(s*0.3, s*0.04); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#34416A'; ctx.beginPath(); ctx.moveTo(-s*0.55, 0); ctx.lineTo(0, -s*0.24); ctx.lineTo(s*0.55, 0); ctx.lineTo(0, s*0.24); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#F5C542'; ctx.beginPath(); ctx.arc(0, 0, s*0.05, 0, Math.PI*2); ctx.fill();
+    ctx.save(); ctx.rotate(sway(e, 2, k || 0, 0.25));
+    ctx.strokeStyle = '#F5C542'; ctx.lineWidth = s*0.035; ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(s*0.3, s*0.02, s*0.36, s*0.3); ctx.stroke();
+    ctx.fillStyle = '#F5C542'; ctx.beginPath(); ctx.moveTo(s*0.32, s*0.3); ctx.lineTo(s*0.4, s*0.3); ctx.lineTo(s*0.43, s*0.5); ctx.lineTo(s*0.29, s*0.5); ctx.closePath(); ctx.fill();
+    ctx.restore(); ctx.restore();
+  }
+  function drawDiploma(ctx, x, y, s, rot){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    ctx.fillStyle = '#FFFBEF'; ctx.strokeStyle = '#D8C7A0'; ctx.lineWidth = 3;
+    roundRect(ctx, -s*0.5, -s*0.12, s, s*0.24, s*0.12); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(s*0.5 - s*0.06, 0, s*0.06, s*0.12, 0, 0, Math.PI*2); ctx.stroke();
+    ctx.fillStyle = '#E0314B'; ctx.fillRect(-s*0.06, -s*0.13, s*0.12, s*0.26);
+    [-1, 1].forEach(function(d){ ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(d*s*0.2, -s*0.3, d*s*0.14, -s*0.06); ctx.closePath(); ctx.fill(); });
+    ctx.beginPath(); ctx.moveTo(-s*0.02, s*0.1); ctx.lineTo(-s*0.1, s*0.32); ctx.lineTo(-s*0.03, s*0.28); ctx.moveTo(s*0.02, s*0.1); ctx.lineTo(s*0.08, s*0.33); ctx.lineTo(s*0.01, s*0.28); ctx.fill();
+    ctx.restore();
+  }
+  function drawMedal(ctx, x, y, s, rot, e){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    ctx.fillStyle = '#5AB4F0'; ctx.beginPath(); ctx.moveTo(-s*0.3, -s*0.7); ctx.lineTo(-s*0.08, -s*0.7); ctx.lineTo(s*0.12, -s*0.1); ctx.lineTo(-s*0.08, -s*0.1); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#E0314B'; ctx.beginPath(); ctx.moveTo(s*0.3, -s*0.7); ctx.lineTo(s*0.08, -s*0.7); ctx.lineTo(-s*0.12, -s*0.1); ctx.lineTo(s*0.08, -s*0.1); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#F5C542'; ctx.strokeStyle = '#C99A2E'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, s*0.12, s*0.3, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    drawStar5(ctx, 0, s*0.13, s*0.17, '#FFF3C4', 1, sway(e, 1, 0, 0.2));
+    ctx.restore();
+  }
+
+  /* ---- the nine Moments frames ---- */
+  function decorHalloween(ctx, e){
+    var A = corners(e.rects[0]), B = corners(e.rects[e.rects.length-1]);
+    for(var d=0; d<12; d++){   // tiny stars down both margins
+      var dy = 40 + ((d * 211) % Math.max(60, e.h - 80));
+      ctx.fillStyle = 'rgba(255,214,92,' + (e.moving ? 0.35 + 0.45*(wave(e.t, 3, d)*0.5 + 0.5) : 0.6) + ')';
+      ctx.beginPath(); ctx.arc(d % 2 ? e.w - 16 : 16, dy, 4, 0, Math.PI*2); ctx.fill();
+    }
+    drawBat(ctx, A[0][0] + 52 + sway(e, 1, 0, 10), 46 + sway(e, 2, 1, 6), 76, e.moving ? wave(e.t, 6, 0) : 0.4);
+    drawBat(ctx, A[0][0] + 136 + sway(e, 1, 2, 8), 30 + sway(e, 2, 3, 5), 48, e.moving ? wave(e.t, 6, 2) : 0.4);
+    drawGhost(ctx, A[1][0] - 40, A[1][1] + 24 + sway(e, 1, 0.5, 12), 116, blinkOpen(e, 0.3), sway(e, 1, 0, 0.08));
+    e.rects.forEach(function(r, i){
+      if(!i) return;
+      var c = corners(r);
+      drawBat(ctx, c[0][0] + 22, c[0][1] + r.h*0.42 + sway(e, 1, i, 10), 64, e.moving ? wave(e.t, 6, i*2) : 0.4);
+      drawGhost(ctx, c[1][0] - 10, c[1][1] + r.h*0.62 + sway(e, 1, i + 1, 8), 84, blinkOpen(e, 0.1*i), sway(e, 1, i, 0.1));
+    });
+    var glow = e.moving ? 0.5 + 0.5*wave(e.t, 3, 0) : 1;
+    drawPumpkin(ctx, B[3][0] + 34, B[3][1] + 32, 56, glow, sway(e, 1, 2, 0.05));
+    drawPumpkin(ctx, B[3][0] + 14, B[3][1] + 90, 28, 1 - glow, -0.1);
+    drawCandy(ctx, B[2][0] - 40, B[2][1] + 40, 42, -0.4 + sway(e, 1, 1, 0.2), '#FF8FB3', '#FFFFFF');
+    drawCandyCorn(ctx, B[2][0] - 28, B[2][1] + 96, 42, 0.3 + sway(e, 1, 2, 0.15));
+  }
+  function decorWinter(ctx, e){
+    var A = corners(e.rects[0]), B = corners(e.rects[e.rects.length-1]);
+    fallers(ctx, e, 30 + e.rects.length*6, 11, 300, 20, function(x, y, a, k, p){   // snow: soft dots and a few crystals
+      if(k % 3){ ctx.fillStyle = 'rgba(255,255,255,' + (0.9*a) + ')'; ctx.beginPath(); ctx.arc(x, y, 5 + (k % 4)*2, 0, Math.PI*2); ctx.fill(); }
+      else drawFlake(ctx, x, y, 12 + (k % 5)*2, p*Math.PI/3, a);
+    });
+    drawHolly(ctx, A[0][0] + 30, A[0][1] + 16, 104, -0.3 + sway(e, 1, 0, 0.06));
+    var swing = sway(e, 1, 0, 0.12);
+    drawBauble(ctx, A[1][0] - 66, 0, A[1][1] + 6, 24, '#FFD45C', swing);
+    drawBauble(ctx, A[1][0] - 16, 0, A[1][1] - 46, 20, '#8FC8FF', -swing*0.8);
+    e.rects.forEach(function(r, i){
+      if(!i) return;
+      var c = corners(r);
+      drawCandyCane(ctx, c[1][0] - 10, c[1][1] + r.h*0.5, 70, 0.2 + sway(e, 1, i, 0.12));
+      drawHolly(ctx, c[0][0] + 8, c[0][1] + r.h*0.4, 76, 0.8 + sway(e, 1, i + 1, 0.08));
+    });
+    drawSnowman(ctx, B[3][0] + 42, B[3][1] + 102, 92, e);
+    drawTree(ctx, B[2][0] - 42, B[2][1] + 100, 196, e);
+  }
+  function decorNewYear(ctx, e){
+    var A = corners(e.rects[0]), B = corners(e.rects[e.rects.length-1]);
+    var bursts = [[A[0][0] + 84, 64, 58, 0], [A[1][0] - 70, 70, 62, 0.5], [A[0][0] + 28, A[0][1] + 330, 50, 0.25], [A[1][0] - 26, A[1][1] + 520, 50, 0.75]];
+    e.rects.forEach(function(r, i){ if(i){ var c = corners(r); bursts.push([i % 2 ? c[1][0] - 26 : c[0][0] + 28, c[0][1] + r.h*0.5, 50, (i*0.37) % 1]); } });
+    bursts.forEach(function(b, k){ drawBurst(ctx, b[0], b[1], b[2], e.moving ? ((e.t / LOOP) + b[3]) % 1 : 0.55, FIREWORK_COLORS[k % FIREWORK_COLORS.length]); });
+    fallers(ctx, e, 24 + e.rects.length*4, 31, 260, 10, function(x, y, a, k, p){ drawConfetti(ctx, x, y, 16, k + p*Math.PI*2, FIREWORK_COLORS[k % 4], a); });
+    drawClock(ctx, B[3][0] + 46, B[3][1] + 58, 40, e);
+    drawPopper(ctx, B[2][0] - 28, B[2][1] + 78, 88, e);
+  }
+  function decorLunar(ctx, e){
+    var A = corners(e.rects[0]), B = corners(e.rects[e.rects.length-1]);
+    fallers(ctx, e, 18 + e.rects.length*3, 47, 240, 16, function(x, y, a, k, p){ drawPetal(ctx, x, y, 24 + (k % 3)*4, k + p*Math.PI*2, a*0.9); });
+    var swing = sway(e, 1, 0, 0.1);
+    drawRedLantern(ctx, A[0][0] + 44, 0, A[0][1] - 62, 70, swing);
+    drawRedLantern(ctx, A[0][0] + 118, 0, 6, 52, -swing*0.8);
+    drawRedLantern(ctx, A[1][0] - 42, 0, A[1][1] - 46, 74, -swing);
+    ctx.save(); ctx.strokeStyle = '#7A4A32'; ctx.lineWidth = 9; ctx.lineCap = 'round';   // a plum blossom branch in the bottom right
+    ctx.beginPath(); ctx.moveTo(e.w + 4, B[2][1] + 118); ctx.quadraticCurveTo(B[2][0] - 20, B[2][1] + 60, B[2][0] - 70, B[2][1] - 40); ctx.stroke();
+    ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(B[2][0] - 26, B[2][1] + 44); ctx.quadraticCurveTo(B[2][0] - 60, B[2][1] + 44, B[2][0] - 76, B[2][1] + 12); ctx.stroke(); ctx.restore();
+    [[-70,-40,24],[-40,8,30],[-76,10,18],[-4,64,26],[-56,40,16]].forEach(function(p, k){
+      drawBloom(ctx, B[2][0] + p[0], B[2][1] + p[1], p[2]*(1 + sway(e, 1, k, 0.06)), '#FFB7C9', '#F5C542', spin(e, 5, k % 2 ? -1 : 1));
+    });
+    e.rects.forEach(function(r, i){
+      if(!i) return;
+      var c = corners(r);
+      drawBloom(ctx, c[0][0] + 6, c[0][1] + r.h*0.45, 26, '#FFB7C9', '#F5C542', spin(e, 5));
+      drawBloom(ctx, c[0][0] + 24, c[0][1] + r.h*0.45 + 34, 16, '#FFD1DC', '#F5C542', spin(e, 5, -1));
+    });
+    drawCoin(ctx, B[3][0] + 80, B[3][1] + 100, 17);
+    drawAngpao(ctx, B[3][0] + 44, B[3][1] + 50, 66, 92, -0.14 + sway(e, 1, 1, 0.04));
+    drawCoin(ctx, B[3][0] + 14, B[3][1] + 104, 18);
+  }
+  function decorRamadan(ctx, e){
+    var A = corners(e.rects[0]), B = corners(e.rects[e.rects.length-1]);
+    for(var d=0; d<16; d++){   // fairy lights down both margins
+      var dy = 30 + d * ((e.h - 60) / 16);
+      ctx.fillStyle = 'rgba(255,214,92,' + (e.moving ? 0.3 + 0.6*(wave(e.t, 2, d*0.8)*0.5 + 0.5) : 0.7) + ')';
+      ctx.beginPath(); ctx.arc(d % 2 ? e.w - 15 : 15, dy + (d % 2)*24, 5, 0, Math.PI*2); ctx.fill();
+    }
+    var swing = sway(e, 1, 0, 0.1), glow = e.moving ? 0.5 + 0.5*wave(e.t, 2, 0) : 1;
+    drawFanous(ctx, A[0][0] + 42, 0, A[0][1] - 70, 84, swing, glow);
+    drawFanous(ctx, A[0][0] + 116, 0, 0, 62, -swing*0.8, 1 - glow);
+    drawMoon(ctx, A[1][0] - 48, A[1][1] + 28 + sway(e, 1, 1, 5), 64, '#F5C542');
+    drawStar5(ctx, A[1][0] - 116, A[1][1] - 30, 16, '#F5C542', twinkle(e, 1), 0);
+    e.rects.forEach(function(r, i){
+      var c = corners(r);
+      [[c[1][0] - 4, c[1][1] + r.h*0.55], [c[0][0] + 2, c[0][1] + r.h*0.7]].forEach(function(p, j){
+        var k = i*2 + j; drawStar5(ctx, p[0], p[1], 18 + (k % 3)*7, '#F5C542', twinkle(e, k), 0);
+      });
+    });
+    drawFanous(ctx, B[2][0] - 44, B[2][1] + 4, 0, 96, 0, glow);
+    drawDates(ctx, B[3][0] + 44, B[3][1] + 68, 100);
+  }
+  function decorAnniv(ctx, e){
+    var A = corners(e.rects[0]), B = corners(e.rects[e.rects.length-1]);
+    var beat = e.moving ? Math.max(0, wave(e.t, 2, 0)) * 0.06 : 0;
+    drawRose(ctx, A[0][0] + 88, A[0][1] - 36, 26*(1 + beat), 0.4, '#E0314B');
+    drawRose(ctx, A[0][0] + 26, A[0][1] + 8, 40*(1 + beat), -0.3, '#E14F7A');
+    drawRibbonBow(ctx, A[1][0] - 44, A[1][1] + 6, 92, e, '#FF8FB3');
+    e.rects.forEach(function(r, i){
+      var c = corners(r);
+      [[c[0][0] + 4, c[0][1] + r.h*0.55], [c[1][0] - 4, c[1][1] + r.h*0.4]].forEach(function(p, j){
+        var k = i*2 + j; drawStar(ctx, p[0], p[1], 22 + (k % 3)*6, e.dark ? '#FFFFFF' : '#E8B93E', twinkle(e, k));
+      });
+      if(i) drawRose(ctx, c[1][0] - 6, c[1][1] + r.h*0.62, 28, 0.5 + sway(e, 1, i, 0.08), '#E0314B');
+    });
+    drawRose(ctx, B[3][0] + 42, B[3][1] + 52, 40*(1 + beat), 0.2, '#E0314B');
+    drawRings(ctx, B[2][0] - 46, B[2][1] + 70, 28, e);
+  }
+  function decorBirthday(ctx, e){
+    var A = corners(e.rects[0]), B = corners(e.rects[e.rects.length-1]);
+    fallers(ctx, e, 20 + e.rects.length*4, 63, 240, 10, function(x, y, a, k, p){ drawConfetti(ctx, x, y, 15, k + p*Math.PI*2, ['#FF8FB3','#8FC8FF','#FFD45C','#8FE3C6','#B98AF0'][k % 5], a); });
+    drawBalloon(ctx, A[0][0] + 96, A[0][1] - 50 + sway(e, 1, 1, 8), 28, '#8FC8FF', sway(e, 1, 2, 0.06));
+    drawBalloon(ctx, A[0][0] + 34, A[0][1] - 18 + sway(e, 1, 0, 8), 36, '#FFD45C', sway(e, 1, 0, 0.06));
+    drawBalloon(ctx, A[1][0] - 100, A[1][1] - 52 + sway(e, 1, 2.5, 7), 26, '#8FE3C6', sway(e, 1, 1, 0.06));
+    drawBalloon(ctx, A[1][0] - 40, A[1][1] - 14 + sway(e, 1, 3, 8), 36, '#B98AF0', sway(e, 1, 3, 0.06));
+    e.rects.forEach(function(r, i){
+      if(!i) return;
+      var c = corners(r);
+      drawBalloon(ctx, c[0][0] + 12, c[0][1] + r.h*0.36 + sway(e, 1, i, 8), 28, ['#FFD45C','#8FC8FF','#8FE3C6'][i % 3], sway(e, 1, i, 0.06));
+    });
+    drawPartyHat(ctx, B[3][0] + 44, B[3][1] + 60, 84, -0.25 + sway(e, 1, 1, 0.05));
+    drawCake(ctx, B[2][0] - 46, B[2][1] + 100, 100, e);
+  }
+  function decorRainy(ctx, e){
+    var A = corners(e.rects[0]), B = corners(e.rects[e.rects.length-1]);
+    var rain = e.dark ? '#CFE3FF' : '#4F83C2';
+    ctx.save(); ctx.lineCap = 'round'; ctx.lineWidth = 4;
+    fallers(ctx, e, 40 + e.rects.length*8, 79, 220, 6, function(x, y, a, k){ ctx.strokeStyle = rgba(rain, 0.7*a); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 5, y + 22 + (k % 3)*6); ctx.stroke(); });
+    ctx.restore();
+    ['#FF9AA2','#FFD08A','#FFF2A0','#A8E6B8','#9FD3FF'].forEach(function(c, i){   // a small rainbow behind the cloud
+      ctx.save(); ctx.strokeStyle = c; ctx.lineWidth = 9; ctx.beginPath(); ctx.arc(A[1][0] - 40, A[1][1] + 46, 66 - i*9, Math.PI, Math.PI*2); ctx.stroke(); ctx.restore();
+    });
+    drawCloud(ctx, A[1][0] - 96 + sway(e, 1, 1, 8), A[1][1] + 36, 56, '#8FC3EE', 1);
+    drawCloud(ctx, A[0][0] + 52 + sway(e, 1, 0, 12), A[0][1] + 10, 92, '#8FC3EE', 1);
+    for(var k=0;k<3;k++){   // drops falling from the big cloud
+      var p = e.moving ? ((e.t / LOOP) + k/3) % 1 : 0.4 + k*0.2;
+      drawDrop(ctx, A[0][0] + 20 + k*36, A[0][1] + 56 + p*70, 16, rain, Math.sin(p*Math.PI));
+    }
+    e.rects.forEach(function(r, i){
+      if(!i) return;
+      var c = corners(r);
+      drawCloud(ctx, c[0][0] + 8 + sway(e, 1, i, 8), c[0][1] + r.h*0.4, 56, '#8FC3EE', 1);
+    });
+    drawUmbrella(ctx, B[3][0] + 42, B[3][1] + 50, 100, -0.22 + sway(e, 1, 0.5, 0.06));
+    var px = B[2][0] - 44, py = B[2][1] + 92;   // a puddle: a drop falls in, rings spread out
+    ctx.save(); ctx.fillStyle = rgba(e.dark ? '#9FD3FF' : '#6BA6DC', 0.45); ctx.beginPath(); ctx.ellipse(px, py, 48, 13, 0, 0, Math.PI*2); ctx.fill();
+    for(var j=0;j<2;j++){
+      var q = e.moving ? ((e.t / LOOP)*2 + j*0.5) % 1 : 0.5;
+      ctx.strokeStyle = rgba('#FFFFFF', 0.85*(1 - q)); ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.ellipse(px, py, 8 + q*38, 3 + q*10, 0, 0, Math.PI*2); ctx.stroke();
+    }
+    ctx.restore();
+    var dq = e.moving ? ((e.t / LOOP)*2) % 1 : 0.6;
+    drawDrop(ctx, px, py - 90 + dq*84, 16, rain, dq < 0.95 ? 1 : 0);
+  }
+  function decorGrad(ctx, e){
+    var A = corners(e.rects[0]), B = corners(e.rects[e.rects.length-1]);
+    function toss(ph){ return e.moving ? Math.abs(Math.sin(((e.t / LOOP) + ph) * Math.PI)) * 34 : 20; }   // caps thrown up and caught
+    drawCap(ctx, A[0][0] + 58, A[0][1] - 14 - toss(0), 122, -0.25 + sway(e, 1, 0, 0.18), e, 0);
+    drawCap(ctx, A[1][0] - 56, A[1][1] - 18 - toss(0.5), 104, 0.22 + sway(e, 1, 1.5, 0.18), e, 2);
+    drawStar(ctx, A[0][0] + 146, 34, 20, '#FFFFFF', twinkle(e, 7, 3));
+    drawStar(ctx, A[1][0] - 132, 40, 16, '#FFFFFF', twinkle(e, 8, 3));
+    e.rects.forEach(function(r, i){
+      var c = corners(r);
+      [[c[0][0] + 4, c[0][1] + r.h*0.6], [c[1][0] - 4, c[1][1] + r.h*0.45], [c[1][0] - 8, c[1][1] + r.h*0.8], [c[0][0] + 8, c[0][1] + r.h*0.82]].forEach(function(p, j){
+        var k = i*4 + j; drawStar5(ctx, p[0], p[1], 16 + (k % 3)*7, '#F5C542', twinkle(e, k), spin(e, 5, k % 2 ? -1 : 1));
+      });
+      if(i) drawCap(ctx, c[0][0] + 8, c[0][1] + r.h*0.3 - toss(i*0.3), 66, 0.3 + sway(e, 1, i, 0.18), e, i);
+    });
+    drawMedal(ctx, B[3][0] + 46, B[3][1] + 70, 92, -0.1 + sway(e, 1, 1, 0.06), e);
+    drawDiploma(ctx, B[2][0] - 44, B[2][1] + 60, 104, -0.45 + sway(e, 1, 2, 0.05));
+  }
+
   /* ================= CHARACTERS =================
      Original characters, drawn with simple shapes. Same rules as the themes: full-size
      strip units, faces-in-photos stay clear, every movement loops once per LOOP. */
@@ -7510,7 +8243,7 @@
   function renderCfBases(){
     var box = $('cfBases');
     box.innerHTML = '';
-    CF_BASES.concat(TEMPLATES.filter(function(t){ return t.tab === 'illustrated'; }).map(function(t){ return t.id; })).forEach(function(id){
+    CF_BASES.concat(TEMPLATES.filter(isDecoBase).map(function(t){ return t.id; })).forEach(function(id){
       var t = templateById(id);
       var card = document.createElement('button');
       card.type = 'button'; card.className = 'frame-card'; card.dataset.base = id;
@@ -7684,7 +8417,7 @@
     var id = f && typeof f.id === 'string' && /^[a-z0-9]{4,32}$/.test(f.id) ? f.id : null;
     if(!id || !Array.isArray(f.items) || !f.items.length || f.items.length > 12) return Promise.reject(new Error('frame'));
     var baseOk = CF_BASES.indexOf(f.baseId) !== -1 ||
-      TEMPLATES.some(function(t){ return t.id === f.baseId && t.tab === 'illustrated'; });
+      TEMPLATES.some(function(t){ return t.id === f.baseId && isDecoBase(t); });
     var total = 0, bytes = [];
     var itemsOk = f.items.every(function(it){
       var b = it && dataUrlBytes(it.png);
@@ -8705,7 +9438,7 @@
     var own = findCustomRec(function(r){ return r.id === srcId && !r.srcId; });
     if(own) return Promise.resolve(own);
     var baseOk = CF_BASES.indexOf(f.baseId) !== -1 ||
-      TEMPLATES.some(function(t){ return t.id === f.baseId && t.tab === 'illustrated'; });
+      TEMPLATES.some(function(t){ return t.id === f.baseId && isDecoBase(t); });
     var total = 0;
     var itemsOk = f.items.every(function(it){
       var bytes = it && binaryOf(it.buf);
@@ -8835,6 +9568,7 @@
   }
   // "Day N together": the date field shows only for that label
   function syncSinceRow(){
+    syncMoments();   // the Anniversary frame's "✨ now" follows your day
     var on = state.dateLabel === 'day';
     $('sinceRow').hidden = !on;
     if(!on) return;
