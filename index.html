@@ -731,6 +731,20 @@
   .js-older{margin-top:4px;}
   .ldr-tip{font-size:.74rem; color:var(--rose-800); line-height:1.5; text-align:center; margin:10px 2px 0;}   /* (v4.15.1) where their file is */
   .love-note{font-size:.8rem !important; margin:10px 0 0 !important;}
+  /* (v4.16) send as a link: the lock line, and the card a link opens */
+  .love-lock{font-size:.78rem; color:var(--rose-800); background:#FFF0F6; border:1px solid var(--pink-200); border-radius:12px;
+    padding:9px 11px; margin:12px 0 0; line-height:1.45; text-align:left;}
+  #sendLoveMode{margin-top:4px;}
+  .love-under{font-size:.74rem; color:var(--rose-800); opacity:.85; margin:-4px 0 10px;}
+  #loveLinkOverlay .btn-ghost{margin-top:2px;}
+  #loveLinkOverlay .btn-text{display:block; margin:4px auto 0;}
+  #loveLinkOverlay .btn-primary + .btn-ghost{margin-top:0;}
+  /* short phones: a smaller preview, so every choice fits on the screen */
+  @media (max-height:700px){
+    #loveLinkOverlay .welcome-card{padding:20px 18px;}
+    #loveLinkOverlay .resume-preview canvas{max-height:26vh;}
+    #loveLinkOverlay .resume-info{margin:8px 0 10px;}
+  }
   #sendLoveModal .switch-row + .switch-row, #openLoveModal .switch-row{margin-top:6px;}
   #openLoveModal .code-style{margin:4px 0 6px;}
   /* short phones: a smaller preview, so OPEN fits on the screen with all the choices */
@@ -1120,11 +1134,14 @@
       <h3 id="sendLoveTitle">Send to my love ♡</h3>
       <label class="switch-row"><input type="checkbox" id="sendLovePhotos" checked><span id="sendLovePhotosText">My photos</span></label>
       <label class="switch-row"><input type="checkbox" id="sendLoveDesign" checked><span id="sendLoveDesignText">My design</span></label>
+      <!-- (v4.16) a private link instead of a file: locked on this device, kept 3 days (see SEND AS A LINK) -->
+      <p class="love-lock" id="sendLoveLock" hidden>🔒 We lock it on your device and make a private link. It works for 3 days, then it's deleted.</p>
       <p class="love-note" id="sendLoveNote"></p>
       <div class="code-actions">
         <button class="btn btn-ghost" id="sendLoveCancel">Cancel</button>
         <button class="btn btn-primary" id="sendLoveGo">SEND ♡</button>
       </div>
+      <button type="button" class="ldr-older" id="sendLoveMode" hidden>send as a file instead</button>
     </div>
   </div>
 
@@ -1285,6 +1302,22 @@
     </div>
   </div>
 
+  <!-- (v4.16) opened from a "Send to my love" link: what your love sent, and how to join it -->
+  <div class="welcome-overlay" id="loveLinkOverlay" role="dialog" aria-modal="true" aria-labelledby="loveLinkTitle">
+    <div class="welcome-card resume-card">
+      <button type="button" class="x-btn" id="loveLinkX" aria-label="Not now">✕</button>
+      <span class="eyebrow-script">From your love ♡</span>
+      <h2 id="loveLinkTitle">Opening what your love sent…</h2>
+      <div class="resume-preview" id="loveLinkPreview" hidden><canvas id="loveLinkCanvas" width="10" height="10"></canvas></div>
+      <p class="resume-info" id="loveLinkInfo"></p>
+      <button class="btn btn-primary" id="loveLinkMain" hidden>TAKE MY PHOTOS ♡</button>
+      <p class="love-under" id="loveLinkMainNote" hidden></p>
+      <button class="btn btn-ghost btn-block" id="loveLinkSecond" hidden>JUST OPEN THEIRS</button>
+      <button type="button" class="btn-text" id="loveLinkThird" hidden>just open theirs</button>
+      <p class="resume-note" id="loveLinkNote"></p>
+    </div>
+  </div>
+
   <div class="inapp inapp-banner" id="inappBanner" role="note" hidden></div>
 
   <!-- a newer version was uploaded: offer a refresh (never automatic) -->
@@ -1371,20 +1404,21 @@
     </section>
 
     <section class="section" style="padding-top:0;">
-      <div class="privacy-note">🔒 Your photos stay on your device. We don't upload or store them.</div>
+      <div class="privacy-note">🔒 Your photos stay on your device. Only your love sees what you send — not us.</div>
       <!-- the honest details, one tap away (the short line above stays true for your own photos) -->
       <details class="privacy-more">
         <summary><span>how it works</span></summary>
         <ul>
           <li>Live room: your photos go straight to your love's phone, encrypted on the way.</li>
           <li>To connect you, a room server (PeerJS) and sometimes a Cloudflare relay pass along encrypted data. They can't see your photos.</li>
-          <li>A photo code contains your photos, so only send it to your love.</li>
+          <li>Send to my love as a link: your photos and design are locked (encrypted) on your device first. Our Cloudflare storage keeps only the locked copy for 3 days, then deletes it. The key is inside the link itself, so anyone with the link can open it — only send it to your love.</li>
+          <li>A photo file or code contains your photos, so only send it to your love.</li>
           <li>The letters come from Google Fonts, so Google can see that this page was opened.</li>
         </ul>
       </details>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.15.1</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.16</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -1490,16 +1524,17 @@
           <p class="ldr-title">Long distance ♡</p>
           <p class="ldr-hint">Want to see each other while you pose? Open a live room together.</p>
           <button class="btn btn-primary btn-block js-go-live">GO LIVE TOGETHER ♡</button>
-          <p class="ldr-hint" style="margin-top:16px;">Not online at the same time? Take your own shots, then send them to your love as one little file — you'll end up on the same strip.</p>
-          <!-- (v4.15) photos + design travel as ONE file (WhatsApp etc.); the old text codes are the "older way" -->
+          <p class="ldr-hint" style="margin-top:16px;">Not online at the same time? Take your own shots, then send them to your love as a private link — you'll end up on the same strip.</p>
+          <!-- (v4.15) photos + design travel as ONE file (WhatsApp etc.); (v4.16) as a link when possible;
+               the old text codes are the "older way" -->
           <div class="fallback-buttons">
             <button class="btn btn-primary js-send-love">SEND TO MY LOVE ♡</button>
             <button class="btn btn-secondary js-open-love">OPEN FROM MY LOVE</button>
           </div>
           <ol class="ldr-steps">
             <li>Each of you takes 2 photos here, on your own phone (one strip holds 4).</li>
-            <li>One of you taps "Send to my love" and picks WhatsApp — it arrives as a file.</li>
-            <li>The other taps "Open from my love" and picks that file — one strip, two people ♡</li>
+            <li>One of you taps "Send to my love" and picks WhatsApp — your love gets a link.</li>
+            <li>The other just taps the link — one strip, two people ♡ (Got a file instead? Tap "Open from my love" and pick it.)</li>
           </ol>
           <p class="ldr-tip js-love-tip"></p>
           <button type="button" class="ldr-older js-older-toggle" aria-expanded="false">older way: copy / paste a code</button>
@@ -1680,7 +1715,7 @@
             </div>
             <button type="button" class="ldr-toggle" id="ldrToggle" aria-expanded="false">♡ Long distance — send to your love</button>
             <div class="ldr-row" id="ldrCustomize" hidden>
-              <p class="ldr-hint">Send your photos and your design to your love as one little file — or open the one they sent you.</p>
+              <p class="ldr-hint">Send your photos and your design to your love as a private link. Got a file from them? Open it here.</p>
               <div class="fallback-buttons">
                 <button class="btn btn-primary js-send-love">SEND TO MY LOVE ♡</button>
                 <button class="btn btn-secondary js-open-love">OPEN FROM MY LOVE</button>
@@ -1727,7 +1762,7 @@
           <button class="btn btn-primary btn-block" id="downloadBtn">DOWNLOAD PHOTO ♡</button>
           <p class="save-hint" id="saveHint" aria-live="polite" hidden></p>
         </div>
-        <p class="privacy-inline">🔒 Your memories stay yours. Photos are made on your device, and we never upload or store them.</p>
+        <p class="privacy-inline">🔒 Your memories stay yours. Photos are made on your device, and we never see them.</p>
       </section>
     </div>
   </main>
@@ -2064,7 +2099,7 @@
     if(!seen){
       // "continue your last photos?" takes the welcome card's place when there are photos from last time
       setTimeout(function(){
-        resumeCheck.then(function(offered){ if(!offered) $('welcomeOverlay').classList.add('show'); });
+        resumeCheck.then(function(offered){ if(!offered && !loveLink) $('welcomeOverlay').classList.add('show'); });   // (a love link has its own card)
       }, 550);
     }
     function dismiss(){
@@ -2401,6 +2436,7 @@
     }
     state.shots = [];
     state.placed = [];   // placed stickers belong to those photos (they're in the saved session)
+    lovePending = null;  // (v4.16) their link still works: tap it again
     $('app').setAttribute('data-view','landing');
   }
   function goToStep(step){
@@ -2436,6 +2472,7 @@
     if(step === 'camera'){ initCamera(); updateTray(); startFx(); startCamOverlay(); syncIdolUI(); }
     if(step === 'live'){ enterLiveStep(); }
     if(step === 'customize'){ prepCustomizeDefaults(); showFrameTab(templateById(state.templateId).tab); renderPreview(); }
+    if(step === 'customize' && lovePending && myOwnShots().length) offerPendingLove();   // (v4.16) their photos join yours now
     if(step === 'result'){ renderResult(); }
     window.scrollTo(0,0);
     if(step === 'camera') showCameraOnShortScreen();
@@ -2498,11 +2535,15 @@
     return $('app').dataset.view === 'app' ? appEntry() : {pid:PAGE_ID, view:'landing'};
   }
   function closeLandingCard(){
+    if($('loveLinkOverlay').classList.contains('show')){ closeLoveLink(); return true; }   // (v4.16)
     if($('resumeOverlay').classList.contains('show')){ resumeLater(); return true; }
     if($('welcomeOverlay').classList.contains('show')){ $('welcomeDismiss').click(); return true; }   // = "maybe later"
     return false;
   }
   window.addEventListener('popstate', function(e){
+    // (v4.16) a love / room link tapped while the booth is open only changes the #part: browsers report that as
+    // a "popstate" without our state — it isn't the back button (hashchange then opens the link)
+    if(e.state === null && /(?:^|[#&])(?:love|room)=/.test(location.hash)){ history.replaceState(currentEntry(), ''); return; }
     var s = e.state || {};
     if(afterBack){ var fn = afterBack; afterBack = null; fn(); return; }   // our own step towards home
     if(!$('cfEditor').hidden){   // back while editing a custom frame just closes the editor
@@ -2519,6 +2560,8 @@
     closeCodeModal();   // back button should close an open code box, not leave it floating over another step
     // back on the home page while a welcome card is up: the card just closes (like its ✕)
     if(s.guard && closeLandingCard()){ history.pushState(currentEntry(), ''); return; }
+    // (v4.16) a love link's card over the app (the link was tapped while the booth was open): it closes too
+    if($('loveLinkOverlay').classList.contains('show')){ closeLoveLink(); history.pushState(currentEntry(), ''); return; }
     if(s.guard){ askToLeave(); return; }
     if($('app').dataset.view !== 'app'){
       if(s.app) history.replaceState({pid:PAGE_ID, view:'landing'}, '');   // "forward" onto an old app entry
@@ -3276,6 +3319,12 @@
     } else if(mode === 'show'){
       $('codeModalTitle').textContent = 'Your photo code ♡';
       $('codeModalText').textContent = 'Select all of this and send it to your love by chat.';
+      input.value = text;
+      input.readOnly = true;
+      $('codeApply').textContent = 'DONE';
+    } else if(mode === 'love'){   // (v4.16) "Send to my love" link, when copying by itself didn't work
+      $('codeModalTitle').textContent = 'Your link ♡';
+      $('codeModalText').textContent = 'Copy all of this and send it to your love.';
       input.value = text;
       input.readOnly = true;
       $('codeApply').textContent = 'DONE';
@@ -8863,7 +8912,8 @@
      pictures of a sensible size, re-drawn by us), shows it on your own photos first, and you choose what to take.
      The file is made BEFORE you tap SEND: phones only open the share menu right after a tap. */
   var LOVE_MARK = 'OLB1:', LOVE_MAX_FILE = 30 * 1024 * 1024, LOVE_MAX_PHOTO = 4 * 1024 * 1024;
-  var loveSend = {job:null, file:null, failed:false};
+  // (v4.16) mode 'link' | 'file'; pkg = the locked package for a link; link = the link once made; busy = uploading
+  var loveSend = {job:null, file:null, failed:false, mode:'file', pkg:null, link:null, busy:false, noLink:false};
   var loveOffer = null;   // the file being looked at in "From your love"
   // ArrayBuffer → base64, in slices (one huge String.fromCharCode call can run out of stack)
   function b64Of(buf){
@@ -8911,11 +8961,13 @@
       }
       var n = data.photos.length;
       var what = (n ? n + (n === 1 ? ' photo' : ' photos') : '') + (n && d ? ' + ' : '') + (d ? 'a design' : '');
+      var payload = LOVE_MARK + JSON.stringify(data);
       var text = 'Our Little Photo Booth ♡ ' + what + ' from your love.\n' +
                  'Open this file in the booth: ' + siteUrl() + ' → OPEN FROM MY LOVE\n' +
-                 "(It's just for the two of you — please don't forward it.)\n\n" + LOVE_MARK + JSON.stringify(data);
+                 "(It's just for the two of you — please don't forward it.)\n\n" + payload;
       var name = 'our-little-booth-' + (n ? n + '-photo' + (n === 1 ? '' : 's') : '') + (n && d ? '-and-' : '') + (d ? 'design' : '') + '-' + todayIso() + '.txt';
-      return {blob:new Blob([text], {type:'text/plain'}), name:name};
+      // (v4.16) payload = what a link carries (locked): the same data, without the words for people
+      return {blob:new Blob([text], {type:'text/plain'}), name:name, payload:payload, what:what};
     });
   }
   function openSendLove(){
@@ -8928,9 +8980,8 @@
     $('sendLoveDesign').checked = true;
     $('sendLoveDesignText').textContent = 'My design — ' + (t.custom ? 'my frame "' + t.rec.name + '"' : 'the ' + t.name + ' frame') +
                                           ', colour, filter, stickers, drawings, text';
-    $('sendLoveNote').textContent = IS_PHONE
-      ? "Your share menu opens — pick WhatsApp, then your love. It arrives as a file; they open it here with \"Open from my love\"."
-      : 'The file is saved on this computer — send it to your love as a document (e.g. in WhatsApp Web: 📎 → Document).';
+    loveSend.mode = canLoveLink() ? 'link' : 'file';   // (v4.16) a link when this page can make one
+    syncSendLoveMode();
     $('sendLoveModal').hidden = false;
     $('sendLoveModal').scrollTop = 0;
     prepareLove();
@@ -8938,22 +8989,66 @@
   function closeSendLove(){
     $('sendLoveModal').hidden = true;
     loveSend.job = null; loveSend.file = null; loveSend.failed = false;
+    loveSend.pkg = null; loveSend.link = null; loveSend.busy = false;
+  }
+  // (v4.16) link or file: the lock line, the words under the choices, the "instead" switch, the button
+  function syncSendLoveMode(){
+    var link = loveSend.mode === 'link';
+    $('sendLoveLock').hidden = !link;
+    $('sendLoveMode').hidden = !canLoveLink();
+    $('sendLoveMode').textContent = link ? 'send as a file instead' : 'send as a link instead';
+    $('sendLoveNote').textContent = link
+      ? (IS_PHONE ? 'Your share menu opens — pick WhatsApp, then your love. They just tap the link.'
+                  : 'We copy the link for you — paste it to your love (e.g. in WhatsApp Web).')
+      : (IS_PHONE ? "Your share menu opens — pick WhatsApp, then your love. It arrives as a file; they open it here with \"Open from my love\"."
+                  : 'The file is saved on this computer — send it to your love as a document (e.g. in WhatsApp Web: 📎 → Document).');
+    syncSendLoveGo();
+  }
+  function syncSendLoveGo(){
+    var go = $('sendLoveGo');
+    var p = $('sendLovePhotos').checked && !$('sendLovePhotos').disabled, d = $('sendLoveDesign').checked;
+    go.disabled = false;
+    if(!p && !d){ go.textContent = 'PICK SOMETHING ♡'; return; }
+    if(loveSend.failed){ go.textContent = 'TRY AGAIN'; return; }
+    if(loveSend.mode === 'link'){
+      var share = IS_PHONE && canShareText();
+      if(loveSend.busy){ go.disabled = true; go.textContent = 'SENDING… ♡'; }
+      else if(!loveSend.pkg){ go.disabled = true; go.textContent = 'WRAPPING IT UP…'; }
+      else if(loveSend.link) go.textContent = share ? 'SHARE THE LINK ♡' : 'COPY LINK ♡';
+      else go.textContent = share ? 'SEND LINK ♡' : 'COPY LINK ♡';
+      return;
+    }
+    if(!loveSend.file){ go.disabled = true; go.textContent = 'MAKING YOUR FILE…'; return; }
+    go.textContent = IS_PHONE ? 'SEND ♡' : 'SAVE THE FILE ♡';
   }
   function prepareLove(){
-    var p = $('sendLovePhotos').checked && !$('sendLovePhotos').disabled, d = $('sendLoveDesign').checked, go = $('sendLoveGo');
+    var p = $('sendLovePhotos').checked && !$('sendLovePhotos').disabled, d = $('sendLoveDesign').checked;
     loveSend.file = null; loveSend.failed = false; loveSend.job = null;
-    if(!p && !d){ go.disabled = false; go.textContent = 'PICK SOMETHING ♡'; return; }
-    go.disabled = true; go.textContent = 'MAKING YOUR FILE…';
+    loveSend.pkg = null; loveSend.link = null; loveSend.busy = false;
+    syncSendLoveGo();
+    if(!p && !d) return;
+    // the file and the locked package are both made now, BEFORE the tap (share menus need a fresh tap);
+    // nothing leaves the device until you tap SEND LINK
     var job = loveSend.job = makeLove(p, d).then(function(f){
       if(loveSend.job !== job) return;
       loveSend.file = f;
-      go.disabled = false;
-      go.textContent = IS_PHONE ? 'SEND ♡' : 'SAVE THE FILE ♡';
+      syncSendLoveGo();
+      if(!canLoveLink()) return;
+      return lockLove(f.payload).then(function(pkg){
+        if(loveSend.job !== job) return;
+        loveSend.pkg = pkg;
+        syncSendLoveGo();
+      }, function(){
+        if(loveSend.job !== job) return;
+        loveSend.noLink = true;   // this browser can't lock: files only
+        loveSend.mode = 'file';
+        syncSendLoveMode();
+      });
     }, function(){
       if(loveSend.job !== job) return;
       loveSend.failed = true;
-      go.disabled = false; go.textContent = 'TRY AGAIN';
-      showToast("Couldn't make the file. Please try again ♡");
+      syncSendLoveGo();
+      showToast("Couldn't get it ready. Please try again ♡");
     });
   }
   // (v4.15.1) the file travels with a short message, so your love knows what to do with it (WhatsApp shows it
@@ -8982,8 +9077,10 @@
   $('sendLoveDesign').addEventListener('change', prepareLove);
   $('sendLoveGo').addEventListener('click', function(){
     if(!$('sendLovePhotos').checked && !$('sendLoveDesign').checked){ showToast('Tick your photos or your design first ♡'); return; }
+    if(loveSend.failed){ prepareLove(); return; }
+    if(loveSend.mode === 'link'){ sendLoveLink(); return; }   // (v4.16)
     var f = loveSend.file;
-    if(!f){ if(loveSend.failed) prepareLove(); return; }   // (still being made: the button says so)
+    if(!f) return;   // (still being made: the button says so)
     if(!IS_PHONE){ saveBlob(f.blob, f.name); closeSendLove(); return; }
     // the file is ready, so the share menu opens straight from this tap
     shareLove(f).then(function(){
@@ -8997,6 +9094,10 @@
       saveBlob(f.blob, f.name);
       closeSendLove();
     });
+  });
+  $('sendLoveMode').addEventListener('click', function(){
+    loveSend.mode = loveSend.mode === 'link' ? 'file' : 'link';
+    syncSendLoveMode();
   });
   $('sendLoveCancel').addEventListener('click', closeSendLove);
   $('sendLoveX').addEventListener('click', closeSendLove);
@@ -9108,6 +9209,11 @@
   }
   function loveDesign(o, shots){
     if(!o.design || !$('openLoveDesign').checked) return null;
+    return designFromLove(o, shots);
+  }
+  // their design for the strip `shots` (their stickers on their photos), checked like any design
+  function designFromLove(o, shots){
+    if(!o.design) return null;
     var keep = state.shots;
     state.shots = shots;
     try{
@@ -9153,7 +9259,8 @@
       return;
     }
     closeStudio();   // (your stickers stay) — the question shows over the editor
-    if(loveOffer && loveOffer.rec && loveOffer.rec !== o.rec && loveOffer.rec.srcId) forgetImages(loveOffer.rec);
+    if(loveOffer && loveOffer.rec && loveOffer.rec !== o.rec && loveOffer.rec.srcId && !loveOffer.inUse) forgetImages(loveOffer.rec);
+    if(lovePending && lovePending !== o) lovePending = null;   // (v4.16) a newer one replaces the one waiting for your photos
     loveOffer = o;
     $('openLovePhotos').checked = true;
     $('openLoveDesign').checked = true;
@@ -9162,12 +9269,13 @@
     $('openLoveModal').scrollTop = 0;
     syncOpenLove();
   }
-  // NOT NOW / ✕ / back: nothing changes (their frame's pictures are let go)
+  // NOT NOW / ✕ / back: nothing changes (their frame's pictures are let go — unless their frame is already
+  // on your strip: (v4.16) "Take my photos" used it on the camera; it then stays until the page closes)
   function closeOpenLove(){
     var o = loveOffer;
     loveOffer = null;
     $('openLoveModal').hidden = true;
-    if(o && o.rec && o.rec.srcId) forgetImages(o.rec);
+    if(o && o.rec && o.rec.srcId && !o.inUse) forgetImages(o.rec);
   }
   function openLove(){
     var o = loveOffer;
@@ -9183,7 +9291,7 @@
     $('openLoveModal').hidden = true;
     // their frame first (the design may use it): saved, or kept until the page closes, or let go
     var saved = saving ? saveReceivedFrame(o.rec) : Promise.resolve(false);
-    if(theirFrame && !saving){ if(useDesign) registerCustom(o.rec); else forgetImages(o.rec); }
+    if(theirFrame && !saving){ if(useDesign || o.inUse) registerCustom(o.rec); else forgetImages(o.rec); }
     if(m){
       state.placed = remapOwnPlaced(state.placed, oldShots, m.shots);
       state.shots = m.shots;
@@ -9191,7 +9299,7 @@
       updateTray();
     }
     if(d){ applyDesign(d); if(state.currentStep === 'camera') startCamOverlay(); }
-    var said = m ? 'Their photos are in — you are on one strip now ♡' : d ? "Using your love's design ♡" : '';
+    var said = m ? (m.keepMine ? 'Their photos are in — you are on one strip now ♡' : 'Their photos are in ♡') : d ? "Using your love's design ♡" : '';
     saved.then(function(ok){
       if(saving && !ok) showToast("Couldn't save their frame on this device — it works until you close the page");
       else if(said) showToast(said + (saving ? ' Their frame is in your frames' : ''));
@@ -9241,6 +9349,404 @@
   $('openLoveKeep').addEventListener('click', closeOpenLove);
   $('openLoveX').addEventListener('click', closeOpenLove);
   $('openLoveModal').addEventListener('click', function(e){ if(e.target === this) closeOpenLove(); });
+
+  /* ================= SEND AS A LINK (v4.16) =================
+     The easiest way for your love: one tap on a link. The same data as the file (photos + design) is LOCKED
+     on this device first — AES-GCM with a new random key for every link — and only the locked bytes go to
+     our little Cloudflare Worker (love-worker.js), which keeps them for 3 days and then deletes them.
+     The key travels inside the link after the # (…#love=<name>.<key>.<expiry>), and browsers never send that
+     part anywhere — not to GitHub, not to Cloudflare. So only someone holding the link can open it.
+     When a link can't be made (offline, too big, the free daily limit used up), the file way takes over.
+     Opening a link: the package is fetched, unlocked and checked exactly like a file (readLove), then a card
+     asks how to join it — with your photos from earlier, by taking your photos now (theirs wait, their design
+     already on the camera; the usual "From your love" card comes when your strip is done), or just theirs. */
+  var LOVE_URL = 'https://booth-love.fadlefatra.workers.dev/';   // the Worker's address (not a secret), ending in '/'. Empty = no links, files only
+  var LOVE_LINK_MAX = 10 * 1024 * 1024;
+  var LOVE_HEAD = [79, 76, 76, 49];   // "OLL1": the start of every locked package
+  var loveLink = null;      // the link this page was opened with {id, key, exp}
+  var loveCard = null;      // what the link card offers right now {o, actions}
+  var lovePending = null;   // their photos waiting while you take yours
+
+  function canLoveLink(){
+    return !!LOVE_URL && !loveSend.noLink && !!(window.crypto && crypto.subtle && crypto.getRandomValues) && typeof fetch === 'function';
+  }
+  function canShareText(){
+    try{ return !!navigator.share && (!navigator.canShare || navigator.canShare({text:'♡'})); }catch(e){ return false; }
+  }
+  function b64url(bytes){ return b64Of(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  function unb64url(s){
+    s = String(s).replace(/-/g, '+').replace(/_/g, '/');
+    while(s.length % 4) s += '=';
+    return bytesOf(s);
+  }
+
+  /* ---- locking / unlocking ---- */
+  // text → {body: "OLL1" + 0 + IV + locked bytes, key: the key for the link}. The 5 header bytes are part of
+  // the lock too (changing them breaks it); the 0 means "not compressed" (room for a later version)
+  function lockLove(text){
+    var head = new Uint8Array(LOVE_HEAD.concat([0])), iv = crypto.getRandomValues(new Uint8Array(12)), key;
+    return crypto.subtle.generateKey({name:'AES-GCM', length:256}, true, ['encrypt']).then(function(k){
+      key = k;
+      return crypto.subtle.encrypt({name:'AES-GCM', iv:iv, additionalData:head}, key, new TextEncoder().encode(text));
+    }).then(function(locked){
+      return crypto.subtle.exportKey('raw', key).then(function(raw){
+        var ct = new Uint8Array(locked), body = new Uint8Array(head.length + iv.length + ct.length);
+        body.set(head, 0); body.set(iv, head.length); body.set(ct, head.length + iv.length);
+        return {body:body, key:b64url(raw)};
+      });
+    });
+  }
+  // the package from the Worker + the key from the link → the text inside (Error 'broken' / 'newer')
+  function unlockLove(buf, key){
+    var bytes = new Uint8Array(buf), raw = unb64url(key);
+    var ours = bytes.length > 5 + 12 + 16 && LOVE_HEAD.every(function(b, i){ return bytes[i] === b; });
+    if(!ours || !raw || raw.length !== 32) return Promise.reject(new Error('broken'));
+    if(bytes[4] !== 0) return Promise.reject(new Error('newer'));   // made by a later version of the booth
+    var head = bytes.subarray(0, 5), iv = bytes.subarray(5, 17);
+    return crypto.subtle.importKey('raw', raw, {name:'AES-GCM'}, false, ['decrypt']).then(function(k){
+      return crypto.subtle.decrypt({name:'AES-GCM', iv:iv, additionalData:head}, k, bytes.subarray(17));
+    }).then(function(plain){ return new TextDecoder().decode(plain); }, function(){ throw new Error('broken'); });
+  }
+
+  /* ---- talking to the Worker ---- */
+  // errors come out as Error('net' | 'gone' | 'big' | 'server' | 'broken')
+  function loveFetch(url, opts, ms, read){
+    var ctl = typeof AbortController === 'function' ? new AbortController() : null;
+    var timer = ctl ? setTimeout(function(){ ctl.abort(); }, ms) : 0;
+    opts.cache = 'no-store'; opts.credentials = 'omit';
+    if(ctl) opts.signal = ctl.signal;
+    return fetch(url, opts).then(read).then(function(v){ clearTimeout(timer); return v; }, function(err){
+      clearTimeout(timer);
+      throw err && /^(gone|big|server|broken)$/.test(err.message) ? err : new Error('net');
+    });
+  }
+  // no Content-Type on purpose: a "simple" request, so browsers don't ask the Worker first (one trip less)
+  function uploadLove(body){
+    return loveFetch(LOVE_URL + 'love', {method:'POST', body:body}, 60000, function(res){
+      if(res.status === 413) throw new Error('big');
+      if(!res.ok) throw new Error('server');
+      return res.json().then(function(j){
+        if(!j || typeof j.id !== 'string' || !/^[A-Za-z0-9_-]{22}$/.test(j.id) || typeof j.expires !== 'number' || !isFinite(j.expires)) throw new Error('server');
+        return j;
+      }, function(){ throw new Error('server'); });
+    });
+  }
+  function downloadLove(id){
+    return loveFetch(LOVE_URL + 'love/' + id, {method:'GET'}, 45000, function(res){
+      if(res.status === 404) throw new Error('gone');
+      if(!res.ok) throw new Error('server');
+      if(Number(res.headers.get('Content-Length') || 0) > LOVE_LINK_MAX * 1.3) throw new Error('broken');
+      return res.arrayBuffer();
+    });
+  }
+
+  /* ---- sending ---- */
+  function loveLinkUrl(id, key, expires){ return siteUrl() + '#love=' + id + '.' + key + '.' + Math.floor(expires / 1000).toString(36); }
+  function loveDay(ms){
+    try{ return new Date(ms).toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short'}); }
+    catch(e){ return new Date(ms).toDateString(); }
+  }
+  function loveMessage(L){
+    return 'Our Little Photo Booth ♡ ' + L.what + ' from your love. Tap to open (it works until ' + loveDay(L.expires) + '):\n' + L.url;
+  }
+  // SEND LINK: the locked package goes up (it was made when the sheet opened), then the share menu / copy
+  function sendLoveLink(){
+    if(loveSend.link){ deliverLoveLink(loveSend.link); return; }   // made already: just share it again
+    var pkg = loveSend.pkg, f = loveSend.file, job = loveSend.job;
+    if(!pkg || !f || loveSend.busy) return;
+    if(pkg.body.length > LOVE_LINK_MAX){ loveLinkFailed('big'); return; }
+    loveSend.busy = true;
+    syncSendLoveGo();
+    uploadLove(pkg.body).then(function(j){
+      if(loveSend.job !== job) return;   // (closed, or the ticks changed meanwhile)
+      loveSend.busy = false;
+      loveSend.link = {url:loveLinkUrl(j.id, pkg.key, j.expires), what:f.what, expires:j.expires};
+      syncSendLoveGo();
+      if(loveSend.mode === 'link') deliverLoveLink(loveSend.link);   // (not if you switched to the file meanwhile)
+    }, function(err){
+      if(loveSend.job !== job) return;
+      loveSend.busy = false;
+      if(loveSend.mode === 'link') loveLinkFailed(err && err.message);
+      else syncSendLoveGo();
+    });
+  }
+  // no link today: the sheet switches to the file (already made), one tap sends it
+  function loveLinkFailed(why){
+    loveSend.mode = 'file';
+    syncSendLoveMode();
+    showToast(why === 'big' ? "That's too big for a link — send it as a file ♡"
+            : why === 'net' ? "Couldn't make a link (no internet?) — send it as a file ♡"
+            : "Couldn't make a link right now — send it as a file ♡");
+  }
+  function deliverLoveLink(L){
+    var msg = loveMessage(L);
+    if(!(IS_PHONE && canShareText())){ copyLoveLink(msg); return; }
+    var p;
+    try{ p = navigator.share({text:msg}); }catch(e){ p = Promise.reject(e); }
+    p.then(function(){
+      closeSendLove();
+      showToast('Sent ♡ Your love just taps the link');
+    }, function(err){
+      var why = err && err.name;
+      if(why === 'AbortError') return;   // you closed the menu: SHARE THE LINK opens it again
+      // the upload took a while and the phone wants a fresh tap for its share menu
+      if(why === 'NotAllowedError'){ showToast('Your link is ready ♡ Tap SHARE THE LINK'); return; }
+      copyLoveLink(msg);
+    });
+  }
+  function copyLoveLink(msg){
+    copyText(msg).then(function(){
+      closeSendLove();
+      showToast('Link copied ♡ Paste it to your love (e.g. in WhatsApp)');
+    }, function(){
+      closeSendLove();
+      openCodeModal('love', msg);   // copy it by hand
+    });
+  }
+
+  /* ---- opening a link ---- */
+  function readLoveLink(){
+    var m = /[#&]love=([A-Za-z0-9_-]{22})\.([A-Za-z0-9_-]{43})(?:\.([0-9a-z]{1,9}))?/.exec(location.hash);
+    return m ? {id:m[1], key:m[2], exp:m[3] ? parseInt(m[3], 36) * 1000 : 0} : null;
+  }
+  // once you've chosen (or closed the card) the #part leaves the address bar, so a refresh doesn't ask again
+  function forgetLoveHash(){
+    if(/love=/.test(location.hash)) history.replaceState(history.state, '', location.pathname + location.search);
+  }
+  function loveLinkOpen(){ return $('loveLinkOverlay').classList.contains('show'); }
+  function letGoOfLove(o){ if(o && o.rec && o.rec.srcId && !o.inUse) forgetImages(o.rec); }
+  function startLoveLink(){
+    var L = readLoveLink();
+    if(!L || (loveLink && loveLink.id === L.id && loveLinkOpen())) return;
+    loveLink = L;
+    if(loveCard && loveCard.o) letGoOfLove(loveCard.o);
+    // the link card takes the place of the other home-page cards
+    if($('resumeOverlay').classList.contains('show')) resumeLater();
+    $('welcomeOverlay').classList.remove('show');
+    if(!LOVE_URL || !(window.crypto && crypto.subtle)){ loveLinkError('old'); return; }
+    if(L.exp && Date.now() > L.exp + 60000){ loveLinkError('expired'); return; }
+    if(inRoom()){ loveLinkError('room'); return; }
+    loveLinkCard('Opening what your love sent…', 'Unlocking it on your device ♡');
+    var tries = 0;
+    function fetchIt(){
+      return downloadLove(L.id).catch(function(err){
+        // just made, far away? a new link can take up to a minute to reach every country: ask again
+        if(err.message === 'gone' && tries < 3 && loveLink === L && !(L.exp && Date.now() > L.exp)){
+          tries++;
+          if(loveLinkOpen()) $('loveLinkInfo').textContent = 'Still arriving… ♡';
+          return wait(tries * 4000).then(fetchIt);
+        }
+        throw err;
+      });
+    }
+    Promise.all([
+      fetchIt().then(function(buf){ return unlockLove(buf, L.key); }),
+      Promise.resolve(customFramesReady).catch(function(){}),
+      document.fonts && document.fonts.ready
+    ]).then(function(r){ return readLove(r[0]); }).then(function(o){
+      if(loveLink !== L || !loveLinkOpen()){ letGoOfLove(o); return; }   // (closed meanwhile)
+      loveArrived(o);
+    }, function(err){
+      if(loveLink === L && loveLinkOpen()) loveLinkError(err && err.message);
+    });
+  }
+  // the card in its plain state: a title, a line, nothing to tap yet
+  function loveLinkCard(title, info){
+    loveCard = {o:null, actions:{}};
+    $('loveLinkTitle').textContent = title;
+    $('loveLinkInfo').textContent = info || '';
+    $('loveLinkPreview').hidden = true;
+    ['loveLinkMain', 'loveLinkMainNote', 'loveLinkSecond', 'loveLinkThird'].forEach(function(id){ $(id).hidden = true; });
+    $('loveLinkNote').textContent = '';
+    $('loveLinkOverlay').classList.add('show');
+  }
+  function loveLinkError(why){
+    var e = {
+      expired: ['This link has expired', 'Links last 3 days. Ask your love to send it again ♡'],
+      gone:    ["This link can't be found", 'It may have expired, or part of the link is missing. Ask your love to send it again ♡'],
+      broken:  ['This link is broken', 'Part of it may be missing — ask your love to send it again ♡'],
+      format:  ['This link is broken', 'Part of it may be missing — ask your love to send it again ♡'],
+      newer:   ["Your love's booth is newer", 'Refresh this page, then it opens ♡'],
+      old:     ["This browser can't open links", 'Try Chrome or Safari — or ask your love to send it as a file ♡'],
+      room:    ["You're in a live room", 'Tap the link again after your live photos ♡'],
+      empty:   ['Nothing to open', "There's nothing in this link — ask your love to send it again ♡"]
+    }[why];
+    var retry = !e;   // no internet, or the Worker didn't answer: worth another try
+    if(!e) e = ["Couldn't open it right now", 'Check your internet, then try again ♡'];
+    loveLinkCard(e[0], e[1]);
+    var main = $('loveLinkMain');
+    main.hidden = false;
+    main.textContent = retry ? 'TRY AGAIN ♡' : why === 'newer' ? 'REFRESH ♡' : 'OKAY ♡';
+    loveCard.actions.main = retry ? function(){ loveLink = null; startLoveLink(); }
+      : why === 'newer' ? function(){ leaving = true; location.replace(location.pathname + '?v=' + Date.now() + location.hash); }
+      : closeLoveLink;
+  }
+  function loveArrived(o){
+    if(!o.photos.length && !o.design){ letGoOfLove(o); loveLinkError('empty'); return; }
+    // already busy with your own photos on this page: straight to the usual "From your love" card
+    if($('app').dataset.view === 'app' && myOwnShots().length){
+      hideLoveLink(); forgetLoveHash();
+      offerLove(o);
+      return;
+    }
+    // your photos from earlier (kept 24 hours) can join theirs
+    (state.shots.length ? Promise.resolve(null) : loadSession().catch(function(){ return null; })).then(function(rec){
+      if(!loveLinkOpen()){ letGoOfLove(o); return; }
+      showLoveOffer(o, rec);
+    });
+  }
+  function showLoveOffer(o, rec){
+    var n = o.photos.length, k = rec ? rec.shots.length : 0;
+    loveLinkCard('Your love sent you ♡',
+      (n ? n + (n === 1 ? ' photo' : ' photos') : '') + (n && o.design ? ' + ' : '') + (o.design ? 'their design' : '') +
+      (o.notes.length ? ' · ' + o.notes.join(' ') : ''));
+    loveCard.o = o;
+    drawLoveLinkPreview(o);
+    var main = $('loveLinkMain'), under = $('loveLinkMainNote'), second = $('loveLinkSecond'), third = $('loveLinkThird');
+    if(rec){
+      main.textContent = n ? 'JOIN WITH MINE ♡' : 'TRY IT ON MINE ♡';   // (one line even at 320 px; the note says which)
+      under.textContent = 'your ' + k + (k === 1 ? ' photo' : ' photos') + ' from ' + whenText(rec.saved) + (n ? ', side by side with theirs' : '');
+      second.textContent = n ? 'TAKE NEW PHOTOS' : 'START WITH THEIR DESIGN';
+      third.textContent = 'just open theirs';
+      loveCard.actions = {main:function(){ loveJoin(o, rec); },
+                          second:function(){ if(n) loveTake(o, true); else loveStartDesign(o, true); },
+                          third:function(){ loveJustOpen(o, true); }};
+      second.hidden = false; third.hidden = !n;
+    } else {
+      main.textContent = n ? 'TAKE MY PHOTOS ♡' : 'START WITH THEIR DESIGN ♡';
+      under.textContent = n ? "then you're side by side on one strip" : '';
+      second.textContent = 'JUST OPEN THEIRS';
+      loveCard.actions = {main:function(){ if(n) loveTake(o, false); else loveStartDesign(o, false); },
+                          second:function(){ loveJustOpen(o, false); }};
+      second.hidden = !n;
+    }
+    main.hidden = false;
+    under.hidden = !under.textContent;
+    $('loveLinkNote').textContent = loveLink && loveLink.exp ? 'This link works until ' + loveDay(loveLink.exp) + ' ♡' : '';
+  }
+  // their strip as they made it: their photos with their design (or with yours, when they sent photos only)
+  function drawLoveLinkPreview(o){
+    var keep = state.shots;
+    state.shots = o.photos;
+    try{
+      var d = designFromLove(o, o.photos), t;
+      if(d) t = o.rec ? customTemplate(o.rec) : templateById(d.templateId);
+      else { d = currentDesign(); d.placed = []; t = templateById(d.templateId); }
+      drawDesignInto($('loveLinkCanvas'), d, t);
+      $('loveLinkPreview').hidden = false;
+    }catch(e){ $('loveLinkPreview').hidden = true; }
+    finally{ state.shots = keep; }
+  }
+  function hideLoveLink(){
+    $('loveLinkOverlay').classList.remove('show');
+    loveCard = null;
+  }
+  // ✕ / back / Escape / OKAY: nothing changes (tap the link again any time while it lasts)
+  function closeLoveLink(){
+    var c = loveCard;
+    hideLoveLink();
+    forgetLoveHash();
+    if(c && c.o) letGoOfLove(c.o);
+    try{ sessionStorage.setItem('oob-welcomed', '1'); }catch(e){}
+  }
+  // the photos kept from earlier are let go (TAKE NEW / just theirs), or there were none
+  function loveFreshStart(dropSaved){
+    if(dropSaved) clearSession();
+    session.pending = false;
+    session.offer = null;
+    state.shots = [];
+    state.placed = [];
+    $('app').setAttribute('data-view', 'app');
+  }
+  // TAKE MY PHOTOS: the camera, as many shots as they sent, their design already on (their stickers come
+  // with their photos at the end); theirs wait in lovePending until your strip is done
+  function loveTake(o, dropSaved){
+    hideLoveLink(); forgetLoveHash();
+    loveFreshStart(dropSaved);
+    state.shotCount = clamp(o.photos.length, 1, MAX_SHOTS);
+    if(o.design){
+      var raw = {};
+      Object.keys(o.design.raw).forEach(function(k){ raw[k] = o.design.raw[k]; });
+      raw.placed = [];
+      var d = cleanDesign(raw);
+      if(d){
+        if(o.rec){ registerCustom(o.rec); o.inUse = true; }   // (their frame stays until the page closes, or is saved at the end)
+        d.templateId = o.design.templateId;
+        applyDesign(d);
+      }
+    }
+    lovePending = o;
+    goToStep('camera');
+    showToast('Take ' + state.shotCount + (state.shotCount === 1 ? ' photo' : ' photos') + " ♡ then you're side by side");
+  }
+  // JOIN WITH MY PHOTOS: your photos from earlier come back, then the usual "From your love" card
+  function loveJoin(o, rec){
+    hideLoveLink(); forgetLoveHash();
+    sessionCanvases(rec).then(function(canvases){
+      session.pending = false;
+      session.offer = null;
+      session.savedThisPage = true;
+      state.shots = canvases;
+      state.shotCount = clamp(rec.shotCount || canvases.length, canvases.length, MAX_SHOTS);
+      applyDesign(sessionDesign(rec));
+      $('app').setAttribute('data-view', 'app');
+      if(state.shots.length < state.shotCount){   // not all taken yet: finish them first
+        lovePending = o;
+        goToStep('camera');
+        showToast("Welcome back ♡ Finish your photos, then you're side by side");
+        return;
+      }
+      goToStep('customize');
+      setTimeout(function(){ if(state.currentStep === 'customize') offerLove(o); else lovePending = o; }, 350);
+    }, function(){
+      showToast("Couldn't open your photos from earlier ♡");
+      $('loveLinkOverlay').classList.add('show');
+      showLoveOffer(o, null);
+    });
+  }
+  // JUST OPEN THEIRS: their photos + design (their frame saved), on to the editor
+  function loveJustOpen(o, dropSaved){
+    hideLoveLink(); forgetLoveHash();
+    loveFreshStart(dropSaved);
+    loveOffer = o;
+    $('openLovePhotos').checked = true;
+    $('openLoveDesign').checked = true;
+    $('openLoveSave').checked = true;
+    openLove();
+    goToStep('customize');
+  }
+  // START WITH THEIR DESIGN (a design without photos): their frame saved, then the usual start
+  function loveStartDesign(o, dropSaved){
+    hideLoveLink(); forgetLoveHash();
+    loveFreshStart(dropSaved);
+    var d = designFromLove(o, []), theirFrame = !!(o.rec && o.rec.srcId);
+    var saved = theirFrame ? saveReceivedFrame(o.rec) : Promise.resolve(false);
+    if(d) applyDesign(d);
+    goToStep('count');
+    saved.then(function(ok){
+      showToast(!theirFrame ? "Using your love's design ♡" : ok ? "Using your love's design ♡ Their frame is in your frames"
+                                                                : "Using your love's design ♡ (their frame works until you close the page)");
+    });
+  }
+  // your strip is done (camera → editor): now theirs join it
+  function offerPendingLove(){
+    var o = lovePending;
+    lovePending = null;
+    setTimeout(function(){
+      if(state.currentStep === 'customize' && $('app').dataset.view === 'app' && $('openLoveModal').hidden) offerLove(o);
+      else if(!lovePending) lovePending = o;   // (moved on meanwhile: next time)
+    }, 450);
+  }
+  ['Main', 'Second', 'Third'].forEach(function(k){
+    $('loveLink' + k).addEventListener('click', function(){
+      var fn = loveCard && loveCard.actions[k.toLowerCase()];
+      if(fn) fn();
+    });
+  });
+  $('loveLinkX').addEventListener('click', closeLoveLink);
+  startLoveLink();
+  // the page may already be open when the link is tapped — then only the #part changes
+  window.addEventListener('hashchange', startLoveLink);
 
   /* ================= DESIGN TOGETHER (live room) =================
      One of you invites, the other taps JOIN and starts from the inviter's design. From then on,
@@ -9613,6 +10119,9 @@
     if(session.offer) return true;   // START was tapped meanwhile and already offered it
     // opened from a live-room invite, coming back to a room after a refresh, or already busy in the app:
     // don't interrupt
+    // (v4.16) opened from a love link: its card offers your photos from earlier itself — they stay kept
+    // (pending) until you choose there; ✕ there and START asks "Continue your last photos?" as usual
+    if(loveLink && !pendingRoom && !rejoinInfo){ if(!rec) session.pending = false; return false; }
     if(!rec || pendingRoom || rejoinInfo || state.shots.length || $('app').dataset.view === 'app'){ session.pending = false; return false; }
     return sessionCanvases(rec).then(function(canvases){
       if(session.offer) return true;
