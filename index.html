@@ -1435,7 +1435,7 @@
       </details>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.18</span></footer>
+    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.18.1</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -2115,6 +2115,12 @@
   function todayIso(){
     var d = new Date();
     return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+  }
+  // (v4.18.1) every file we make gets its own name: date + time to the second, e.g. 2026-10-04_16-32-45.
+  // With one fixed name, Android's Chrome asked "Download file again? The name already exists" for every new photo.
+  function fileStamp(){
+    var d = new Date(), p = function(v){ return ('0' + v).slice(-2); };
+    return todayIso() + '_' + p(d.getHours()) + '-' + p(d.getMinutes()) + '-' + p(d.getSeconds());
   }
   function templateById(id){
     for(var i=0;i<TEMPLATES.length;i++){ if(TEMPLATES[i].id===id) return TEMPLATES[i]; }
@@ -8460,7 +8466,7 @@
           // (older pages read only `frames`; `images` = My images, from v4.12)
           var file = JSON.stringify({kind:BACKUP_KIND, v:1, saved:new Date().toISOString(), frames:frames, images:parts[1]});
           // a download on every device (on iPhones it goes to the Files app — the right place for a backup)
-          saveBlob(new Blob([file], {type:'application/json'}), 'our-little-frames-' + todayIso() + '.json');
+          saveBlob(new Blob([file], {type:'application/json'}), 'our-little-frames-' + fileStamp() + '.json');
         });
       }).catch(function(){
         showToast("Couldn't make the backup. Please try again ♡");
@@ -9758,7 +9764,7 @@
       var text = 'Our Little Photo Booth ♡ ' + what + ' from your love.\n' +
                  'Open this file in the booth: ' + siteUrl() + ' → OPEN FROM MY LOVE\n' +
                  "(It's just for the two of you — please don't forward it.)\n\n" + payload;
-      var name = 'our-little-booth-' + (n ? n + '-photo' + (n === 1 ? '' : 's') : '') + (n && d ? '-and-' : '') + (d ? 'design' : '') + '-' + todayIso() + '.txt';
+      var name = 'our-little-booth-' + (n ? n + '-photo' + (n === 1 ? '' : 's') : '') + (n && d ? '-and-' : '') + (d ? 'design' : '') + '-' + fileStamp() + '.txt';
       // (v4.16) payload = what a link carries (locked): the same data, without the words for people
       return {blob:new Blob([text], {type:'text/plain'}), name:name, payload:payload, what:what};
     });
@@ -11670,7 +11676,7 @@
      after a tap, and making the video takes LOOP*2 = 6 seconds — so a video made after the tap
      came too late and no menu opened (on iPhones even saving goes through that menu). Now the
      result page makes the photo / video as soon as it shows them; a tap hands over the finished file. */
-  var PHOTO_NAME = 'our-little-photo-booth.png';
+  function photoName(){ return 'our-little-photo-booth-' + fileStamp() + '.png'; }   // (v4.18.1) a new name every time
   var photoJob = null;   // {base, promise, blob} — the still picture of the design on screen
   function photoBlob(){
     if(photoJob && photoJob.base === base) return photoJob.promise;
@@ -11831,7 +11837,7 @@
       showToast("Couldn't open the menu. Please try again ♡");
     });
   }
-  function videoName(v){ return 'our-little-photo-booth.' + v.ext; }
+  function videoName(v){ return 'our-little-photo-booth-' + fileStamp() + '.' + v.ext; }
   function onSaveTap(how){
     if(state.resultMode === 'animated'){
       if(videoReady()){ deliver(lastVideo.blob, videoName(lastVideo), how, true); return; }
@@ -11845,9 +11851,9 @@
       return;
     }
     var blob = readyPhoto();
-    if(blob){ deliver(blob, PHOTO_NAME, how, false); return; }
+    if(blob){ deliver(blob, photoName(), how, false); return; }
     photoBlob().then(function(b){
-      if(onResultPage()) deliver(b, PHOTO_NAME, how, false);
+      if(onResultPage()) deliver(b, photoName(), how, false);
     }, function(){ showToast("Couldn't create the image. Please try again."); });
   }
   $('downloadBtn').addEventListener('click', function(){ onSaveTap(SAVE_VIA_SHARE ? 'save' : 'download'); });
@@ -11936,7 +11942,7 @@
       return new Blob([head, blob.slice(18)], {type:'image/jpeg'});
     }).catch(function(){ return blob; });
   }
-  function printName(size){ return 'our-little-photo-booth-' + PRINT_SIZES[size].name + '.jpg'; }
+  function printName(size){ return 'our-little-photo-booth-' + PRINT_SIZES[size].name + '-' + fileStamp() + '.jpg'; }
   function makePrint(size){
     if(printJob && printJob.base === base && printJob.size === size) return printJob.promise;
     var job = {base:base, size:size, blob:null};
