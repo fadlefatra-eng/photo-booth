@@ -973,6 +973,68 @@
   /* computers rarely have a second camera to switch to */
   .is-desktop #switchCameraBtn, .is-desktop #liveSwitchBtn{visibility:hidden;}
 
+  /* ---------- MY ALBUM (v4.19) ----------
+     Full-screen pages over the home page or the result page: the album (grouped by month), "Recently
+     deleted", and one memory big. Above the result page's pop-ups (85), below a partner's design (90),
+     the toast (90) and "are you sure?" (95). */
+  .al-count{display:inline-block; min-width:24px; margin-left:6px; padding:1px 8px; border-radius:999px; background:var(--blush-100); color:var(--rose-600); font-size:.8rem; line-height:1.5;}
+  .al-pill{display:flex; align-items:center; gap:8px; width:max-content; max-width:100%; min-height:44px; margin:8px auto 0; padding:4px 5px 4px 14px;
+    border-radius:999px; border:1px solid var(--pink-200); background:var(--white); color:var(--rose-800); font-size:.78rem; font-weight:500; box-shadow:var(--shadow-soft);}
+  .al-pill b{padding:8px 12px; border-radius:999px; background:var(--blush-100); font-size:.72rem; font-weight:700; letter-spacing:.04em; white-space:nowrap;}
+  @media (min-width:900px) and (min-height:521px){ #step-result > .al-pill{grid-column:2;} }
+  .album-view{position:fixed; inset:0; z-index:86; background:var(--blush-50); overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;}
+  .album-view.al-layer{z-index:87;}
+  #holdModal.over-album{z-index:89;}   /* "press and hold to save" from a memory in the album */
+  .al-inner{max-width:640px; min-height:100%; margin:0 auto; padding:0 16px 18px; display:flex; flex-direction:column;}
+  .al-head{position:sticky; top:0; z-index:3; display:flex; align-items:center; gap:10px; padding:10px 0 6px; background:var(--blush-50);}
+  .al-head h3{flex:1; min-width:0; font-size:1.25rem; color:var(--rose-800); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .al-info, .al-explain{font-size:.76rem; color:var(--rose-800); opacity:.9; line-height:1.45; margin:0 0 4px;}
+  .al-explain{background:rgba(255,255,255,.75); border-radius:12px; padding:8px 12px; margin:2px 0 12px; opacity:1;}
+  .al-month{font-size:.7rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--rose-600); margin:14px 2px 6px;}
+  .al-grid{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:6px;}
+  @media (min-width:560px){ .al-grid{grid-template-columns:repeat(4, minmax(0,1fr));} }
+  .al-tile{position:relative; display:block; width:100%; aspect-ratio:1 / 1; padding:0; border:none; border-radius:12px; overflow:hidden;
+    background:var(--blush-100); box-shadow:var(--shadow-soft);}
+  .al-tile img{display:block; width:100%; height:100%; object-fit:cover;}
+  .al-love{position:absolute; left:5px; bottom:5px; min-width:22px; height:20px; padding:0 6px; border-radius:999px; background:rgba(255,255,255,.92);
+    color:var(--rose-600); font-size:.74rem; font-weight:700; line-height:20px; text-align:center; pointer-events:none;}
+  .al-empty{text-align:center; font-size:.85rem; color:var(--rose-800); line-height:1.6; margin:28px 0 8px;}
+  .al-foot{margin-top:auto; padding-top:18px; display:flex; flex-direction:column; gap:6px;}
+  .al-two{display:flex; gap:8px;}
+  .al-two .btn{flex:1 1 0; min-width:0; min-height:44px; padding:10px 8px; font-size:.76rem; white-space:nowrap;}
+  .al-foot > .btn{min-height:44px; padding:10px 16px; font-size:.8rem;}
+  .al-trash-link{align-self:center;}
+  .al-note{text-align:center; font-size:.72rem; color:var(--rose-800); opacity:.85; line-height:1.5; margin:2px 0 0;}
+  .album-view .btn[disabled]{opacity:.6;}
+  .al-danger{color:#B3261E; border-color:#F3C1C6;}
+  .al-trow{display:flex; align-items:center; gap:8px; margin-bottom:8px; padding:8px; border-radius:14px; background:var(--white); box-shadow:var(--shadow-soft);}
+  .al-trow img{flex:0 0 56px; width:56px; height:56px; border-radius:10px; object-fit:cover; opacity:.85; background:var(--blush-100);}
+  .al-tt{flex:1; min-width:0; font-size:.72rem; line-height:1.4; color:var(--plum-900);}
+  .al-tt b{font-size:.76rem;}
+  .al-mini{flex:0 0 auto; min-height:44px; padding:0 12px; border-radius:999px; border:1.5px solid var(--pink-300); background:var(--white); color:var(--rose-800);
+    font-size:.68rem; font-weight:700; letter-spacing:.04em;}
+  .al-xmini{flex:0 0 44px; width:44px; height:44px; padding:0; border-radius:50%; border:1.5px solid #F3C1C6; background:var(--white); color:#B3261E; font-size:.9rem;}
+  /* one memory: the picture fills the space between the top bar and the buttons; tap it for full size */
+  .al-viewer{display:flex; flex-direction:column;}   /* (it scrolls only on very short screens, e.g. a phone held sideways) */
+  .alv-head{display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; max-width:640px; margin:0 auto; padding:10px 16px 4px;}
+  .alv-pos{font-size:.82rem; font-weight:600; color:var(--rose-800);}
+  .alv-gap{width:44px;}
+  .alv-wrap{position:relative; flex:1 1 auto; width:100%; max-width:760px; min-height:140px; margin:4px auto;}   /* (laptops: the arrows stay near the picture) */
+  .alv-stage{position:absolute; inset:0; touch-action:pan-y;}
+  .alv-stage img{position:absolute; top:0; bottom:0; left:56px; right:56px; width:calc(100% - 112px); height:100%; object-fit:contain; cursor:zoom-in;}
+  .alv-wrap.zoom .alv-stage{overflow-y:auto; -webkit-overflow-scrolling:touch;}
+  .alv-wrap.zoom .alv-stage img{position:static; display:block; width:100%; max-width:560px; height:auto; margin:0 auto; cursor:zoom-out;}
+  .alv-wrap.zoom .alv-arrow{display:none;}   /* full size: the whole width for the picture (swipe still works) */
+  .alv-arrow{position:absolute; top:50%; z-index:2; width:44px; height:52px; margin-top:-26px; padding:0; border-radius:14px; border:1.5px solid var(--pink-300);
+    background:rgba(255,255,255,.9); color:var(--rose-800); font-size:1.5rem; line-height:1;}
+  .alv-arrow.l{left:6px;} .alv-arrow.r{right:6px;}
+  .alv-arrow.off{visibility:hidden;}
+  .alv-info{text-align:center; font-size:.8rem; line-height:1.5; color:var(--plum-900); padding:2px 16px;}
+  .alv-info b{color:var(--rose-800);}
+  .alv-love{color:var(--rose-600); font-weight:700;}
+  .alv-btns{display:flex; flex-direction:column; gap:8px; width:100%; max-width:480px; margin:0 auto; padding:6px 16px 14px;}
+  .alv-btns > .btn{min-height:48px; padding:12px 16px;}
+
   /* toast */
   .toast{
     position:fixed; left:50%; bottom:28px; transform:translate(-50%,20px); background:var(--plum-900); color:#fff;
@@ -1003,7 +1065,7 @@
     <div class="code-card">
       <button type="button" class="x-btn" id="codeX" aria-label="Close">✕</button>
       <h3 id="codeModalTitle">Paste their photo code ♡</h3>
-      <p id="codeModalText">Paste the code your love sent you — their photos join your strip.</p>
+      <p id="codeModalText">Paste the code your love sent you. Their photos join your strip.</p>
       <textarea id="codeInput" rows="4" spellcheck="false" aria-label="Photo code"></textarea>
       <!-- paste only: how their photos join yours -->
       <div class="code-style" id="codeStyle" role="radiogroup" aria-label="How their photos join yours" hidden>
@@ -1040,7 +1102,7 @@
       <h3 id="duoHelpTitle">Together ♡ how it works</h3>
       <ul>
         <li>One photo for both of you, side by side.</li>
-        <li>The one who <b>made the room</b> is always on the <b>left</b>, the one who <b>joined</b> on the <b>right</b> — so your photo is exactly the same for both of you.</li>
+        <li>The one who <b>made the room</b> is always on the <b>left</b>, the one who <b>joined</b> on the <b>right</b>, so your photo is exactly the same for both of you.</li>
         <li><span class="phone-only">Hold your phone upright and keep</span><span class="desktop-only">Keep</span> your face inside the dotted oval.</li>
         <li>"Lean in" always means toward the <b>middle line</b>.</li>
         <li>Cute trick: each make half a heart with your hands next to the middle line ♡</li>
@@ -1074,8 +1136,8 @@
       <h3 id="idolTitle">Pick your pictures ★</h3>
       <p>Tap them in order: photo 1 gets picture 1, photo 2 picture 2… (up to 4).</p>
       <div class="idol-grid" id="idolGrid"></div>
-      <p class="idol-empty" id="idolEmpty" hidden>Your pictures show up here — add one from your gallery ♡</p>
-      <p class="idol-tip">Any picture works — your idol, your love, your pet ♡ A cut-out picture (no background) stands right in your room. Your pictures stay on this device, in My images.</p>
+      <p class="idol-empty" id="idolEmpty" hidden>Your pictures show up here. Add one from your gallery ♡</p>
+      <p class="idol-tip">Any picture works: your idol, your love, your pet ♡ A cut-out picture (no background) stands right in your room. Your pictures stay on this device, in My images.</p>
       <button type="button" class="btn btn-primary btn-block" id="idolUse">PICK A PICTURE ♡</button>
     </div>
   </div>
@@ -1110,7 +1172,7 @@
     <div class="code-card">
       <button type="button" class="x-btn" id="printX" aria-label="Close">✕</button>
       <h3 id="printTitle">Save for printing ♡</h3>
-      <p>Your strip on a sheet of photo paper, as big as it stays sharp — with a thin line to cut along.</p>
+      <p>Your strip on a sheet of photo paper, as big as it stays sharp, with a thin line to cut along.</p>
       <div class="print-sizes" role="radiogroup" aria-label="Paper size">
         <button type="button" class="save-opt" data-size="4r" role="radio"><b>4R</b><small>10 × 15 cm photo paper</small></button>
         <button type="button" class="save-opt" data-size="a4" role="radio"><b>A4</b><small>21 × 29.7 cm paper</small></button>
@@ -1122,6 +1184,61 @@
   <input type="file" id="cfImportInput" accept=".json,application/json" class="sr-only" tabindex="-1" aria-hidden="true">
   <!-- (v4.15) "Open from my love": the file your love sent (camera page + editor) -->
   <input type="file" id="loveFile" accept=".txt,text/plain" class="sr-only" tabindex="-1" aria-hidden="true">
+
+  <!-- (v4.19) MY ALBUM: every strip you saved, shared or printed — kept on this device only -->
+  <input type="file" id="albumImportInput" accept=".zip,application/zip,application/x-zip-compressed" class="sr-only" tabindex="-1" aria-hidden="true">
+  <div class="album-view" id="albumView" role="dialog" aria-modal="true" aria-labelledby="albumTitle" hidden>
+    <div class="al-inner">
+      <div class="al-head">
+        <button type="button" class="st-nav" id="albumClose" aria-label="Close the album">←</button>
+        <h3 id="albumTitle">My album ♡</h3>
+      </div>
+      <p class="al-info" id="albumInfo"></p>
+      <div id="albumList"></div>
+      <p class="al-empty" id="albumEmpty" hidden>No memories here yet ♡<br>Every photo strip you save or share is kept here.</p>
+      <div class="al-foot">
+        <div class="al-two">
+          <button type="button" class="btn btn-secondary" id="albumBackup">⬇ BACKUP ALBUM</button>
+          <button type="button" class="btn btn-secondary" id="albumRestore">RESTORE</button>
+        </div>
+        <button type="button" class="btn-text al-trash-link" id="albumTrashBtn">🗑 Recently deleted</button>
+        <p class="al-note" id="albumNote">Your album lives only in this browser on this device. A backup keeps it safe for a new phone or cleared browser data.</p>
+      </div>
+    </div>
+  </div>
+  <div class="album-view al-layer" id="albumTrash" role="dialog" aria-modal="true" aria-labelledby="albumTrashTitle" hidden>
+    <div class="al-inner">
+      <div class="al-head">
+        <button type="button" class="st-nav" id="albumTrashClose" aria-label="Back to the album">←</button>
+        <h3 id="albumTrashTitle">Recently deleted</h3>
+      </div>
+      <p class="al-explain">Memories wait here for 30 days, then they're gone for good. Space on your device is freed when you empty the trash.</p>
+      <div id="albumTrashList"></div>
+      <p class="al-empty" id="albumTrashEmpty" hidden>Nothing here ♡</p>
+      <div class="al-foot"><button type="button" class="btn btn-secondary al-danger" id="albumEmptyTrash">EMPTY TRASH</button></div>
+    </div>
+  </div>
+  <div class="album-view al-layer al-viewer" id="albumViewer" role="dialog" aria-modal="true" aria-labelledby="alvWhen" hidden>
+    <div class="alv-head">
+      <button type="button" class="st-nav" id="alvClose" aria-label="Back to the album">✕</button>
+      <span class="alv-pos" id="alvPos"></span>
+      <span class="alv-gap" aria-hidden="true"></span>
+    </div>
+    <div class="alv-wrap">
+      <div class="alv-stage" id="alvStage"><img id="alvImg" alt=""></div>
+      <button type="button" class="alv-arrow l" id="alvPrev" aria-label="Newer memory">‹</button>
+      <button type="button" class="alv-arrow r" id="alvNext" aria-label="Older memory">›</button>
+    </div>
+    <div class="alv-info"><b id="alvWhen"></b><br><span id="alvWhat"></span></div>
+    <div class="alv-btns">
+      <button type="button" class="btn btn-primary" id="alvSave">SAVE AGAIN ♡</button>
+      <div class="al-two">
+        <button type="button" class="btn btn-secondary" id="alvShare">↗ SHARE</button>
+        <button type="button" class="btn btn-secondary al-danger" id="alvDelete">🗑 DELETE</button>
+      </div>
+      <p class="save-hint" id="alvHint" hidden></p>
+    </div>
+  </div>
 
   <!-- "zoom" in the editor: the whole strip as big as the screen allows (scroll to see it all) -->
   <div class="code-modal zoom-modal" id="zoomModal" role="dialog" aria-modal="true" aria-label="Your strip, bigger" hidden>
@@ -1201,11 +1318,11 @@
         <div class="chip-row" id="cfPresets"></div>
       </div>
       <div class="cf-section">
-        <h4>Your images <small>— saved only on this device</small></h4>
+        <h4>Your images <small>· saved only on this device</small></h4>
         <div class="cf-images" id="cfImages"></div>
         <p class="cf-tip" id="cfFullNote" hidden>All 6 spots are used ♡ Remove one to add another.</p>
         <p class="cf-tip cf-danger" id="cfDoubleNote" hidden></p>
-        <p class="cf-tip">Tip: PNG images with a see-through background look best. They sit at the edges — make one big (above 60%) and it stands right next to you in the photo.</p>
+        <p class="cf-tip">Tip: PNG images with a see-through background look best. They sit at the edges. Make one big (above 60%) and it stands right next to you in the photo.</p>
         <p class="cf-tip ios-only">On iPhone, Safari clears saved frames if this site isn't opened for 7 days. To keep them, tap Share → <b>Add to Home Screen</b> and open the booth from there.</p>
         <input type="file" id="cfFile" accept="image/*" class="sr-only" tabindex="-1" aria-hidden="true">
       </div>
@@ -1367,6 +1484,8 @@
         <div class="hero-actions">
           <button class="btn btn-primary" id="startBtn">START PHOTO BOOTH ♡</button>
           <button class="btn btn-secondary" id="liveBtn">LIVE WITH MY LOVE ♡</button>
+          <!-- (v4.19) shown once the album has at least one memory -->
+          <button class="btn btn-secondary" id="albumBtn" hidden>MY ALBUM ♡ <span class="al-count" id="albumCount">0</span></button>
           <button class="btn btn-secondary" id="howBtn">HOW IT WORKS</button>
         </div>
         <div class="mockup" aria-hidden="true">
@@ -1388,12 +1507,12 @@
         <div class="how-card">
           <div class="how-num">01</div>
           <h3>Say cheese ♡</h3>
-          <p>Allow your camera and choose how many shots you want — up to four in a row. No camera access? Use your phone's camera app or photos you already have.</p>
+          <p>Allow your camera and choose how many shots you want, up to four in a row. No camera access? Use your phone's camera app or photos you already have.</p>
         </div>
         <div class="how-card">
           <div class="how-num">02</div>
           <h3>Pick your vibe</h3>
-          <p>Choose a frame, a filter, and a few little stickers to make it yours — they can even move ✨</p>
+          <p>Choose a frame, a filter, and a few little stickers to make it yours. They can even move ✨</p>
         </div>
         <div class="how-card">
           <div class="how-num">03</div>
@@ -1421,21 +1540,22 @@
     </section>
 
     <section class="section" style="padding-top:0;">
-      <div class="privacy-note">🔒 Your photos stay on your device. Only your love sees what you send — not us.</div>
+      <div class="privacy-note">🔒 Your photos stay on your device. Only your love sees what you send, not us.</div>
       <!-- the honest details, one tap away (the short line above stays true for your own photos) -->
       <details class="privacy-more">
         <summary><span>how it works</span></summary>
         <ul>
           <li>Live room: your photos go straight to your love's phone, encrypted on the way.</li>
           <li>To connect you, a room server (PeerJS) and sometimes a Cloudflare relay pass along encrypted data. They can't see your photos.</li>
-          <li>Send to my love as a link: your photos and design are locked (encrypted) on your device first. Our Cloudflare storage keeps only the locked copy for 3 days, then deletes it. The key is inside the link itself, so anyone with the link can open it — only send it to your love.</li>
+          <li>Send to my love as a link: your photos and design are locked (encrypted) on your device first. Our Cloudflare storage keeps only the locked copy for 3 days, then deletes it. The key is inside the link itself, so anyone with the link can open it. Only send it to your love.</li>
           <li>A photo file or code contains your photos, so only send it to your love.</li>
+          <li>My album lives only in this browser on this device. Clearing the browser's data deletes it. BACKUP ALBUM saves a copy.</li>
           <li>The letters come from Google Fonts, so Google can see that this page was opened.</li>
         </ul>
       </details>
     </section>
 
-    <footer class="site-footer">♡ Our Booth — free, no login, made for two. <span class="app-version" title="Version of this page — if it looks old, reload">v4.18.1</span></footer>
+    <footer class="site-footer">♡ Our Booth · free, no login, made for two. <span class="app-version" title="Version of this page. If it looks old, reload">v4.19</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -1460,7 +1580,7 @@
       <!-- STEP 2: frame -->
       <section class="step" id="step-frame" data-step="frame">
         <h2>Choose Frame</h2>
-        <p class="step-sub">You'll see its decorations while you pose — and you can still change it after.</p>
+        <p class="step-sub">You'll see its decorations while you pose, and you can still change it after.</p>
         <div class="frame-tabs" id="frameTabsStep" role="tablist" aria-label="Frame types"></div>
         <!-- (v4.18) Strip or Grid 2×2 — only on the tabs with decorated frames, and with 2 photos or more -->
         <div class="chip-row layout-row js-layout-row" role="group" aria-label="Photo layout" hidden></div>
@@ -1469,11 +1589,11 @@
         <div class="cf-backup js-cf-backup" hidden>
           <button type="button" class="btn btn-ghost js-cf-export">⬇ BACKUP MY FRAMES</button>
           <button type="button" class="btn btn-ghost js-cf-import">⬆ RESTORE FROM FILE</button>
-          <p>One file with all your frames — keep it in your Drive or chat, and restore it on a new phone ♡</p>
+          <p>One file with all your frames. Keep it in your Drive or chat, and restore it on a new phone ♡</p>
         </div>
         <div class="step-footer">
           <button class="btn btn-primary btn-block" id="toCameraBtn">START PHOTO BOOTH ♡</button>
-          <button type="button" class="btn-text skip-link" id="skipFrameBtn">Skip — I'll choose after</button>
+          <button type="button" class="btn-text skip-link" id="skipFrameBtn">Skip, I'll choose after</button>
         </div>
       </section>
 
@@ -1524,8 +1644,8 @@
         <div class="fallback-row" id="fallbackRow">
           <!-- which hint shows depends on the device (is-phone / is-desktop on <html>)
                and on whether the live camera works (.highlight = camera failed) -->
-          <p class="fallback-hint desktop-only">Camera not working on this computer? Choose photos you already have — or open this page on your phone. Same frames, same strip ♡</p>
-          <p class="fallback-hint phone-only when-failed">Camera blocked? Use your phone's own camera app or your gallery — same frames, same strip ♡</p>
+          <p class="fallback-hint desktop-only">Camera not working on this computer? Choose photos you already have, or open this page on your phone. Same frames, same strip ♡</p>
+          <p class="fallback-hint phone-only when-failed">Camera blocked? Use your phone's own camera app or your gallery. Same frames, same strip ♡</p>
           <p class="fallback-hint phone-only when-ok">Or use photos you already have ♡</p>
           <div class="fallback-buttons">
             <button class="btn btn-secondary phone-only when-failed" id="useCameraAppBtn">TAKE WITH PHONE CAMERA</button>
@@ -1543,7 +1663,7 @@
           <p class="ldr-title">Long distance ♡</p>
           <p class="ldr-hint">Want to see each other while you pose? Open a live room together.</p>
           <button class="btn btn-primary btn-block js-go-live">GO LIVE TOGETHER ♡</button>
-          <p class="ldr-hint" style="margin-top:16px;">Not online at the same time? Take your own shots, then send them to your love as a private link — you'll end up on the same strip.</p>
+          <p class="ldr-hint" style="margin-top:16px;">Not online at the same time? Take your own shots, then send them to your love as a private link. You'll end up on the same strip.</p>
           <!-- (v4.15) photos + design travel as ONE file (WhatsApp etc.); (v4.16) as a link when possible;
                the old text codes are the "older way" -->
           <div class="fallback-buttons">
@@ -1552,8 +1672,8 @@
           </div>
           <ol class="ldr-steps">
             <li>Each of you takes 2 photos here, on your own phone (one strip holds 4).</li>
-            <li>One of you taps "Send to my love" and picks WhatsApp — your love gets a link.</li>
-            <li>The other just taps the link — one strip, two people ♡ (Got a file instead? Tap "Open from my love" and pick it.)</li>
+            <li>One of you taps "Send to my love" and picks WhatsApp. Your love gets a link.</li>
+            <li>The other just taps the link: one strip, two people ♡ (Got a file instead? Tap "Open from my love" and pick it.)</li>
           </ol>
           <p class="ldr-tip js-love-tip"></p>
           <button type="button" class="ldr-older js-older-toggle" aria-expanded="false">older way: copy / paste a code</button>
@@ -1574,7 +1694,7 @@
 
         <!-- a) create or join -->
         <div class="live-panel" id="livePick">
-          <p class="step-sub">See each other on screen and smile on the same countdown — even when you're far apart.</p>
+          <p class="step-sub">See each other on screen and smile on the same countdown, even when you're far apart.</p>
           <button class="btn btn-primary btn-block" id="liveCreateBtn">CREATE A ROOM ♡</button>
           <p class="live-or">or join your love's room</p>
           <div class="live-join-row">
@@ -1642,7 +1762,7 @@
             <ul>
               <li>Stay on this screen until you see "Swapping photos…".</li>
               <li>Your love's photo turns sharp a moment after the click.</li>
-              <li>While you decorate, your picture pauses — your voice stays on.</li>
+              <li>While you decorate, your picture pauses. Your voice stays on.</li>
               <li>WiFi works best for both of you.</li>
             </ul>
             <button type="button" class="btn-text" id="liveTipsOk">Got it ♡</button>
@@ -1655,7 +1775,7 @@
       <!-- STEP 4: customize -->
       <section class="step" id="step-customize" data-step="customize">
         <h2>MAKE IT YOURS ♡</h2>
-        <p class="step-sub">Not sure? Try other frames — your photos stay.</p>
+        <p class="step-sub">Not sure? Try other frames. Your photos stay.</p>
         <!-- editor: the preview stays on screen, and only one tool panel is open at a time -->
         <div class="editor">
           <div class="preview-pane">
@@ -1696,7 +1816,7 @@
               <button type="button" class="btn btn-secondary st-open" id="stOpenBtn">✋ PLACE &amp; EDIT STICKERS</button>
               <div class="st-quick" id="stickerChips" role="group" aria-label="Add a sticker"></div>
               <label class="switch-row"><input type="checkbox" id="animToggle" checked><span>Moving stickers and decorations ✨</span></label>
-              <p class="motion-note" id="motionNote" hidden>Your phone or browser has <b>Reduce motion</b> turned on, so movement starts switched off. Turn it on with the switch above — or turn off Reduce motion in your device's accessibility settings (iPhone: Settings → Accessibility → Motion · Android: Settings → Accessibility → Remove animations). Battery saver can also slow animations down.</p>
+              <p class="motion-note" id="motionNote" hidden>Your phone or browser has <b>Reduce motion</b> turned on, so movement starts switched off. Turn it on with the switch above, or turn off Reduce motion in your device's accessibility settings (iPhone: Settings → Accessibility → Motion · Android: Settings → Accessibility → Remove animations). Battery saver can also slow animations down.</p>
               <p class="motion-note" id="liteNote" hidden>This <span class="phone-only">phone</span><span class="desktop-only">computer</span> looked a little busy, so the moving previews now update less often to keep everything smooth. Your saved photo and video aren't affected ♡</p>
             </div>
             <div class="tool-panel" data-panel="text" role="tabpanel" hidden>
@@ -1728,12 +1848,12 @@
                 <p class="live-design-hint">Together: every change shows for both of you. Send: they see your design on their photos and choose.</p>
               </div>
               <div id="togetherOn" hidden>
-                <p class="together-status">♡ Designing together — your changes show for both of you</p>
+                <p class="together-status">♡ Designing together: your changes show for both of you</p>
                 <button type="button" class="btn-text" id="togetherSaveFrame" hidden>Save their frame to my frames</button>
                 <button type="button" class="btn-text" id="togetherStop">Stop designing together</button>
               </div>
             </div>
-            <button type="button" class="ldr-toggle" id="ldrToggle" aria-expanded="false">♡ Long distance — send to your love</button>
+            <button type="button" class="ldr-toggle" id="ldrToggle" aria-expanded="false">♡ Long distance: send to your love</button>
             <div class="ldr-row" id="ldrCustomize" hidden>
               <p class="ldr-hint">Send your photos and your design to your love as a private link. Got a file from them? Open it here.</p>
               <div class="fallback-buttons">
@@ -1764,10 +1884,10 @@
         <!-- shown only when something on the strip moves -->
         <div class="save-as" id="saveAs" role="radiogroup" aria-label="Save as" hidden>
           <button type="button" class="save-opt" data-mode="photo" role="radio">
-            <span class="save-ico" aria-hidden="true">🖼</span><b>Photo</b><small>Still image — for printing or a wallpaper</small>
+            <span class="save-ico" aria-hidden="true">🖼</span><b>Photo</b><small>Still image for printing or a wallpaper</small>
           </button>
           <button type="button" class="save-opt" data-mode="animated" role="radio">
-            <span class="save-ico" aria-hidden="true">✨</span><b>Animated</b><small>Short video — decorations move, photos stay still</small>
+            <span class="save-ico" aria-hidden="true">✨</span><b>Animated</b><small>Short video: decorations move, photos stay still</small>
           </button>
         </div>
         <p class="save-note" id="saveNote" hidden>This browser can't make videos, so you can save the photo only.</p>
@@ -1778,6 +1898,8 @@
           <button class="btn btn-ghost" id="shareBtn" aria-label="Share">↗ SHARE</button>
         </div>
         <button type="button" class="btn-text print-link" id="printBtn">🖨 Save for printing (4R · A4)</button>
+        <!-- (v4.19) appears once this strip is in your album -->
+        <button type="button" class="al-pill" id="albumPill" hidden>♡ Kept in your album <b>OPEN ›</b></button>
         <div class="result-actions">
           <button class="btn btn-primary btn-block" id="downloadBtn">DOWNLOAD PHOTO ♡</button>
           <p class="save-hint" id="saveHint" aria-live="polite" hidden></p>
@@ -2021,7 +2143,7 @@
     $('updateBar').hidden = !show;
     if(!show) return;
     var here = !!(live && (live.peer || live.rejoin));   // in a live room
-    $('updateText').textContent = here ? 'New version ♡ refresh after your live photos — it leaves the room'
+    $('updateText').textContent = here ? 'New version ♡ refresh after your live photos (it leaves the room)'
                                          : 'A new version is here ♡';
     $('updateGo').hidden = here;
   }
@@ -2073,6 +2195,7 @@
   // action (optional): {label, fn} — a button in the toast, e.g. UNDO
   function showToast(msg, action){
     var t = $('toast'); t.textContent = msg;
+    showToast.last = {msg:msg, at:Date.now()};   // (v4.19) the album's note must not cover a message shown after your tap
     if(action){
       var b = document.createElement('button');
       b.type = 'button'; b.className = 'toast-act'; b.textContent = action.label;
@@ -2378,7 +2501,7 @@
     });
     Array.prototype.forEach.call(document.querySelectorAll('.frame-tab[data-tab="moments"]'), function(b){
       b.classList.toggle('has-now', momentsNow.length > 0);
-      b.setAttribute('aria-label', momentsNow.length ? 'Moments — some are in season now' : 'Moments');
+      b.setAttribute('aria-label', momentsNow.length ? 'Moments, some are in season now' : 'Moments');
     });
   }
   /* ---- (v4.18) Layout: Strip / Grid — a row under the frame tabs (frame step + editor). It shows on the tabs
@@ -2562,7 +2685,7 @@
         this.value = state.since;
         syncSinceRow();
         $('sinceHint').textContent = unfinished || !raw
-          ? 'That date wasn\'t finished — ' + (state.since ? 'your last one is back ♡' : 'please pick the whole date ♡')
+          ? 'That date wasn\'t finished. ' + (state.since ? 'Your last one is back ♡' : 'Please pick the whole date ♡')
           : 'Please pick a day that already happened ♡';
         $('sinceHint').classList.add('err');
       }
@@ -2623,6 +2746,7 @@
     closeStudio(true);   // (e.g. your love pressed the heart for new photos while you were placing stickers)
     closeHoldSheet();
     closePrintSheet();
+    closeAlbumAll();     // (v4.19) e.g. your love pressed the heart for new photos while you looked at your album
     if(!$('sendLoveModal').hidden) closeSendLove();   // (v4.15)
     if(!$('openLoveModal').hidden) closeOpenLove();
     state.currentStep = step;
@@ -2719,6 +2843,11 @@
     if(e.state === null && /(?:^|[#&])(?:love|room)=/.test(location.hash)){ history.replaceState(currentEntry(), ''); return; }
     var s = e.state || {};
     if(afterBack){ var fn = afterBack; afterBack = null; fn(); return; }   // our own step towards home
+    if(albumOpen()){   // (v4.19) back in the album: one layer closes (a question, the memory, the trash, the album)
+      albumBack();
+      history.pushState(currentEntry(), '');
+      return;
+    }
     if(!$('cfEditor').hidden){   // back while editing a custom frame just closes the editor
       closeCfEditor();
       history.pushState(currentEntry(), '');
@@ -2780,7 +2909,7 @@
     if(!inRoom()) return Promise.resolve(true);
     return confirmBox({
       title: 'Leave the live room?',
-      text: live.connected ? 'Going back closes the room — your love will see that you left.' : 'Going back closes your room, so the code stops working.',
+      text: live.connected ? 'Going back closes the room, and your love will see that you left.' : 'Going back closes your room, so the code stops working.',
       yes: 'LEAVE ROOM', no: 'STAY ♡'
     }).then(function(yes){ return yes === true; });
   }
@@ -2840,6 +2969,7 @@
     if(!$('confirmModal').hidden) closeConfirm(false);
     else if(!$('backModal').hidden) closeBackChooser();
     else if(!$('holdModal').hidden) closeHoldSheet();
+    else if(albumOpen()) albumBack();   // (v4.19)
     else if(!$('printModal').hidden) closePrintSheet();
     else if(!$('zoomModal').hidden) closeZoom();
     else if(!$('duoHelp').hidden) closeDuoHelp();
@@ -2856,7 +2986,7 @@
      With a pop-up open, Tab / Shift+Tab used to wander to the page behind it (buttons you can't see).
      Now they go round inside the top pop-up, and when it closes the focus goes back to the button that
      opened it. Only for keyboards: a tap never moves the focus (no rings or keyboards popping up on phones) */
-  var POPUPS = Array.prototype.slice.call(document.querySelectorAll('.code-modal, .cf-editor, .welcome-overlay'));
+  var POPUPS = Array.prototype.slice.call(document.querySelectorAll('.code-modal, .cf-editor, .welcome-overlay, .album-view'));
   var usingKeys = false;
   document.addEventListener('keydown', function(e){ if(e.key === 'Tab' || e.key === 'Escape') usingKeys = true; }, true);
   document.addEventListener('pointerdown', function(){ usingKeys = false; }, true);
@@ -3128,7 +3258,7 @@
   $('liveShutterLabel').textContent = PRESS + ' to start for both of you ♡';
   // what to suggest when the live camera fails, worded for the device
   var ALT_CAPTURE = IS_PHONE
-    ? "use your phone's own camera below — it works without any permission here."
+    ? "use your phone's own camera below. It works without any permission here."
     : 'choose photos from your computer below, or open this page on your phone.';
   $('permissionUpload').textContent = IS_PHONE ? 'USE PHONE CAMERA INSTEAD' : 'CHOOSE PHOTOS INSTEAD';
   function initCamera(){
@@ -3163,7 +3293,7 @@
           'Allow camera permission in your browser settings, or ' + ALT_CAPTURE, true);
       }else if(name === 'NotFoundError' || name === 'DevicesNotFoundError'){
         showPermission('missing', "No camera found ♡",
-          "We couldn't find a camera here — " + ALT_CAPTURE, true);
+          "We couldn't find a camera here, so " + ALT_CAPTURE, true);
       }else{
         showPermission('error', "Something went wrong ♡",
           "We couldn't start the camera. Please try again.", true);
@@ -3248,11 +3378,11 @@
         .forEach(function(c){ c.dataset.from = 'me'; state.shots.push(c); });
       updateTray();
       if(failed){
-        showToast("We couldn't read " + (failed === 1 ? 'one photo' : failed + ' photos') + ' — try another one ♡');
+        showToast("We couldn't read " + (failed === 1 ? 'one photo' : failed + ' photos') + '. Try another one ♡');
       } else if(state.shots.length >= state.shotCount){
         showToast('That was cute ♡');
       } else {
-        showToast(state.shots.length + ' of ' + state.shotCount + ' — keep going ♡');
+        showToast(state.shots.length + ' of ' + state.shotCount + ', keep going ♡');
       }
       if(state.shots.length >= state.shotCount && state.currentStep === 'camera'){
         setTimeout(function(){ if(state.currentStep === 'camera') goToStep('customize'); }, 700);
@@ -3397,11 +3527,11 @@
     try{ code = packShots(mine); }
     catch(e){ showToast("We couldn't pack your photos. Try fewer shots ♡"); return; }
     if(code.length > 60000){
-      showToast('Too many photos for one code — try 1 or 2 shots ♡');
+      showToast('Too many photos for one code. Try 1 or 2 shots ♡');
       return;
     }
     copyText(code).then(function(){
-      showToast('Code copied — send it to your love by WhatsApp ♡');
+      showToast('Code copied! Send it to your love by WhatsApp ♡');
     }).catch(function(){
       openCodeModal('show', code);
     });
@@ -3451,7 +3581,7 @@
     state.shots = merged.shots;
     state.shotCount = merged.shots.length;
     updateTray();
-    showToast('Their photos are in — you are on one strip now ♡');
+    showToast('Their photos are in. You are on one strip now ♡');
     setTimeout(function(){
       // already on the customize step? just redraw it instead of stacking another history entry
       if(state.currentStep === 'customize'){ prepCustomizeDefaults(); fillThumbs($('framePickRow'), 0.14); renderPreview(); }
@@ -3484,7 +3614,7 @@
     syncCodeStyle();
     if(mode === 'paste'){
       $('codeModalTitle').textContent = 'Paste their photo code ♡';
-      $('codeModalText').textContent = "Paste the code your love sent you — their photos join your strip.";
+      $('codeModalText').textContent = "Paste the code your love sent you. Their photos join your strip.";
       input.value = '';
       input.readOnly = false;
       $('codeApply').textContent = 'ADD PHOTOS ♡';
@@ -3919,12 +4049,12 @@
       var why = live.rejoin ? live.rejoin.why : '';
       $('liveWaitStatus').textContent = live.role === 'host'
         ? (live.conn ? 'Your love is joining… ♡'
-          : live.hostNote === 'refresh' ? "Your love is refreshing their page — they'll be back in a moment ♡"
-          : live.hostNote === 'lost' ? 'The connection was lost — waiting for your love to come back… ♡'
+          : live.hostNote === 'refresh' ? "Your love is refreshing their page. They'll be back in a moment ♡"
+          : live.hostNote === 'lost' ? 'The connection was lost. Waiting for your love to come back… ♡'
           : 'Waiting for your love to join…')
-        : why === 'refresh' ? "Your love is refreshing their page — you'll be back together in a moment ♡"
+        : why === 'refresh' ? "Your love is refreshing their page. You'll be back together in a moment ♡"
         : why === 'reload' ? 'Coming back to room ' + live.code + '… ♡'
-        : why === 'lost' ? 'The connection was lost — reconnecting… ♡ Stay on this screen.'
+        : why === 'lost' ? 'The connection was lost. Reconnecting… ♡ Stay on this screen.'
         : (live.slow ? 'Still connecting… far apart or on mobile data this can take up to half a minute ♡'
                      : 'Joining room ' + live.code + '…');
     }
@@ -3966,14 +4096,14 @@
     if(gap < 0){
       $('liveVerTitle').textContent = "Your love's page is older" + (theirs ? ' (' + theirs + ')' : '');
       $('liveVerText').textContent = theirs && verCmp(theirs, LOCK_SINCE) >= 0
-        ? "Ask them to tap REFRESH NOW — you'll be back together here by yourselves ♡"
+        ? "Ask them to tap REFRESH NOW. You'll be back together here by yourselves ♡"
         : 'Ask them to refresh their page (pull down or tap reload), then join you again ♡';
       $('liveVerGo').hidden = true;
     } else {
       $('liveVerTitle').textContent = 'Your love has a newer version (' + theirs + ')';
       $('liveVerText').textContent = refreshedFor() === theirs
-        ? "Still the older page after refreshing — are you both on the same link? Open the one your love sent ♡"
-        : "Refresh to take photos together — you'll come straight back to this room ♡";
+        ? "Still the older page after refreshing. Are you both on the same link? Open the one your love sent ♡"
+        : "Refresh to take photos together. You'll come straight back to this room ♡";
       $('liveVerGo').hidden = false;
     }
   }
@@ -4087,7 +4217,7 @@
     var cam = live.localStream.getVideoTracks()[0];
     if(!cam || cam.readyState === 'ended'){
       reopenLiveCamera(state.facingMode).catch(function(){
-        showToast("Your camera stopped — close other apps using it, then tap ↻ ♡");
+        showToast("Your camera stopped. Close other apps using it, then tap ↻ ♡");
       });
     } else {
       playVideo($('liveLocal'));
@@ -4186,7 +4316,7 @@
         }
         if(keep || attempt < 3){   // code already taken: roll a new one
           peer.destroy();
-          if(keep) showToast('Your room has a new code — send your love the new invite ♡');
+          if(keep) showToast('Your room has a new code. Send your love the new invite ♡');
           openHostPeer(makeRoomCode(), keep ? 0 : attempt + 1);
           return;
         }
@@ -4484,7 +4614,7 @@
         break;
       case 'photo': receivePhoto(msg); break;
       case 'design':
-        if(versionGap()){ showToast('Your love sent a design — refresh to the same version first ♡'); break; }
+        if(versionGap()){ showToast('Your love sent a design. Refresh to the same version first ♡'); break; }
         receiveDesign(msg);
         break;
       case 'design-reply':
@@ -4572,7 +4702,7 @@
       if(!still()) return;
       if(r >= rounds) return finish();
       live.roundIdx = r;   // the decorations on your tile move to this photo's spot
-      setLiveStatus('Photo ' + (r+1) + ' of ' + rounds + ' — smile ♡');
+      setLiveStatus('Photo ' + (r+1) + ' of ' + rounds + ' · smile ♡');
       var pose = duo && poses ? poses[r] : null;
       showPose(pose);
       // a pose idea gets a moment to be read before the countdown starts (same on both phones)
@@ -4727,7 +4857,7 @@
       return;
     }
     copyText(text + ': ' + url).then(function(){
-      showToast('Invite link copied — send it to your love ♡');
+      showToast('Invite link copied! Send it to your love ♡');
     }).catch(function(){ openCodeModal('invite', text + ': ' + url); });
   });
   $('liveLeaveBtn').addEventListener('click', function(){
@@ -4824,8 +4954,8 @@
     // (different versions: the card on the camera says it all — see syncVersionUI)
     var note = '';
     if(live.connected && !versionGap()){
-      if(!live.partnerDuo) note = "Your love's page is older — they can reload it to use Together ♡";
-      else if(live.mode === 'separate') note = 'Stacked: your photos go one below the other — Together ♡ puts you side by side';
+      if(!live.partnerDuo) note = "Your love's page is older. They can reload it to use Together ♡";
+      else if(live.mode === 'separate') note = 'Stacked: your photos go one below the other. Together ♡ puts you side by side';
     }
     $('liveModeNote').textContent = note;
     $('liveModeNote').hidden = !note;
@@ -4974,8 +5104,8 @@
     });
     $('poseHint').textContent = {
       surprise: 'A different pose for every photo, picked for you. The same pose shows for both of you.',
-      pick: TAP_ + ' poses in the order you want them — the number is the photo. Up to 4.',
-      off: 'No pose ideas — just be yourselves ♡ ' + TAP_ + ' a pose to pick your own.'
+      pick: TAP_ + ' poses in the order you want them. The number is the photo. Up to 4.',
+      off: 'No pose ideas, just be yourselves ♡ ' + TAP_ + ' a pose to pick your own.'
     }[live.poseMode];
     var grid = $('poseGrid');
     grid.innerHTML = '';
@@ -4994,7 +5124,7 @@
         var i = live.posePick.indexOf(p.id);
         if(i !== -1) live.posePick.splice(i, 1);
         else if(live.posePick.length < MAX_SHOTS) live.posePick.push(p.id);
-        else showToast('Up to 4 poses — ' + TAP + ' one to remove it ♡');
+        else showToast('Up to 4 poses, ' + TAP + ' one to remove it ♡');
         renderPoseSheet();
       });
       grid.appendChild(b);
@@ -5112,7 +5242,7 @@
     copy.addEventListener('click', function(){
       var link = inappLink();
       copyText(link).then(function(){
-        showToast('Link copied — paste it in ' + (IS_IOS ? 'Safari' : 'Chrome') + ' ♡');
+        showToast('Link copied! Paste it in ' + (IS_IOS ? 'Safari' : 'Chrome') + ' ♡');
       }).catch(function(){ openCodeModal('link', link); });
     });
     row.appendChild(copy);
@@ -5883,7 +6013,7 @@
     }).then(function(blob){
       var rec = {id:cfUid(), blob:blob, created:Date.now()};
       return loadStickerImg(rec.id, blob).then(function(){ return putMyImage(rec); }).then(function(res){
-        if(res === null) showToast("Added for now — this browser can't keep it after you close the page");
+        if(res === null) showToast("Added for now. This browser can't keep it after you close the page");
         else keepStorage();
         return rec;
       });
@@ -6061,7 +6191,7 @@
     if(on && n > 1){
       var at = idol.view % n + 1;
       $('idolWhich').textContent = '★ ' + at + ' / ' + n + ' ›';
-      $('idolWhich').setAttribute('aria-label', 'Showing picture ' + at + ' of ' + n + ' — show the next one');
+      $('idolWhich').setAttribute('aria-label', 'Showing picture ' + at + ' of ' + n + ', show the next one');
     }
     $('idolHint').hidden = !on || idol.hinted;
     $('idolGrab').tabIndex = on ? 0 : -1;
@@ -6284,7 +6414,7 @@
     var i = idolPick.indexOf(id);
     if(i !== -1) idolPick.splice(i, 1);
     else if(idolPick.length < IDOL_MAX) idolPick.push(id);
-    else { showToast('Up to ' + IDOL_MAX + ' pictures — ' + TAP + ' one to remove it ♡'); return; }
+    else { showToast('Up to ' + IDOL_MAX + ' pictures, ' + TAP + ' one to remove it ♡'); return; }
     syncIdolTiles();
   }
   // numbers + the button's words, without redrawing the pictures
@@ -6293,7 +6423,7 @@
       var at = idolPick.indexOf(b.dataset.id), num = b.querySelector('.pose-num');
       b.classList.toggle('selected', at !== -1);
       b.setAttribute('aria-pressed', at !== -1 ? 'true' : 'false');
-      b.setAttribute('aria-label', at !== -1 ? 'Picture ' + (at + 1) + ' — ' + TAP + ' to take it out' : 'Pose with this picture');
+      b.setAttribute('aria-label', at !== -1 ? 'Picture ' + (at + 1) + ', ' + TAP + ' to take it out' : 'Pose with this picture');
       if(at === -1){ if(num) num.remove(); return; }
       if(!num){ num = document.createElement('span'); num.className = 'pose-num'; b.appendChild(num); }
       num.textContent = String(at + 1);
@@ -6315,7 +6445,7 @@
         }, function(err){ if(err && err.message === 'full') full = true; else bad++; });
       });
     }, Promise.resolve()).then(function(){
-      if(full) showToast('My images holds ' + MY_IMAGES_MAX + ' pictures — remove one in the sticker studio first ♡');
+      if(full) showToast('My images holds ' + MY_IMAGES_MAX + ' pictures. Remove one in the sticker studio first ♡');
       else if(bad) showToast("We couldn't read " + (bad === 1 ? 'that picture' : bad + ' pictures') + '. Try another one ♡');
       renderIdolSheet();
     });
@@ -8228,10 +8358,10 @@
     var growing = selIt && growFrac(selIt) > 0;
     $('cfMaxNote').hidden = !growing;
     $('cfMaxNote').textContent = size >= 100
-      ? 'The biggest ♡ Your image covers up to a third of the photo — at the sides as tall as a photo.'
+      ? 'The biggest ♡ Your image covers up to a third of the photo, and at the sides as tall as a photo.'
       : size > CUSTOM_CLEAR
         ? 'Now your image steps into the photo ♡ Great for someone standing next to you. Want clear photos? Turn off "Let decorations peek over photos" in the editor.'
-        : 'From here the frame grows a little to make room — your photos stay clear ♡';
+        : 'From here the frame grows a little to make room. Your photos stay clear ♡';
     if(selIt) $('cfSizeValue').textContent = size + '%';
     // image buttons
     var box = $('cfImages');
@@ -8262,7 +8392,7 @@
     $('cfDoubleNote').hidden = !doubled.length;
     if(doubled.length){
       $('cfDoubleNote').textContent = 'Two images share ' + doubled.map(function(p){ return p.label; }).join(' and ') +
-        ' — only the top one shows. ' + (full ? 'Remove one of them.' : 'Move one to a free spot ♡');
+        ', so only the top one shows. ' + (full ? 'Remove one of them.' : 'Move one to a free spot ♡');
     }
     // controls for the selected image
     var it = d.items[cf.sel];
@@ -8276,7 +8406,7 @@
         var c = document.createElement('button');
         c.type = 'button'; c.className = 'chip' + (p.id === it.pos ? ' active' : '');
         c.textContent = p.label + (other && p.id !== it.pos ? ' ●' : '');
-        if(other && p.id !== it.pos) c.setAttribute('aria-label', p.label + ' (used — swaps the two images)');
+        if(other && p.id !== it.pos) c.setAttribute('aria-label', p.label + ' (used, swaps the two images)');
         c.addEventListener('click', function(){
           if(p.id === it.pos) return;
           if(other) other.pos = it.pos;
@@ -8373,10 +8503,10 @@
       if(!rec.items.some(function(x){ return x.id === it.id; })) delete customImages[it.id];
     });
     customDbRun('readwrite', function(store){ return store.put(rec); }).then(function(res){
-      if(res === null) showToast("Saved for now — this browser can't keep it after you close the page");
+      if(res === null) showToast("Saved for now. This browser can't keep it after you close the page");
       else { showToast('Saved on this device ♡'); keepStorage(); }
     }, function(){
-      showToast("Couldn't save to this device (storage full?) — it works until you close the page");
+      showToast("Couldn't save to this device (storage full?). It works until you close the page");
     });
     var t = registerCustom(rec);
     closeCfEditor();
@@ -9211,7 +9341,7 @@
       renderImageTiles();
       addSticker('img', rec.id);
     }, function(err){
-      showToast(err && err.message === 'full' ? 'My images holds ' + MY_IMAGES_MAX + ' pictures — remove one first ♡'
+      showToast(err && err.message === 'full' ? 'My images holds ' + MY_IMAGES_MAX + ' pictures. Remove one first ♡'
                                                : "We couldn't read that picture. Try another one ♡");
     });
   });
@@ -9248,7 +9378,7 @@
     var m = makeDrawing(d.strokes);
     rememberDraw(m.d);   // (in the ✏️ Draw tab from now on, also when the strip is full)
     if(st.tray === 'draw') renderDrawTiles();
-    if(state.placed.length >= STUDIO_MAX){ showToast(STUDIO_MAX + " stickers is the most for one strip — your drawing waits in ✏️ Draw ♡"); return; }
+    if(state.placed.length >= STUDIO_MAX){ showToast(STUDIO_MAX + " stickers is the most for one strip. Your drawing waits in ✏️ Draw ♡"); return; }
     // right where you drew it, standing straight (also on a tilted polaroid photo)
     var it = {id:stId(), k:'draw', key:m.d.id, p:d.p, x:0, y:0, s:0.23, r:-(r.rot || 0), e:false, ph:0};
     setItemCenter(it, base, r.cx + m.cx * r.w / 1000, r.cy + m.cy * r.w / 1000);
@@ -9548,7 +9678,7 @@
       ready = Promise.resolve(null);
     } else {
       // most likely your love's page is a newer version with a frame this one doesn't have yet
-      showToast("Your love sent a frame this page doesn't know yet — reload to update ♡");
+      showToast("Your love sent a frame this page doesn't know yet. Reload to update ♡");
       return;
     }
     ready.then(function(rec){ offerDesign(d, rec, kind || 'send'); }, function(){
@@ -9595,7 +9725,7 @@
     var invite = kind === 'invite';
     $('designTitle').textContent = invite ? 'Design together? ♡' : 'Your love sent a design ♡';
     $('designText').textContent = invite
-      ? "Your love wants to decorate with you. You'll start from their design (here on your photos) — then every change shows for both of you."
+      ? "Your love wants to decorate with you. You'll start from their design (here on your photos), then every change shows for both of you."
       : 'Here it is with your photos:';
     $('designUse').textContent = invite ? 'JOIN ♡' : 'USE THEIRS ♡';
     $('designKeep').textContent = invite ? 'NOT NOW' : 'KEEP MINE';
@@ -9694,7 +9824,7 @@
       sendLive({type:'design-reply', used:used});
     }
     saved.then(function(ok){
-      if(saving && !ok) showToast("Couldn't save their frame on this device — it works until you close the page");
+      if(saving && !ok) showToast("Couldn't save their frame on this device. It works until you close the page");
       else if(invite && used) showToast("Designing together ♡ Your changes show for both of you");
       else if(used) showToast(saving ? "Using your love's design ♡ Their frame is in your frames" : "Using your love's design ♡");
       else if(saving) showToast('Their frame is saved in your frames ♡');
@@ -9763,7 +9893,7 @@
       var payload = LOVE_MARK + JSON.stringify(data);
       var text = 'Our Little Photo Booth ♡ ' + what + ' from your love.\n' +
                  'Open this file in the booth: ' + siteUrl() + ' → OPEN FROM MY LOVE\n' +
-                 "(It's just for the two of you — please don't forward it.)\n\n" + payload;
+                 "(It's just for the two of you. Please don't forward it.)\n\n" + payload;
       var name = 'our-little-booth-' + (n ? n + '-photo' + (n === 1 ? '' : 's') : '') + (n && d ? '-and-' : '') + (d ? 'design' : '') + '-' + fileStamp() + '.txt';
       // (v4.16) payload = what a link carries (locked): the same data, without the words for people
       return {blob:new Blob([text], {type:'text/plain'}), name:name, payload:payload, what:what};
@@ -9775,9 +9905,9 @@
     $('sendLovePhotos').disabled = !n;
     $('sendLovePhotos').checked = n > 0;
     $('sendLovePhotosText').textContent = n ? 'My photos (' + n + ')'
-      : together ? 'My photos — your Together photos are already with both of you' : 'My photos — take some first';
+      : together ? 'My photos (your Together photos are already with both of you)' : 'My photos (take some first)';
     $('sendLoveDesign').checked = true;
-    $('sendLoveDesignText').textContent = 'My design — ' + (t.custom ? 'my frame "' + t.rec.name + '"' : 'the ' + t.name + ' frame') +
+    $('sendLoveDesignText').textContent = 'My design: ' + (t.custom ? 'my frame "' + t.rec.name + '"' : 'the ' + t.name + ' frame') +
                                           ', colour, filter, stickers, drawings, text';
     loveSend.mode = canLoveLink() ? 'link' : 'file';   // (v4.16) a link when this page can make one
     syncSendLoveMode();
@@ -9797,10 +9927,10 @@
     $('sendLoveMode').hidden = !canLoveLink();
     $('sendLoveMode').textContent = link ? 'send as a file instead' : 'send as a link instead';
     $('sendLoveNote').textContent = link
-      ? (IS_PHONE ? 'Your share menu opens — pick WhatsApp, then your love. They just tap the link.'
-                  : 'We copy the link for you — paste it to your love (e.g. in WhatsApp Web).')
-      : (IS_PHONE ? "Your share menu opens — pick WhatsApp, then your love. It arrives as a file; they open it here with \"Open from my love\"."
-                  : 'The file is saved on this computer — send it to your love as a document (e.g. in WhatsApp Web: 📎 → Document).');
+      ? (IS_PHONE ? 'Your share menu opens. Pick WhatsApp, then your love. They just tap the link.'
+                  : 'We copy the link for you. Paste it to your love (e.g. in WhatsApp Web).')
+      : (IS_PHONE ? "Your share menu opens. Pick WhatsApp, then your love. It arrives as a file; they open it here with \"Open from my love\"."
+                  : 'The file is saved on this computer. Send it to your love as a document (e.g. in WhatsApp Web: 📎 → Document).');
     syncSendLoveGo();
   }
   function syncSendLoveGo(){
@@ -9869,7 +9999,7 @@
   // (v4.15.1) under OPEN FROM MY LOVE: where the file from WhatsApp is, for this device
   Array.prototype.forEach.call(document.querySelectorAll('.js-love-tip'), function(p){
     p.textContent = IS_IOS ? 'Got their file in WhatsApp? Open it → Share → Save to Files. Then tap "Open from my love" and pick it in Files.'
-      : IS_ANDROID ? 'Got their file in WhatsApp? Tap it once so it downloads. Then tap "Open from my love" — it\'s under Recent (or Downloads).'
+      : IS_ANDROID ? 'Got their file in WhatsApp? Tap it once so it downloads. Then tap "Open from my love". It\'s under Recent (or Downloads).'
       : 'Got their file in WhatsApp Web? Download it first, then click "Open from my love" and pick it.';
   });
   $('sendLovePhotos').addEventListener('change', prepareLove);
@@ -9963,7 +10093,7 @@
           });
         }
         if(TEMPLATES.some(function(t){ return t.id === tid && !t.custom; })) o.design = {raw:raw, templateId:tid};
-        else notes.push("Their frame needs a newer page — reload this page to see it.");   // (sent from a newer version)
+        else notes.push("Their frame needs a newer page. Reload this page to see it.");   // (sent from a newer version)
         return o;
       });
     });
@@ -10047,7 +10177,7 @@
     state.shots = shots;
     try{ drawDesignInto($('openLoveCanvas'), d, t); } finally { state.shots = keep; }
     var notes = o.notes.slice();
-    if(m && m.trimmed) notes.push('One strip holds ' + MAX_SHOTS + ' photos — we keep ' + m.keepMine + ' of yours and ' + m.keepTheirs + ' of theirs.');
+    if(m && m.trimmed) notes.push('One strip holds ' + MAX_SHOTS + ' photos, so we keep ' + m.keepMine + ' of yours and ' + m.keepTheirs + ' of theirs.');
     $('openLoveNote').textContent = notes.join(' ');
     $('openLoveNote').hidden = !notes.length;
   }
@@ -10098,9 +10228,9 @@
       updateTray();
     }
     if(d){ applyDesign(d); if(state.currentStep === 'camera') startCamOverlay(); }
-    var said = m ? (m.keepMine ? 'Their photos are in — you are on one strip now ♡' : 'Their photos are in ♡') : d ? "Using your love's design ♡" : '';
+    var said = m ? (m.keepMine ? 'Their photos are in. You are on one strip now ♡' : 'Their photos are in ♡') : d ? "Using your love's design ♡" : '';
     saved.then(function(ok){
-      if(saving && !ok) showToast("Couldn't save their frame on this device — it works until you close the page");
+      if(saving && !ok) showToast("Couldn't save their frame on this device. It works until you close the page");
       else if(said) showToast(said + (saving ? ' Their frame is in your frames' : ''));
       else if(saving) showToast('Their frame is saved in your frames ♡');
     });
@@ -10119,7 +10249,7 @@
     if(file.size > LOVE_MAX_FILE){ showToast("That file is too big to be from the booth ♡"); return; }
     readTextFile(file).then(readLove).then(offerLove, function(err){
       var why = err && err.message;
-      showToast(why === 'newer' ? "Your love's page is newer — reload this page, then open the file again ♡"
+      showToast(why === 'newer' ? "Your love's page is newer. Reload this page, then open the file again ♡"
                                 : "That file doesn't look like one from the booth. Pick the file your love sent ♡");
     });
   });
@@ -10273,9 +10403,9 @@
   function loveLinkFailed(why){
     loveSend.mode = 'file';
     syncSendLoveMode();
-    showToast(why === 'big' ? "That's too big for a link — send it as a file ♡"
-            : why === 'net' ? "Couldn't make a link (no internet?) — send it as a file ♡"
-            : "Couldn't make a link right now — send it as a file ♡");
+    showToast(why === 'big' ? "That's too big for a link. Send it as a file ♡"
+            : why === 'net' ? "Couldn't make a link (no internet?). Send it as a file ♡"
+            : "Couldn't make a link right now. Send it as a file ♡");
   }
   function deliverLoveLink(L){
     var msg = loveMessage(L);
@@ -10357,18 +10487,19 @@
     $('loveLinkPreview').hidden = true;
     ['loveLinkMain', 'loveLinkMainNote', 'loveLinkSecond', 'loveLinkThird'].forEach(function(id){ $(id).hidden = true; });
     $('loveLinkNote').textContent = '';
+    closeAlbumAll();   // (v4.19) a link tapped while the album was open: its card must not hide behind the album
     $('loveLinkOverlay').classList.add('show');
   }
   function loveLinkError(why){
     var e = {
       expired: ['This link has expired', 'Links last 3 days. Ask your love to send it again ♡'],
       gone:    ["This link can't be found", 'It may have expired, or part of the link is missing. Ask your love to send it again ♡'],
-      broken:  ['This link is broken', 'Part of it may be missing — ask your love to send it again ♡'],
-      format:  ['This link is broken', 'Part of it may be missing — ask your love to send it again ♡'],
+      broken:  ['This link is broken', 'Part of it may be missing. Ask your love to send it again ♡'],
+      format:  ['This link is broken', 'Part of it may be missing. Ask your love to send it again ♡'],
       newer:   ["Your love's booth is newer", 'Refresh this page, then it opens ♡'],
-      old:     ["This browser can't open links", 'Try Chrome or Safari — or ask your love to send it as a file ♡'],
+      old:     ["This browser can't open links", 'Try Chrome or Safari, or ask your love to send it as a file ♡'],
       room:    ["You're in a live room", 'Tap the link again after your live photos ♡'],
-      empty:   ['Nothing to open', "There's nothing in this link — ask your love to send it again ♡"]
+      empty:   ['Nothing to open', "There's nothing in this link. Ask your love to send it again ♡"]
     }[why];
     var retry = !e;   // no internet, or the Worker didn't answer: worth another try
     if(!e) e = ["Couldn't open it right now", 'Check your internet, then try again ♡'];
@@ -10568,12 +10699,12 @@
       imgIds.forEach(function(id){ together.sentImgs[id] = true; });
       drawIds.forEach(function(id){ together.sentDraws[id] = true; });
       sendLive({type:'together-invite', design:partnerDesign(d), frame:frame, imgs:res[1], draws:packDraws(drawIds)});
-      showToast('Invite sent — waiting for your love ♡');
+      showToast('Invite sent. Waiting for your love ♡');
       clearTimeout(together.inviteTimer);
       together.inviteTimer = setTimeout(function(){
         if(!together.inviting) return;
         together.inviting = false; syncLiveDesign();
-        showToast("No answer yet — your love's page may need a reload (v4.5 or newer) ♡");
+        showToast("No answer yet. Your love's page may need a reload (v4.5 or newer) ♡");
       }, INVITE_TIMEOUT);
     }).catch(function(){
       together.inviting = false; syncLiveDesign();
@@ -10583,7 +10714,7 @@
   $('togetherStop').addEventListener('click', function(){
     sendLive({type:'together-stop'});
     endTogether();
-    showToast('Stopped designing together — your design stays as it is ♡');
+    showToast('Stopped designing together. Your design stays as it is ♡');
   });
   $('togetherSaveFrame').addEventListener('click', function(){
     var rec = together.unsaved[state.templateId];
@@ -10591,7 +10722,7 @@
     delete together.unsaved[state.templateId];
     syncLiveDesign();
     saveReceivedFrame(rec).then(function(ok){
-      showToast(ok ? 'Their frame is saved in your frames ♡' : "Couldn't save their frame on this device — it works until you close the page");
+      showToast(ok ? 'Their frame is saved in your frames ♡' : "Couldn't save their frame on this device. It works until you close the page");
     });
   });
 
@@ -10701,7 +10832,7 @@
       d.templateId = state.templateId; d.colorId = keys.indexOf('colorId') !== -1 ? d.colorId : state.colorId;
       applyDesign(d);
       together.last = currentDesign();
-      showToast("Your love picked a frame this page can't open — reload to update ♡");
+      showToast("Your love picked a frame this page can't open. Reload to update ♡");
     });
   }
   // everything from the room goes through here in order
@@ -10967,7 +11098,7 @@
       session.pending = false;
       $('resumeOverlay').classList.remove('show');
       clearSession();
-      showToast('Those photos were kept for 24 hours — now they\'re gone ♡');
+      showToast('Those photos were kept for 24 hours. Now they\'re gone ♡');
       return;
     }
     loadSession();   // reads the kept photos' date and deletes them if they're older than 24 hours
@@ -11237,7 +11368,7 @@
     el.hidden = false;
     el.classList.toggle('over', over);
     el.textContent = over
-      ? n + ' / ' + textLimit.max + ' — too long for this frame. Shorten it to ' + textLimit.max + ' letters so your images don\'t cover it.'
+      ? n + ' / ' + textLimit.max + ' · too long for this frame. Shorten it to ' + textLimit.max + ' letters so your images don\'t cover it.'
       : n + ' / ' + textLimit.max + ' · up to ' + textLimit.max + ' letters fit between your images';
   }
   // how wide the text below the photos may be: frames with drawings in the bottom corners keep a
@@ -11511,8 +11642,8 @@
     var label = '';
     if(state.dateLabel === 'day'){
       var n = dayNumber(state.since);   // no day picked yet: just the date
-      if(n) label = 'Day ' + n.toLocaleString('en-US') + ' together ♡ — ';
-    } else if(state.dateLabel && state.dateLabel !== 'date') label = state.dateLabel + ' — ';
+      if(n) label = 'Day ' + n.toLocaleString('en-US') + ' together ♡ · ';
+    } else if(state.dateLabel && state.dateLabel !== 'date') label = state.dateLabel + ' · ';
     ctx.fillStyle = textColor;
     ctx.globalAlpha = 0.85;
     ctx.textAlign = 'center';
@@ -11552,7 +11683,7 @@
   function goLite(){
     motion.lite = true;
     $('liteNote').hidden = false;
-    showToast('Your ' + (IS_PHONE ? 'phone' : 'computer') + ' looked busy — previews now move more gently ♡');
+    showToast('Your ' + (IS_PHONE ? 'phone' : 'computer') + ' looked busy, so previews now move more gently ♡');
   }
 
   /* ---------------- preview / result render ---------------- */
@@ -11622,6 +11753,7 @@
     document.querySelector('.save-opt[data-mode="animated"]').disabled = !canVideo;
     $('saveNote').hidden = !(moving && !canVideo);
     if(!moving || !canVideo) state.resultMode = 'photo';
+    syncAlbumPill();   // (v4.19) a changed design is a new picture: not in the album until you save it
     syncSaveAs();
   }
   function syncSaveAs(){
@@ -11779,7 +11911,7 @@
     if(state.resultMode !== 'animated'){ photoBlob().catch(function(){}); return; }
     if(document.hidden || videoReady() || videoJob || videoFailedFor === base) return;
     recordVideo(false).catch(function(err){
-      if(err && err.message === 'failed' && onResultPage()) showToast("Couldn't make the video this time — tap the button to try again ♡");
+      if(err && err.message === 'failed' && onResultPage()) showToast("Couldn't make the video this time. Tap the button to try again ♡");
     });
   }
   // back in the app with Animated chosen: make the video that stopped while you were away
@@ -11800,7 +11932,7 @@
     // (short label for the one-row buttons; the Photo / Animated choice above says what gets shared)
     sh.setAttribute('aria-label', animated ? 'Share video' : 'Share photo');
     var item = animated ? (MENU_ID ? 'Simpan Video' : 'Save Video') : (MENU_ID ? 'Simpan Gambar' : 'Save Image');
-    var tip = making ? 'About ' + (LOOP*2) + ' seconds — stay on this page ✨'
+    var tip = making ? 'About ' + (LOOP*2) + ' seconds. Stay on this page ✨'
             : SAVE_VIA_SHARE ? 'In the menu, tap "' + item + '" ♡' : '';
     hint.textContent = tip;
     hint.hidden = !tip;
@@ -11820,14 +11952,15 @@
     }catch(e){ return Promise.reject(e); }
   }
   // how: 'save' (iPhone: the share menu, file only) · 'download' (other devices) · 'share' (SHARE button)
-  function deliver(blob, name, how, isVideo){
+  // fromAlbum (v4.19): a memory from the album (its press-and-hold sheet may open over the album, anywhere)
+  function deliver(blob, name, how, isVideo, fromAlbum){
     if(how === 'download'){ saveBlob(blob, name); return; }
     shareFile(blob, name, how === 'share').catch(function(err){
       var why = err && err.name;
       if(why === 'AbortError') return;   // you closed the menu
-      if(how === 'save' && !isVideo){ openHoldSheet(blob); return; }   // press and hold always works for a picture
+      if(how === 'save' && !isVideo){ openHoldSheet(blob, fromAlbum); return; }   // press and hold always works for a picture
       if(how === 'save' && why === 'Unsupported'){ saveBlob(blob, name); return; }   // then at least into Files
-      if(why === 'Unsupported'){ showToast("Sharing isn't supported here — try downloading instead ♡"); return; }
+      if(why === 'Unsupported'){ showToast("Sharing isn't supported here. Try downloading instead ♡"); return; }
       if(why === 'NotAllowedError'){
         // the phone said "too long after your tap"
         var again = how === 'share' ? 'SHARE' : 'SAVE VIDEO TO PHOTOS';
@@ -11839,6 +11972,7 @@
   }
   function videoName(v){ return 'our-little-photo-booth-' + fileStamp() + '.' + v.ext; }
   function onSaveTap(how){
+    try{ albumKeep(how); }catch(e){}   // (v4.19) the strip goes into your album too (a moment later, after the menu / download has started) — never in the way of saving
     if(state.resultMode === 'animated'){
       if(videoReady()){ deliver(lastVideo.blob, videoName(lastVideo), how, true); return; }
       if(recording) return;   // the buttons wait until it's ready
@@ -11846,7 +11980,7 @@
       recordVideo(true).then(function(v){
         if(onResultPage() && state.resultMode === 'animated') deliver(v.blob, videoName(v), how, true);
       }, function(err){
-        if(err && err.message === 'failed') showToast("Couldn't make the video — try again, or save it as a Photo ♡");
+        if(err && err.message === 'failed') showToast("Couldn't make the video. Try again, or save it as a Photo ♡");
       });
       return;
     }
@@ -11860,10 +11994,11 @@
   $('shareBtn').addEventListener('click', function(){ onSaveTap('share'); });
 
   // iPhone fallback when the menu can't open: the picture as a real image → press and hold → save to Photos
-  function openHoldSheet(blob){
+  function openHoldSheet(blob, fromAlbum){
     var reader = new FileReader();
     reader.onload = function(){
-      if(!onResultPage()) return;
+      if(fromAlbum ? !albumOpen() : !onResultPage()) return;
+      $('holdModal').classList.toggle('over-album', !!fromAlbum);
       $('holdImg').src = reader.result;   // a data: address — the kind iPhones save most reliably
       $('holdModal').hidden = false;
       $('holdModal').scrollTop = 0;
@@ -12009,7 +12144,739 @@
     if(!blob) return;   // (the button waits until it's ready)
     closePrintSheet();
     deliver(blob, printName(printSize), SAVE_VIA_SHARE ? 'save' : 'download', false);
+    try{ albumKeep(SAVE_VIA_SHARE ? 'save' : 'download'); }catch(e){}   // (v4.19) the album keeps the strip itself, not the paper sheet
   });
+
+  /* ================= MY ALBUM (v4.19) =================
+     Every photo strip you save, share or print is kept here too — automatically, on this device only.
+     One picture per memory: the strip exactly as it was saved (an Animated video keeps its still picture),
+     as a high-quality JPEG, plus a small square thumbnail (the top of the strip) for the album's grid.
+     The same picture saved twice (DOWNLOAD, then SHARE) is one memory. It lives in its own database — the
+     frame, sticker and auto-save databases are never touched. Up to ALBUM_MAX memories: a full album says
+     so, it never deletes anything by itself. DELETE moves a memory to "Recently deleted" (UNDO right away),
+     where it waits 30 days (checked while the site is open) or until you empty the trash.
+     BACKUP ALBUM = one .zip file with every picture (it opens in any gallery / Files app) + album.json;
+     RESTORE reads such a file back: memories already here are skipped, every picture is checked first. */
+  var ALBUM_MAX = 200, ALBUM_TRASH_DAYS = 30, DAY_MS = 86400000, ALBUM_THUMB = 240;
+  var ALBUM_KIND = 'our-little-photo-booth/album';
+  var MAX_ALBUM_PIC = 15*1024*1024;   // one picture read back from a backup
+  var ALBUM_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var ALBUM_DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  // list: every memory, newest first (the trash too) · keptBase: the result page's picture once it's in the album
+  // keeping: the picture being put in right now · items / view: the memories the big view steps through
+  var album = {list:null, ready:null, keptBase:null, keeping:null, fullFor:null, warned:false,
+               items:[], view:0, swipe:null, swiped:0, busy:false, urls:{grid:[], trash:[], view:[]}};
+
+  /* ---- storage ---- */
+  var albumDbPromise = null;
+  function albumDb(){
+    if(albumDbPromise) return albumDbPromise;
+    albumDbPromise = new Promise(function(resolve){
+      var timer = setTimeout(function(){ resolve(null); }, 3000);   // a stuck database must never hang the page
+      try{
+        var req = indexedDB.open('our-little-booth-album', 1);
+        req.onupgradeneeded = function(){ req.result.createObjectStore('memories', {keyPath:'id'}); };
+        req.onsuccess = function(){ clearTimeout(timer); resolve(req.result); };
+        req.onerror = req.onblocked = function(){ clearTimeout(timer); resolve(null); };
+      }catch(e){ clearTimeout(timer); resolve(null); }
+    });
+    return albumDbPromise;
+  }
+  // resolves with the request's result; rejects when it can't be written (e.g. the device is full)
+  function albumRun(mode, work){
+    return albumDb().then(function(db){
+      if(!db) throw new Error('nodb');
+      return new Promise(function(resolve, reject){
+        try{
+          var tx = db.transaction('memories', mode), req = work(tx.objectStore('memories'));
+          tx.oncomplete = function(){ resolve(req ? req.result : null); };
+          tx.onerror = tx.onabort = function(){ reject(tx.error || new Error('tx')); };
+        }catch(e){ reject(e); }
+      });
+    });
+  }
+  function albumPut(m){ return albumRun('readwrite', function(s){ return s.put(m); }); }
+  function okMemory(m){
+    return !!(m && typeof m.id === 'string' && typeof m.created === 'number' && m.pic instanceof Blob && m.thumb instanceof Blob);
+  }
+  function sortAlbum(){ album.list.sort(function(a, b){ return b.created - a.created; }); }
+  function activeMemories(){ return (album.list || []).filter(function(m){ return !m.deleted; }); }
+  function trashMemories(){ return (album.list || []).filter(function(m){ return !!m.deleted; }).sort(function(a, b){ return b.deleted - a.deleted; }); }
+  function indexOfId(list, id){
+    for(var i = 0; i < list.length; i++) if(list[i].id === id) return i;
+    return -1;
+  }
+  // (read again whenever the album opens: another tab may have added to it)
+  function loadAlbum(){
+    album.ready = albumRun('readonly', function(s){ return s.getAll(); }).then(function(recs){
+      album.list = (recs || []).filter(okMemory);
+      sortAlbum();
+      purgeTrash();
+      syncAlbumButton();
+      return album.list;
+    }, function(){
+      if(!album.list) album.list = [];   // private windows may block it: then there's simply no album
+      syncAlbumButton();
+      return album.list;
+    });
+    return album.ready;
+  }
+  // memories in the trash for 30 days are deleted for good (only possible while the site is open)
+  function purgeTrash(){
+    var now = Date.now(), old = (album.list || []).filter(function(m){ return m.deleted && now - m.deleted >= ALBUM_TRASH_DAYS*DAY_MS; });
+    if(!old.length) return;
+    album.list = album.list.filter(function(m){ return old.indexOf(m) === -1; });
+    albumRun('readwrite', function(s){ old.forEach(function(m){ s.delete(m.id); }); return null; }).catch(function(){});
+  }
+  function syncAlbumButton(){
+    var n = activeMemories().length;
+    $('albumBtn').hidden = !(album.list && album.list.length);   // (the trash alone still needs a way in)
+    $('albumCount').textContent = n;
+    $('albumBtn').setAttribute('aria-label', 'My album, ' + n + (n === 1 ? ' memory' : ' memories'));
+  }
+  function syncAlbumPill(){
+    // (called by renderResult, which may run before this section has set `album` up)
+    $('albumPill').hidden = !(album && album.keptBase && album.keptBase === base);
+  }
+
+  /* ---- small helpers ---- */
+  function blobBytes(blob){
+    if(blob.arrayBuffer) return blob.arrayBuffer().then(function(b){ return new Uint8Array(b); });
+    return new Promise(function(resolve, reject){
+      var r = new FileReader();
+      r.onload = function(){ resolve(new Uint8Array(r.result)); };
+      r.onerror = function(){ reject(r.error); };
+      r.readAsArrayBuffer(blob);
+    });
+  }
+  function blobText(blob){
+    if(blob.text) return blob.text();
+    return new Promise(function(resolve, reject){
+      var r = new FileReader();
+      r.onload = function(){ resolve(r.result); };
+      r.onerror = function(){ reject(r.error); };
+      r.readAsText(blob);
+    });
+  }
+  // a fingerprint of a picture's bytes: the same strip saved again gives the same JPEG, so it isn't kept twice
+  function albumSig(bytes){
+    var h = 0x811c9dc5;
+    for(var i = 0; i < bytes.length; i++){ h ^= bytes[i]; h = Math.imul(h, 0x01000193); }
+    return (h >>> 0).toString(36) + '-' + bytes.length.toString(36);
+  }
+  function canvasJpeg(c, q){
+    return new Promise(function(resolve, reject){
+      c.toBlob(function(b){ b && b.size ? resolve(b) : reject(new Error('blob')); }, 'image/jpeg', q);
+    });
+  }
+  // the grid's little square: a strip's top (title + first photo), a wide grid's left side (its first photo)
+  function albumThumbCanvas(src, w, h){
+    var s = Math.min(w, h), t = document.createElement('canvas');
+    t.width = t.height = ALBUM_THUMB;
+    var ctx = t.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, ALBUM_THUMB, ALBUM_THUMB);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(src, 0, 0, s, s, 0, 0, ALBUM_THUMB, ALBUM_THUMB);
+    return t;
+  }
+  // the strip on the result page as the album keeps it: the "resting" pose, exactly like the saved photo
+  function albumPictures(){
+    var c = document.createElement('canvas');
+    drawFrame(c, 0);
+    var ctx = c.getContext('2d');
+    ctx.globalCompositeOperation = 'destination-over';   // anything see-through turns white (a JPEG would make it black)
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.globalCompositeOperation = 'source-over';
+    var t = albumThumbCanvas(c, c.width, c.height), w = c.width, h = c.height;
+    return Promise.all([canvasJpeg(c, 0.92), canvasJpeg(t, 0.82)]).then(function(b){
+      c.width = c.height = 0; t.width = t.height = 0;   // free the big picture right away
+      return {pic:b[0], thumb:b[1], w:w, h:h};
+    });
+  }
+  function albumDay(t){ var d = new Date(t); return d.getDate() + ' ' + ALBUM_MONTHS[d.getMonth()] + ' ' + d.getFullYear(); }
+  function albumWhen(t){
+    var d = new Date(t), p = function(v){ return ('0' + v).slice(-2); };
+    return ALBUM_DAYS[d.getDay()] + ', ' + albumDay(t) + ' · ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function albumStamp(t){
+    var d = new Date(t), p = function(v){ return ('0' + v).slice(-2); };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '_' + p(d.getHours()) + '-' + p(d.getMinutes()) + '-' + p(d.getSeconds());
+  }
+  function albumMB(bytes){
+    var mb = bytes / 1048576;
+    return (mb < 10 ? Math.max(0.1, Math.round(mb * 10) / 10) : Math.round(mb)) + ' MB';
+  }
+  // the pictures on screen use temporary addresses; each group is freed when its page closes or redraws
+  function albumUrl(kind, blob){ var u = URL.createObjectURL(blob); album.urls[kind].push(u); return u; }
+  function freeAlbumUrls(kind){ album.urls[kind].forEach(function(u){ URL.revokeObjectURL(u); }); album.urls[kind] = []; }
+  // (v4.18.1 rule) a new file name every time — Android's Chrome otherwise asks "download again?"
+  function albumFileName(){ return 'our-little-photo-booth-' + fileStamp() + '.jpg'; }
+
+  /* ---- keeping a strip (called by DOWNLOAD / SAVE / SHARE and the print button) ---- */
+  function albumKeep(how){
+    if(!album || !base || !state.shots.length) return;
+    var forBase = base;
+    if(album.keptBase === forBase || (album.keeping && album.keeping.base === forBase)) return;   // this picture: already done
+    var job = {base:forBase, how:how, at:Date.now()};
+    album.keeping = job;
+    var love = state.shots.some(function(c){ return c.dataset && (c.dataset.from === 'you' || c.dataset.from === 'duo'); });
+    var frame = String(forBase.t && forBase.t.name || 'Photo strip').slice(0, 40), n = state.shots.length;
+    // a moment later: the download / share menu has already started (phones allow that menu only right after a tap)
+    setTimeout(function(){
+      if(base !== forBase){ if(album.keeping === job) album.keeping = null; return; }   // the design changed meanwhile
+      var made;
+      try{ made = albumPictures(); }catch(e){ made = Promise.reject(e); }
+      Promise.all([made, album.ready || loadAlbum()]).then(function(r){
+        var p = r[0];
+        return blobBytes(p.pic).then(function(bytes){ p.sig = albumSig(bytes); return p; });
+      }).then(function(p){
+        var same = album.list.filter(function(m){ return m.sig === p.sig; })[0];
+        if(same && !same.deleted) return 'had';
+        if(activeMemories().length >= ALBUM_MAX) return 'full';
+        if(same){   // you deleted it, then saved it again: it comes back
+          var was = same.deleted;
+          same.deleted = 0;
+          return albumPut(same).then(function(){ return 'back'; }, function(err){ same.deleted = was; throw err; });
+        }
+        var m = {id:cfUid(), created:Date.now(), pic:p.pic, thumb:p.thumb, w:p.w, h:p.h, frame:frame, n:n, love:love, sig:p.sig, deleted:0};
+        return albumPut(m).then(function(){
+          if(indexOfId(album.list, m.id) === -1) album.list.push(m);
+          sortAlbum();
+          return 'added';
+        });
+      }).then(function(res){
+        if(album.keeping === job) album.keeping = null;
+        if(res === 'full'){ albumFull(forBase); return; }
+        album.keptBase = forBase;
+        syncAlbumPill();
+        syncAlbumButton();
+        if(res === 'had') return;
+        keepStorage();   // ask the browser not to clear it when the phone runs low on space
+        albumNote(job, res === 'back' ? 'Back in your album ♡' : job.how === 'download' ? 'Saved ♡ · kept in your album' : 'Kept in your album ♡', true);
+      }).catch(function(err){
+        if(album.keeping === job) album.keeping = null;
+        if(err && err.message === 'nodb') return;   // this browser window has no storage (some private windows)
+        if(album.warned) return;
+        album.warned = true;
+        albumNote(job, "Couldn't keep this one in your album on this device. Your photo itself is fine ♡", false);
+      });
+    }, 60);
+  }
+  // a little note after your tap — unless something more important was shown since (e.g. "Tap SHARE again ♡")
+  function albumNote(job, msg, withOpen){
+    var last = showToast.last;
+    if(last && last.at >= job.at && last.msg !== 'Saved to your device ♡') return;
+    if(withOpen) showToast(msg, {label:'OPEN', fn:openAlbum});
+    else showToast(msg);
+  }
+  function albumFull(forBase){
+    if(album.fullFor === forBase) return;   // asked once per picture
+    album.fullFor = forBase;
+    confirmBox({
+      title: 'Your album is full ♡',
+      text: 'It holds ' + ALBUM_MAX + ' memories, so this one wasn\'t added. Your photo itself is fine. Delete a few old memories (or back them up first) to keep adding new ones.',
+      yes: 'OPEN MY ALBUM', no: 'NOT NOW'
+    }).then(function(yes){ if(yes === true) openAlbum(); });
+  }
+
+  /* ---- the album page ---- */
+  function albumOpen(){ return !$('albumView').hidden || !$('albumTrash').hidden || !$('albumViewer').hidden; }
+  function openAlbum(){
+    loadAlbum().then(function(){
+      closePrintSheet();
+      closeHoldSheet();
+      var first = $('albumView').hidden;
+      $('albumView').hidden = false;
+      if(first) $('albumView').scrollTop = 0;
+      document.body.style.overflow = 'hidden';
+      renderAlbum();
+      if(first) setTimeout(function(){ if(!$('albumView').hidden) $('albumClose').focus(); }, 30);
+    });
+  }
+  function closeAlbum(){
+    if($('albumView').hidden) return;
+    closeViewer();
+    closeTrash();
+    $('albumView').hidden = true;
+    document.body.style.overflow = '';
+    freeAlbumUrls('grid');
+    $('albumList').textContent = '';
+  }
+  // everything of the album closes (a new step, a love link's card)
+  function closeAlbumAll(){
+    if(!album) return;   // (called while the page is still starting)
+    if(!$('holdModal').hidden && $('holdModal').classList.contains('over-album')) closeHoldSheet();
+    closeAlbum();
+  }
+  // back button / Escape: the top layer closes
+  function albumBack(){
+    if(!$('confirmModal').hidden){ closeConfirm(null); return; }
+    if(!$('holdModal').hidden){ closeHoldSheet(); return; }
+    if(!$('albumViewer').hidden){ closeViewer(); return; }
+    if(!$('albumTrash').hidden){ closeTrash(); return; }
+    closeAlbum();
+  }
+  function renderAlbum(){
+    freeAlbumUrls('grid');
+    var box = $('albumList'), act = activeMemories(), trash = trashMemories();
+    box.textContent = '';
+    var month = '', grid = null;
+    act.forEach(function(m){
+      var d = new Date(m.created), key = d.getFullYear() + '-' + d.getMonth();
+      if(key !== month){   // newest first, one heading per month
+        month = key;
+        var h = document.createElement('h4');
+        h.className = 'al-month';
+        h.textContent = ALBUM_MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+        grid = document.createElement('div');
+        grid.className = 'al-grid';
+        box.appendChild(h);
+        box.appendChild(grid);
+      }
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'al-tile';
+      b.setAttribute('aria-label', 'Memory from ' + albumDay(m.created) + (m.love ? ', with your love' : ''));
+      var img = document.createElement('img');
+      img.alt = ''; img.decoding = 'async'; img.loading = 'lazy';   // (only the squares near the screen are decoded)
+      img.onerror = function(){ img.style.visibility = 'hidden'; };
+      img.src = albumUrl('grid', m.thumb);
+      b.appendChild(img);
+      if(m.love){
+        var s = document.createElement('span');
+        s.className = 'al-love'; s.textContent = '♡'; s.setAttribute('aria-hidden', 'true');
+        b.appendChild(s);
+      }
+      b.addEventListener('click', function(){ openViewer(m.id); });
+      grid.appendChild(b);
+    });
+    $('albumEmpty').hidden = act.length > 0;
+    var bytes = 0;
+    album.list.forEach(function(m){ bytes += (m.pic.size || 0) + (m.thumb.size || 0); });
+    $('albumInfo').textContent = act.length
+      ? act.length + (act.length === 1 ? ' memory' : ' memories') + ' · ' + albumMB(bytes) + ' · only on this device'
+      : (trash.length ? 'Your memories are in Recently deleted ♡' : '');
+    $('albumInfo').hidden = !$('albumInfo').textContent;
+    $('albumBackup').disabled = !act.length || album.busy;
+    $('albumRestore').disabled = album.busy;
+    $('albumTrashBtn').hidden = !trash.length;
+    $('albumTrashBtn').textContent = '🗑 Recently deleted (' + trash.length + ')';
+    syncAlbumButton();
+  }
+  // after a change: every open album page shows it (the big view stays on the memory you were looking at)
+  function afterAlbumChange(preferId){
+    syncAlbumButton();
+    if(!$('albumView').hidden) renderAlbum();
+    if(!$('albumTrash').hidden) renderTrash();
+    if($('albumViewer').hidden) return;
+    var cur = album.items[album.view];
+    album.items = activeMemories();
+    if(!album.items.length){ closeViewer(); return; }
+    var i = preferId ? indexOfId(album.items, preferId) : -1;
+    if(i < 0) i = cur ? indexOfId(album.items, cur.id) : -1;
+    if(i < 0) i = Math.min(album.view, album.items.length - 1);   // it was just deleted: the next one takes its place
+    album.view = i;
+    showMemory();
+  }
+
+  /* ---- one memory, big ---- */
+  function openViewer(id){
+    album.items = activeMemories();
+    album.view = Math.max(0, indexOfId(album.items, id));
+    $('albumViewer').hidden = false;
+    showMemory();
+    setTimeout(function(){ if(!$('albumViewer').hidden) $('alvClose').focus(); }, 30);
+  }
+  function closeViewer(){
+    if($('albumViewer').hidden) return;
+    $('albumViewer').hidden = true;
+    $('alvImg').removeAttribute('src');
+    freeAlbumUrls('view');
+  }
+  function showMemory(){
+    var m = album.items[album.view];
+    if(!m){ closeViewer(); return; }
+    freeAlbumUrls('view');
+    $('alvStage').parentNode.classList.remove('zoom');
+    $('alvStage').scrollTop = 0;
+    var img = $('alvImg');
+    img.style.visibility = '';
+    img.src = albumUrl('view', m.pic);
+    img.alt = 'Photo strip from ' + albumDay(m.created);
+    $('alvPos').textContent = (album.view + 1) + ' of ' + album.items.length;
+    $('alvWhen').textContent = albumWhen(m.created);
+    var n = m.n > 0 ? m.n : 1, what = $('alvWhat');
+    what.textContent = (m.frame || 'Photo strip') + ' · ' + n + (n === 1 ? ' photo' : ' photos');
+    if(m.love){
+      what.appendChild(document.createTextNode(' · '));
+      var s = document.createElement('span');
+      s.className = 'alv-love'; s.textContent = '♡ with your love';
+      what.appendChild(s);
+    }
+    $('alvPrev').classList.toggle('off', album.view <= 0);
+    $('alvNext').classList.toggle('off', album.view >= album.items.length - 1);
+  }
+  function stepMemory(d){
+    var i = album.view + d;
+    if(i < 0 || i >= album.items.length) return;
+    album.view = i;
+    showMemory();
+  }
+  function trashMemory(m){
+    var when = Date.now();
+    m.deleted = when;
+    albumPut(m).then(function(){
+      afterAlbumChange();
+      showToast('Moved to Recently deleted', {label:'UNDO', fn:function(){
+        if(m.deleted !== when) return;   // (already restored or gone)
+        m.deleted = 0;
+        albumPut(m).then(function(){ afterAlbumChange(m.id); }, function(){
+          m.deleted = when;
+          showToast("Couldn't bring it back. It's in Recently deleted ♡");
+        });
+      }});
+    }, function(){
+      m.deleted = 0;
+      showToast("Couldn't delete it. Please try again ♡");
+    });
+  }
+  // swipe sideways for the next / previous memory; tap the picture for its full size (scroll to see it all)
+  $('alvStage').addEventListener('pointerdown', function(e){ album.swipe = {x:e.clientX, y:e.clientY, id:e.pointerId}; });
+  $('alvStage').addEventListener('pointercancel', function(){ album.swipe = null; });
+  $('alvStage').addEventListener('pointerup', function(e){
+    var s = album.swipe;
+    album.swipe = null;
+    if(!s || s.id !== e.pointerId) return;
+    var dx = e.clientX - s.x, dy = e.clientY - s.y;
+    if(Math.abs(dx) > 50 && Math.abs(dx) > 1.5 * Math.abs(dy)){
+      album.swiped = Date.now();   // (the click that follows a swipe isn't a tap)
+      stepMemory(dx < 0 ? 1 : -1);
+    }
+  });
+  $('alvImg').draggable = false;
+  $('alvImg').addEventListener('click', function(){
+    if(Date.now() - album.swiped < 400) return;
+    $('alvStage').parentNode.classList.toggle('zoom');
+    $('alvStage').scrollTop = 0;
+  });
+  document.addEventListener('keydown', function(e){
+    if($('albumViewer').hidden || topPopup() !== $('albumViewer')) return;
+    if(e.key === 'ArrowLeft'){ e.preventDefault(); stepMemory(-1); }
+    else if(e.key === 'ArrowRight'){ e.preventDefault(); stepMemory(1); }
+  });
+  $('alvSave').addEventListener('click', function(){
+    var m = album.items[album.view];
+    if(m) deliver(m.pic, albumFileName(), SAVE_VIA_SHARE ? 'save' : 'download', false, true);
+  });
+  $('alvShare').addEventListener('click', function(){
+    var m = album.items[album.view];
+    if(m) deliver(m.pic, albumFileName(), 'share', false, true);
+  });
+  $('alvDelete').addEventListener('click', function(){
+    var m = album.items[album.view];
+    if(m) trashMemory(m);
+  });
+
+  /* ---- Recently deleted ---- */
+  function openTrash(){
+    $('albumTrash').hidden = false;
+    $('albumTrash').scrollTop = 0;
+    renderTrash();
+    setTimeout(function(){ if(!$('albumTrash').hidden) $('albumTrashClose').focus(); }, 30);
+  }
+  function closeTrash(){
+    if($('albumTrash').hidden) return;
+    $('albumTrash').hidden = true;
+    freeAlbumUrls('trash');
+    $('albumTrashList').textContent = '';
+  }
+  function albumAgo(deleted, now){
+    var days = Math.max(0, Math.floor((now - deleted) / DAY_MS)), left = ALBUM_TRASH_DAYS - days;
+    var ago = days === 0 ? 'deleted today' : days === 1 ? 'deleted yesterday' : 'deleted ' + days + ' days ago';
+    return ago + ' · ' + (left <= 1 ? 'last day' : left + ' days left');
+  }
+  function renderTrash(){
+    freeAlbumUrls('trash');
+    var box = $('albumTrashList'), list = trashMemories(), now = Date.now();
+    box.textContent = '';
+    list.forEach(function(m){
+      var day = albumDay(m.created);
+      var row = document.createElement('div');
+      row.className = 'al-trow';
+      var img = document.createElement('img');
+      img.alt = ''; img.decoding = 'async';
+      img.onerror = function(){ img.style.visibility = 'hidden'; };
+      img.src = albumUrl('trash', m.thumb);
+      var tt = document.createElement('div');
+      tt.className = 'al-tt';
+      var b = document.createElement('b');
+      b.textContent = day;
+      tt.appendChild(b);
+      tt.appendChild(document.createElement('br'));
+      tt.appendChild(document.createTextNode(albumAgo(m.deleted, now)));
+      var rs = document.createElement('button');
+      rs.type = 'button'; rs.className = 'al-mini'; rs.textContent = 'RESTORE';
+      rs.setAttribute('aria-label', 'Restore the memory from ' + day);
+      rs.addEventListener('click', function(){ restoreFromTrash(m); });
+      var x = document.createElement('button');
+      x.type = 'button'; x.className = 'al-xmini'; x.textContent = '✕';
+      x.setAttribute('aria-label', 'Delete the memory from ' + day + ' forever');
+      x.addEventListener('click', function(){ deleteForever([m]); });
+      row.appendChild(img); row.appendChild(tt); row.appendChild(rs); row.appendChild(x);
+      box.appendChild(row);
+    });
+    $('albumTrashEmpty').hidden = list.length > 0;
+    $('albumEmptyTrash').disabled = !list.length;
+  }
+  function restoreFromTrash(m){
+    if(!m.deleted) return;
+    if(activeMemories().length >= ALBUM_MAX){ showToast('Your album is full (' + ALBUM_MAX + '). Delete one first ♡'); return; }
+    var was = m.deleted;
+    m.deleted = 0;
+    albumPut(m).then(function(){
+      afterAlbumChange();
+      showToast('Back in your album ♡');
+    }, function(){
+      m.deleted = was;
+      showToast("Couldn't restore it. Please try again ♡");
+    });
+  }
+  function deleteForever(list){
+    var n = list.length;
+    confirmBox({
+      title: n === 1 ? 'Delete this memory forever?' : 'Delete ' + n + ' memories forever?',
+      text: (n === 1 ? 'It disappears' : 'They disappear') + " from this device. This can't be undone.",
+      yes: 'DELETE FOREVER', no: 'KEEP'
+    }).then(function(yes){
+      if(yes !== true) return;
+      var ids = list.map(function(m){ return m.id; });
+      albumRun('readwrite', function(s){ ids.forEach(function(id){ s.delete(id); }); return null; }).then(function(){
+        album.list = album.list.filter(function(m){ return ids.indexOf(m.id) === -1; });
+        afterAlbumChange();
+        showToast(n === 1 ? 'Deleted forever' : n + ' memories deleted forever');
+      }, function(){ showToast("Couldn't delete them. Please try again ♡"); });
+    });
+  }
+
+  /* ---- backup: one .zip file ----
+     A plain "stored" zip (no compression — JPEGs don't shrink anyway), so it needs no extra library and
+     every phone and computer can open it. Our own reader below only reads such files back. */
+  var CRC_TABLE = null;
+  function crc32(bytes){
+    if(!CRC_TABLE){
+      CRC_TABLE = new Int32Array(256);
+      for(var n = 0; n < 256; n++){
+        var c = n;
+        for(var k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+        CRC_TABLE[n] = c;
+      }
+    }
+    var crc = -1;
+    for(var i = 0; i < bytes.length; i++) crc = (crc >>> 8) ^ CRC_TABLE[(crc ^ bytes[i]) & 0xFF];
+    return (crc ^ -1) >>> 0;
+  }
+  function dosTime(t){
+    var d = new Date(t), y = Math.max(1980, d.getFullYear());
+    return {time:(d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1),
+            date:((y - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate()};
+  }
+  function asciiBytes(s){
+    var out = new Uint8Array(s.length);
+    for(var i = 0; i < s.length; i++) out[i] = s.charCodeAt(i) & 0x7F;
+    return out;
+  }
+  // files: [{name (plain letters only), data: Blob, crc, size, time}]
+  function makeZip(files){
+    var parts = [], central = [], offset = 0, cdSize = 0;
+    files.forEach(function(f){
+      var name = asciiBytes(f.name), dos = dosTime(f.time);
+      var h = new DataView(new ArrayBuffer(30));
+      h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true);
+      h.setUint16(10, dos.time, true); h.setUint16(12, dos.date, true);
+      h.setUint32(14, f.crc, true); h.setUint32(18, f.size, true); h.setUint32(22, f.size, true);
+      h.setUint16(26, name.length, true);
+      parts.push(h.buffer, name, f.data);
+      var c = new DataView(new ArrayBuffer(46));
+      c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true);
+      c.setUint16(12, dos.time, true); c.setUint16(14, dos.date, true);
+      c.setUint32(16, f.crc, true); c.setUint32(20, f.size, true); c.setUint32(24, f.size, true);
+      c.setUint16(28, name.length, true); c.setUint32(42, offset, true);
+      central.push(c.buffer, name);
+      cdSize += 46 + name.length;
+      offset += 30 + name.length + f.size;
+    });
+    var e = new DataView(new ArrayBuffer(22));
+    e.setUint32(0, 0x06054b50, true);
+    e.setUint16(8, files.length, true); e.setUint16(10, files.length, true);
+    e.setUint32(12, cdSize, true); e.setUint32(16, offset, true);
+    return new Blob(parts.concat(central, [e.buffer]), {type:'application/zip'});
+  }
+  // name → {method, csize, usize, off} from the zip's table of contents (read in pieces, never the whole file)
+  function readZip(file){
+    var tailLen = Math.min(file.size, 22 + 65535);
+    return blobBytes(file.slice(file.size - tailLen)).then(function(tail){
+      var v = new DataView(tail.buffer, tail.byteOffset, tail.byteLength), at = -1;
+      for(var i = tail.length - 22; i >= 0; i--){ if(v.getUint32(i, true) === 0x06054b50){ at = i; break; } }
+      if(at < 0) throw new Error('notours');
+      var count = v.getUint16(at + 10, true), cdSize = v.getUint32(at + 12, true), cdOff = v.getUint32(at + 16, true);
+      if(cdOff + cdSize > file.size || count > 5000) throw new Error('notours');
+      return blobBytes(file.slice(cdOff, cdOff + cdSize)).then(function(cd){
+        var d = new DataView(cd.buffer, cd.byteOffset, cd.byteLength), p = 0, out = Object.create(null);
+        for(var k = 0; k < count; k++){
+          if(p + 46 > cd.length || d.getUint32(p, true) !== 0x02014b50) throw new Error('notours');
+          var nlen = d.getUint16(p + 28, true), xlen = d.getUint16(p + 30, true), clen = d.getUint16(p + 32, true);
+          var name = String.fromCharCode.apply(null, cd.subarray(p + 46, p + 46 + nlen));
+          out[name] = {method:d.getUint16(p + 10, true), csize:d.getUint32(p + 20, true), usize:d.getUint32(p + 24, true), off:d.getUint32(p + 42, true)};
+          p += 46 + nlen + xlen + clen;
+        }
+        return out;
+      });
+    });
+  }
+  function zipEntryBlob(file, e){
+    // (a file's own header may have other extra bytes than the table of contents says)
+    return blobBytes(file.slice(e.off, e.off + 30)).then(function(h){
+      var v = new DataView(h.buffer, h.byteOffset, h.byteLength);
+      if(h.length < 30 || v.getUint32(0, true) !== 0x04034b50) throw new Error('notours');
+      if(e.method !== 0 || e.csize !== e.usize) throw new Error('packed');   // re-zipped with compression
+      var start = e.off + 30 + v.getUint16(26, true) + v.getUint16(28, true);
+      if(start + e.csize > file.size) throw new Error('notours');
+      return file.slice(start, start + e.csize);
+    });
+  }
+  $('albumBackup').addEventListener('click', function(){
+    var btn = this, list = activeMemories().slice().sort(function(a, b){ return a.created - b.created; });
+    if(album.busy) return;
+    if(!list.length){ showToast('Nothing to back up yet ♡'); return; }
+    album.busy = true;
+    btn.disabled = true; $('albumRestore').disabled = true;
+    btn.textContent = 'MAKING YOUR BACKUP…';
+    var files = [], used = {}, meta = [];
+    list.reduce(function(chain, m){   // one picture at a time (old phones)
+      return chain.then(function(){
+        return blobBytes(m.pic).then(function(bytes){
+          var name = 'our-memory-' + albumStamp(m.created), k = 2;
+          while(used[name]) name = 'our-memory-' + albumStamp(m.created) + '-' + (k++);
+          used[name] = true;
+          name += '.jpg';
+          files.push({name:name, data:m.pic, crc:crc32(bytes), size:bytes.length, time:m.created});
+          meta.push({file:name, id:m.id, created:m.created, frame:m.frame, n:m.n, love:!!m.love, w:m.w, h:m.h});
+        });
+      });
+    }, Promise.resolve()).then(function(){
+      var json = new TextEncoder().encode(JSON.stringify({kind:ALBUM_KIND, v:1, ver:APP_VERSION, saved:new Date().toISOString(), memories:meta}));
+      files.push({name:'album.json', data:new Blob([json]), crc:crc32(json), size:json.length, time:Date.now()});
+      // a download on every device (on iPhones it goes to the Files app — the right place for a backup)
+      saveBlob(makeZip(files), 'our-little-album-' + fileStamp() + '.zip');
+    }).catch(function(){
+      showToast("Couldn't make the backup. Please try again ♡");
+    }).then(function(){
+      album.busy = false;
+      btn.textContent = '⬇ BACKUP ALBUM';
+      if(!$('albumView').hidden) renderAlbum(); else { btn.disabled = false; $('albumRestore').disabled = false; }
+    });
+  });
+  // one memory from a backup: its picture must really be a JPEG we can open; the rest is checked like anything we read
+  function restoreMemory(file, entries, x, out){
+    var name = x && typeof x.file === 'string' && /^[A-Za-z0-9._-]{1,100}$/.test(x.file) ? x.file : '';
+    var e = name ? entries[name] : null;
+    var id = x && typeof x.id === 'string' && /^[a-z0-9]{4,32}$/.test(x.id) ? x.id : cfUid();
+    if(indexOfId(album.list, id) !== -1){ out.had++; return; }
+    if(!e || e.usize > MAX_ALBUM_PIC){ out.bad++; return; }
+    if(activeMemories().length >= ALBUM_MAX){ out.full = true; return; }
+    return zipEntryBlob(file, e).then(blobBytes).then(function(bytes){
+      if(bytes.length < 4 || bytes[0] !== 0xFF || bytes[1] !== 0xD8 || bytes[2] !== 0xFF) throw new Error('pic');
+      var sig = albumSig(bytes);
+      if(album.list.some(function(m){ return m.sig === sig; })){ out.had++; return; }
+      var pic = new Blob([bytes], {type:'image/jpeg'});   // our own copy (not a piece of the picked file)
+      return loadImage(pic).then(function(img){
+        var w = img.width, h = img.height;
+        if(!(w >= 16 && h >= 16 && w <= 8000 && h <= 8000)){ freeImage(img); throw new Error('pic'); }
+        var t = albumThumbCanvas(img, w, h);
+        freeImage(img);
+        return canvasJpeg(t, 0.82).then(function(thumb){
+          t.width = t.height = 0;
+          var now = Date.now();
+          var m = {id:id, pic:pic, thumb:thumb, w:w, h:h, sig:sig, deleted:0,
+                   created: typeof x.created === 'number' && isFinite(x.created) && x.created > 0 && x.created < now + DAY_MS ? x.created : now,
+                   frame: (typeof x.frame === 'string' ? x.frame.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 40) : '') || 'Photo strip',
+                   n: typeof x.n === 'number' && x.n === Math.floor(x.n) && x.n >= 1 && x.n <= 8 ? x.n : 1,
+                   love: x.love === true};
+          return albumPut(m).then(function(){ album.list.push(m); sortAlbum(); out.added++; });
+        });
+      });
+    }).catch(function(){ out.bad++; });
+  }
+  $('albumRestore').addEventListener('click', function(){
+    if(album.busy) return;
+    $('albumImportInput').value = '';
+    $('albumImportInput').click();
+  });
+  $('albumImportInput').addEventListener('change', function(){
+    var file = this.files && this.files[0];
+    this.value = '';
+    if(!file || album.busy) return;
+    album.busy = true;
+    var btn = $('albumRestore');
+    btn.disabled = true; $('albumBackup').disabled = true;
+    btn.textContent = 'RESTORING…';
+    var out = {added:0, had:0, bad:0, full:false};
+    readZip(file).then(function(entries){
+      var meta = entries['album.json'];
+      if(!meta || meta.usize > 5*1024*1024) throw new Error('notours');
+      return zipEntryBlob(file, meta).then(blobText).then(function(text){
+        var data;
+        try{ data = JSON.parse(text); }catch(e){ data = null; }
+        if(!data || data.kind !== ALBUM_KIND || !Array.isArray(data.memories)) throw new Error('notours');
+        var list = data.memories.slice(0, 1000), done = 0;
+        return (album.ready || loadAlbum()).then(function(){
+          return list.reduce(function(chain, x){   // one at a time (old phones)
+            return chain.then(function(){
+              btn.textContent = 'RESTORING… ' + (++done) + ' / ' + list.length;
+              return restoreMemory(file, entries, x, out);
+            });
+          }, Promise.resolve());
+        });
+      });
+    }).then(function(){
+      if(out.added) keepStorage();
+      var msg = out.added ? 'Restored ' + out.added + (out.added === 1 ? ' memory' : ' memories') + ' ♡' : 'Nothing new to restore ♡';
+      if(out.had) msg += ' (' + out.had + ' already here)';
+      if(out.bad) msg += ' · ' + out.bad + " couldn't be opened";
+      if(out.full) msg += ' · your album is full (' + ALBUM_MAX + ')';
+      showToast(msg);
+    }, function(err){
+      var why = err && err.message;
+      showToast(why === 'packed' ? 'That zip was changed. Please use the original backup file ♡'
+              : why === 'notours' ? "That isn't an album backup from Our Little Photo Booth ♡"
+              : "Couldn't read that file. Please try again ♡");
+    }).then(function(){
+      album.busy = false;
+      btn.textContent = 'RESTORE';
+      if(!$('albumView').hidden) afterAlbumChange(); else { btn.disabled = false; $('albumBackup').disabled = false; syncAlbumButton(); }
+    });
+  });
+
+  /* ---- start ---- */
+  if(IS_IOS) $('albumNote').textContent += " On iPhone, Safari may clear it if the site isn't opened for 7 days. Make a backup now and then, or add the site to your Home Screen.";
+  $('alvSave').textContent = SAVE_VIA_SHARE ? 'SAVE TO PHOTOS ♡' : 'SAVE AGAIN ♡';
+  if(SAVE_VIA_SHARE){
+    $('alvHint').textContent = 'In the menu, tap "' + (MENU_ID ? 'Simpan Gambar' : 'Save Image') + '" ♡';
+    $('alvHint').hidden = false;
+  }
+  $('albumBtn').addEventListener('click', openAlbum);
+  $('albumPill').addEventListener('click', openAlbum);
+  $('albumClose').addEventListener('click', closeAlbum);
+  $('albumTrashBtn').addEventListener('click', openTrash);
+  $('albumTrashClose').addEventListener('click', closeTrash);
+  $('albumEmptyTrash').addEventListener('click', function(){ var l = trashMemories(); if(l.length) deleteForever(l); });
+  $('alvClose').addEventListener('click', closeViewer);
+  $('alvPrev').addEventListener('click', function(){ stepMemory(-1); });
+  $('alvNext').addEventListener('click', function(){ stepMemory(1); });
+  loadAlbum();   // (for the home page's MY ALBUM button)
 
   /* init */
   goToStep('count');   // (on the home page this adds no history entry)
