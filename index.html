@@ -1555,7 +1555,7 @@
       </details>
     </section>
 
-    <footer class="site-footer">♡ Our Booth · free, no login, made for two. <span class="app-version" title="Version of this page. If it looks old, reload">v4.19</span></footer>
+    <footer class="site-footer">♡ Our Booth · free, no login, made for two. <span class="app-version" title="Version of this page. If it looks old, reload">v4.20</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -1929,7 +1929,8 @@
     {id:'mocha', label:'Mocha', hex:'#A47E6B'},
     {id:'cherry', label:'Cherry Red', hex:'#C8102E'},
     {id:'navy', label:'Navy', hex:'#1F2A44'},
-    {id:'midnight', label:'Midnight', hex:'#3B1626'}
+    {id:'midnight', label:'Midnight', hex:'#3B1626'},
+    {id:'black', label:'Black', hex:'#151515'}   // (v4.20) for Booth Noir and Studio Film
   ];
   var FILTERS = [
     {id:'original', label:'Original', css:'none'},
@@ -1961,7 +1962,12 @@
        color   its starting color; `colors` = the ones that suit it (marked ★)
        title   small heading above the photos (hidden with "Show frame title")
        decor   (later stages) a function that draws its illustrations each frame,
-               so they can move and peek over the photo edges */
+               so they can move and peek over the photo edges
+     (v4.20) plain strips may also set (all optional, see PLAIN FRAMES): gap, radius, noBorder, headerH,
+       footBand (a fixed band at the bottom for the frame's own extras), pattern(ctx,W,H,L),
+       headDraw(ctx,W,L), photoUnder / photoOver(ctx,x,y,w,h,i,L), footDraw(ctx,W,y,L,H), ink(L) (text
+       colour), titleFont / textFont / dateStyle {w, px, min, family, title}, footPill(L), hidden (kept for
+       old designs and custom frames, not listed) */
   var FRAME_TABS = [
     {id:'plain', label:'Plain'},
     {id:'illustrated', label:'Illustrated'},
@@ -1969,12 +1975,40 @@
     {id:'moments', label:'Moments'},   // (v4.17) a time of year or a special day; "✨ now" marks the ones in season
     {id:'custom', label:'Custom'}   // your own frames — always shown, so you can make the first one
   ];
+  // (v4.20) the Plain tab in this order; the two film frames side by side. Minimal is hidden (too close to
+  // Classic) but stays for old designs and custom frames built on it. All plain frames are still pictures.
   var TEMPLATES = [
     {id:'classic', tab:'plain', name:'Classic Strip', layout:'strip', color:'pink'},
-    {id:'minimal', tab:'plain', name:'Minimal Strip', layout:'strip', color:'white', thin:true},
-    {id:'grid', tab:'plain', name:'Grid 2×2', layout:'grid', color:'sky'},
+    {id:'minimal', tab:'plain', name:'Minimal Strip', layout:'strip', color:'white', thin:true, hidden:true},
+    {id:'noir', tab:'plain', name:'Booth Noir', layout:'strip', color:'black', colors:['black','navy','midnight'],
+     gap:22, radius:0, noBorder:true, footBand:44, pattern:patternFlat, photoUnder:noirLine, footDraw:noirBrand,
+     dateStyle:{w:'500', px:18, min:14, family:'Poppins, sans-serif'}},
+    {id:'film', tab:'plain', name:'Retro Film', layout:'film', color:'midnight'},
+    {id:'studiofilm', tab:'plain', name:'Studio Film', layout:'strip', color:'black', colors:['black','white','mint','cream'],
+     pad:56, gap:24, radius:0, noBorder:true, pattern:patternFlat, photoOver:studioFilmEdge,
+     dateStyle:{w:'500', px:18, min:14, family:'Poppins, sans-serif'}},
+    {id:'doubleline', tab:'plain', name:'Double Line', layout:'strip', color:'cream', colors:['cream','white','baby','butter'],
+     title:'our little moments', pad:48, gap:24, radius:4, noBorder:true, pattern:patternDoubleLine, ink:inkDoubleLine,
+     titleFont:{w:'italic 600', px:38, min:22, family:"'Playfair Display', serif"},
+     textFont:{w:'italic 600', px:28, min:18, family:"'Playfair Display', serif"},
+     dateStyle:{w:'italic 600', px:22, min:14, family:"'Playfair Display', serif", title:true}},
+    {id:'polka', tab:'plain', name:'Polka Dots', layout:'strip', color:'baby', colors:['baby','mint','sky','lavender'],
+     pad:44, gap:28, radius:12, noBorder:true, pattern:patternPolka, photoUnder:polkaMat, footPill:'rgba(255,255,255,.94)', ink:inkPolka},
+    {id:'checker', tab:'plain', name:'Checker', layout:'strip', color:'lavender', colors:['lavender','mint','butter','cherry'],
+     pad:58, gap:24, radius:10, noBorder:true, pattern:patternChecker, ink:inkChecker},
+    {id:'kraft', tab:'plain', name:'Kraft & Tape', layout:'strip', color:'mocha', colors:['mocha','cream','peach'],
+     pad:52, gap:34, radius:0, noBorder:true, pattern:patternKraft, photoUnder:kraftPrint, photoOver:kraftTape},
+    {id:'ticket', tab:'plain', name:'Ticket', layout:'strip', color:'butter', colors:['butter','cream','peach','cherry'],
+     pad:44, gap:22, radius:8, noBorder:true, footBand:170, pattern:patternTicket, footDraw:ticketStub, ink:inkTicket},
+    {id:'stamp', tab:'plain', name:'Love Stamp', layout:'strip', color:'sky', colors:['sky','mint','baby','butter'],
+     pad:52, gap:24, radius:0, noBorder:true, footBand:124, pattern:patternStamp, photoUnder:stampMat, footDraw:stampPostmark},
+    {id:'receipt', tab:'plain', name:'Receipt', layout:'strip', color:'white', colors:['white','cream','baby','sky'],
+     pad:46, gap:22, radius:0, noBorder:true, headerH:150, footBand:196, pattern:patternReceipt, headDraw:receiptHead,
+     footDraw:receiptFoot, ink:inkReceipt,
+     textFont:{w:'700', px:26, min:16, family:"'Courier New', Courier, monospace"},
+     dateStyle:{w:'700', px:20, min:13, family:"'Courier New', Courier, monospace"}},
     {id:'polaroid', tab:'plain', name:'Polaroid', layout:'polaroid', color:'butter'},
-    {id:'film', tab:'plain', name:'Film', layout:'film', color:'midnight'}
+    {id:'grid', tab:'plain', name:'Grid 2×2', layout:'grid', color:'sky'}
   ];
   // Illustrated themes: the drawings live in the decorXxx / patternXxx functions further down
   [
@@ -2219,6 +2253,12 @@
     var months = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
     return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
   }
+  // (v4.20) "5 October 2026" — for the frames with a softer, classic date (Double Line)
+  function formatDateTitle(){
+    var d = new Date();
+    var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+  }
   // "Day N together": a real calendar day 'YYYY-MM-DD', not in the future (anything else → '')
   function cleanSince(v){
     var m = typeof v === 'string' && /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
@@ -2335,6 +2375,7 @@
     var tabs = usedTabs();
     var lastTab = null;
     TEMPLATES.forEach(function(t){
+      if(t.hidden) return;   // (v4.20) e.g. Minimal: kept for old designs, not shown
       if(tabs.length > 1 && t.tab !== lastTab){   // a small heading before each group
         lastTab = t.tab;
         var h = document.createElement('p');
@@ -2405,7 +2446,7 @@
     create.innerHTML = '<div class="frame-thumb"><span class="cf-plus">+</span>Create</div><span>New frame</span>';
     create.addEventListener('click', function(){ openCfEditor(null); });
     container.appendChild(create);
-    TEMPLATES.forEach(function(t){ container.appendChild(makeFrameCard(t)); });
+    TEMPLATES.forEach(function(t){ if(!t.hidden) container.appendChild(makeFrameCard(t)); });   // (v4.20) hidden: not listed
   }
   buildFrameCards($('frameGrid'));
   buildFrameCards($('framePickRow'));
@@ -8435,6 +8476,7 @@
     box.innerHTML = '';
     CF_BASES.concat(TEMPLATES.filter(isDecoBase).map(function(t){ return t.id; })).forEach(function(id){
       var t = templateById(id);
+      if(t.hidden && cf.draft.baseId !== id) return;   // (v4.20) Minimal: only for a frame already built on it
       var card = document.createElement('button');
       card.type = 'button'; card.className = 'frame-card'; card.dataset.base = id;
       var thumb = document.createElement('div'); thumb.className = 'frame-thumb';
@@ -11331,12 +11373,14 @@
   }
 
   // maxW (optional): the free width between your custom images in the top corners
-  function drawHeader(ctx, text, w, color, maxW){
+  // font (optional, v4.20): {w, px, min, family} — a plain frame's own title style
+  function drawHeader(ctx, text, w, color, maxW, font){
     if(!text) return;
     ctx.fillStyle = color;
     ctx.textAlign = 'center';
     maxW = Math.min(maxW || w, w - 40);
-    if(text === text.toUpperCase()) fillFitted(ctx, text, w/2, 62, maxW, 700, 30, 18, "'Playfair Display', serif");
+    if(font) fillFitted(ctx, text, w/2, 62, maxW, font.w, font.px, font.min, font.family);
+    else if(text === text.toUpperCase()) fillFitted(ctx, text, w/2, 62, maxW, 700, 30, 18, "'Playfair Display', serif");
     else fillFitted(ctx, text, w/2, 62, maxW, 600, 40, 22, "'Dancing Script', cursive");
   }
   // one line of text that must fit `maxW`: the font shrinks (not below minPx), and the canvas
@@ -11380,16 +11424,19 @@
     return own ? (lane ? Math.min(lane, own) : own) : lane;
   }
   function titleLane(t, e){ return t.custom && e ? customLane(t, e, 't') : 0; }
-  // maxW: the text lane width (0 = full width)
-  function drawFooter(ctx, w, y, color, maxW){
+  // maxW: the text lane width (0 = full width) · t (optional, v4.20): a plain frame's own fonts / pill behind the text
+  function drawFooter(ctx, w, y, color, maxW, t){
     maxW = Math.min(maxW || w, w - 80);
+    var tf = t && t.textFont;
+    if(t && t.footPill && (state.customText || state.showDate)) drawFootPill(ctx, w, y, maxW, t);
     if(state.customText){
       ctx.fillStyle = color;
       ctx.textAlign = 'center';
-      fillFitted(ctx, state.customText.slice(0,40), w/2, y, maxW, 600, 30, 20, "'Dancing Script', cursive");
+      if(tf) fillFitted(ctx, state.customText.slice(0,40), w/2, y, maxW, tf.w, tf.px, tf.min, tf.family);
+      else fillFitted(ctx, state.customText.slice(0,40), w/2, y, maxW, 600, 30, 20, "'Dancing Script', cursive");
       y += 38;
     }
-    if(state.showDate) drawFooterDate(ctx, w, y, color, maxW);
+    if(state.showDate) drawFooterDate(ctx, w, y, color, maxW, t);
   }
   function drawBorder(ctx, w, h, color, thin){
     ctx.save();
@@ -11411,28 +11458,35 @@
 
   // one photo per row; "film" is the same strip with sprocket holes in wider margins
   function drawStripLayout(canvas, L){
-    var film = L.t.layout === 'film';
-    var PAD = L.t.pad || (film ? 76 : 40), CELL = 640, GAP = film ? 20 : 26;   // pad: wider side margins on request
-    var headerH = L.t.headerH || ((L.title || L.t.decor) ? 96 : 40);   // decorated frames keep room above the photos for their drawings
+    var t = L.t, film = t.layout === 'film';
+    var PAD = t.pad || (film ? 76 : 40), CELL = 640, GAP = t.gap || (film ? 20 : 26);   // pad: wider side margins on request
+    var headerH = t.headerH || ((L.title || t.decor) ? 96 : 40);   // decorated frames keep room above the photos for their drawings
     // …and below (footerTrim: a custom frame's wider sides — the same margin runs along the bottom)
-    var footerH = L.t.footerH || (((state.showDate || state.customText || L.t.decor) ? 130 : 60) - (L.t.footerTrim || 0));
+    // (v4.20) footBand: a plain frame's own band at the very bottom (e.g. a ticket stub), below your text and date
+    var footerH = t.footerH || (((state.showDate || state.customText || t.decor) ? 130 : 60) - (t.footerTrim || 0) + (t.footBand || 0));
     var W = CELL + PAD*2;
     var H = headerH + L.n*CELL + (L.n-1)*GAP + footerH + PAD;
     var ctx = prepCanvas(canvas, W, H, L.scale);
     paintBackground(ctx, W, H, L.hex, L.isWhite);
-    if(L.t.pattern) L.t.pattern(ctx, W, H, L);   // e.g. picnic gingham, journal dots
+    if(t.pattern) t.pattern(ctx, W, H, L);   // e.g. picnic gingham, journal dots
     if(film) drawSprockets(ctx, W, H, isDarkHex(L.hex));
-    else drawBorder(ctx, W, H, L.accent, L.t.thin);
+    else if(!t.noBorder) drawBorder(ctx, W, H, L.accent, t.thin);
 
+    var radius = t.radius != null ? t.radius : (film ? 6 : 16);
     for(var s=0; s<L.n; s++){
       var y = headerH + s*(CELL+GAP);
-      drawPhotoInto(ctx, s, PAD, y, CELL, CELL, L.filter, film ? 6 : 16);
+      if(t.photoUnder) t.photoUnder(ctx, PAD, y, CELL, CELL, s, L);   // (v4.20) e.g. a mat or a thin line around the photo
+      drawPhotoInto(ctx, s, PAD, y, CELL, CELL, L.filter, radius);
+      if(t.photoOver) t.photoOver(ctx, PAD, y, CELL, CELL, s, L);     // (v4.20) e.g. tape on its outer corners, film-edge text
       L.rects.push({cx:PAD + CELL/2, cy:y + CELL/2, w:CELL, h:CELL, rot:0});
     }
     // title and text after the photos: then we know exactly where custom images sit
-    var e = {w:W, h:H, rects:L.rects};
-    drawHeader(ctx, L.title, W, L.textColor, titleLane(L.t, e));
-    drawFooter(ctx, W, headerH + L.n*CELL + (L.n-1)*GAP + 46, L.textColor, textLane(L.t, e));
+    var e = {w:W, h:H, rects:L.rects}, ink = t.ink ? t.ink(L) : L.textColor;
+    var photosEnd = headerH + L.n*CELL + (L.n-1)*GAP;
+    if(t.headDraw) t.headDraw(ctx, W, L);
+    drawHeader(ctx, L.title, W, ink, titleLane(t, e), t.titleFont);
+    drawFooter(ctx, W, photosEnd + 46, ink, textLane(t, e), t);
+    if(t.footDraw) t.footDraw(ctx, W, photosEnd + footerH - (t.footBand || 0), L, H);
     return {w:W, h:H};
   }
 
@@ -11552,6 +11606,273 @@
     ctx.fillStyle = g2; ctx.fillRect(0,0,w,h);
   }
 
+  /* ================= PLAIN FRAMES (v4.20) =================
+     Still frames in the style of real photo booths — nothing on them moves. They use the usual strip layout
+     with a few optional hooks (see the note above TEMPLATES): their own gap and photo corners, a mat or a line
+     around each photo, and a band at the very bottom for the frame's own extras (a ticket stub, a postmark…).
+     Your text and date keep their usual place in the middle above that band, so nothing ever covers them.
+     The colours follow the colour you pick; anything "random" (the kraft paper) uses a fixed seed, so a frame
+     looks exactly the same every time it's drawn. Decorations only touch a photo's outer corners (the tape). */
+  function plainRnd(seed){ return function(){ seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }; }
+  function plainDark(L){ return !L.isWhite && isDarkHex(L.hex); }
+  function plainPaper(L){ return L.isWhite ? '#FFFFFF' : L.hex; }
+  // letter-spaced text (the canvas letterSpacing setting isn't in every browser yet); align 'center' or 'left'
+  function fillSpaced(ctx, text, x, y, sp, align){
+    var chars = text.split(''), w = 0, keep = ctx.textAlign;
+    chars.forEach(function(ch){ w += ctx.measureText(ch).width + sp; });
+    w -= sp;
+    var cx = align === 'left' ? x : x - w/2;
+    ctx.textAlign = 'left';
+    chars.forEach(function(ch){ ctx.fillText(ch, cx, y); cx += ctx.measureText(ch).width + sp; });
+    ctx.textAlign = keep;
+  }
+  // a flat background instead of the usual soft gradient (Booth Noir, Studio Film)
+  function patternFlat(ctx, W, H, L){ ctx.fillStyle = plainPaper(L); ctx.fillRect(0, 0, W, H); }
+  // a rounded "label" behind your text and date (Polka Dots: the dots never run through the letters)
+  function drawFootPill(ctx, w, y, maxW, t){
+    var tf = t.textFont, ds = t.dateStyle, widths = [];
+    ctx.save();
+    if(state.customText){
+      ctx.font = tf ? tf.w + ' ' + tf.px + 'px ' + tf.family : "600 30px 'Dancing Script', cursive";
+      widths.push(Math.min(maxW, ctx.measureText(state.customText.slice(0,40)).width));
+    }
+    if(state.showDate){
+      ctx.font = ds ? ds.w + ' ' + ds.px + 'px ' + ds.family : '600 20px Poppins, sans-serif';
+      widths.push(Math.min(maxW, ctx.measureText(footerDateText(t)).width));
+    }
+    var bw = Math.max.apply(null, widths) + 56;
+    var top = y - (state.customText ? 36 : 26), bottom = y + (state.customText && state.showDate ? 38 : 0) + 16;
+    ctx.fillStyle = t.footPill;
+    roundRect(ctx, w/2 - bw/2, top, bw, bottom - top, Math.min(24, (bottom - top) / 2));
+    ctx.fill();
+    ctx.restore();
+  }
+
+  /* Booth Noir: a thin line around every photo, "PHOTO BOOTH" at the bottom */
+  function noirLine(ctx, x, y, w, h, i, L){
+    ctx.save();
+    ctx.strokeStyle = plainDark(L) ? 'rgba(244,241,234,.95)' : 'rgba(43,43,43,.85)';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(x - 7, y - 7, w + 14, h + 14);
+    ctx.restore();
+  }
+  function noirBrand(ctx, W, y, L){
+    ctx.save();
+    ctx.fillStyle = plainDark(L) ? 'rgba(244,241,234,.92)' : 'rgba(43,43,43,.88)';
+    ctx.font = '700 20px Poppins, sans-serif';
+    fillSpaced(ctx, 'PHOTO BOOTH', W/2, y + 24, 8);
+    ctx.restore();
+  }
+
+  /* Studio Film: small printing along the side margins, like the edge of a roll of film (our own name) */
+  function studioFilmEdge(ctx, x, y, w, h, i, L){
+    var num = (i < 9 ? '0' : '') + (i + 1);
+    ctx.save();
+    ctx.fillStyle = plainDark(L) ? 'rgba(237,237,237,.9)' : 'rgba(43,43,43,.8)';
+    ctx.font = '600 15px Poppins, sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.save(); ctx.translate(x - 28, y + h - 22); ctx.rotate(-Math.PI/2); fillSpaced(ctx, 'OUR BOOTH', 0, 0, 3, 'left'); ctx.restore();
+    ctx.save(); ctx.translate(x - 28, y + 22); ctx.rotate(-Math.PI/2); ctx.textAlign = 'right'; ctx.fillText(num + ' ▸', 0, 0); ctx.restore();
+    ctx.save(); ctx.translate(x + w + 28, y + h - 80); ctx.rotate(-Math.PI/2); ctx.textAlign = 'center'; ctx.fillText('▸ ' + (i + 1) + 'A', 0, 0); ctx.restore();
+    ctx.restore();
+  }
+
+  /* Double Line: two thin golden lines with a small diamond top and bottom, like an invitation card */
+  function patternDoubleLine(ctx, W, H, L){
+    var gold = plainDark(L) ? 'rgba(236,212,170,.9)' : '#C9A27E', paper = plainPaper(L);
+    ctx.save();
+    ctx.fillStyle = paper; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = gold;
+    ctx.lineWidth = 3; ctx.strokeRect(16.5, 16.5, W - 33, H - 33);
+    ctx.lineWidth = 1.5; ctx.strokeRect(26, 26, W - 52, H - 52);
+    [[W/2, 16.5], [W/2, H - 16.5]].forEach(function(p){
+      ctx.save(); ctx.translate(p[0], p[1]); ctx.rotate(Math.PI/4);
+      ctx.fillStyle = gold; ctx.fillRect(-9, -9, 18, 18);
+      ctx.fillStyle = paper; ctx.fillRect(-4, -4, 8, 8);
+      ctx.restore();
+    });
+    ctx.restore();
+  }
+  function inkDoubleLine(L){ return plainDark(L) ? '#FFF6F8' : '#7A5B42'; }
+
+  /* Polka Dots: small white dots, white rounded mats under the photos, your text on a white label */
+  function patternPolka(ctx, W, H, L){
+    ctx.save();
+    ctx.fillStyle = L.isWhite ? '#FFD1E3' : 'rgba(255,255,255,.85)';
+    for(var y = 18, row = 0; y < H; y += 40, row++){
+      for(var x = row % 2 ? 38 : 18; x < W; x += 40){ ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI*2); ctx.fill(); }
+    }
+    ctx.restore();
+  }
+  function polkaMat(ctx, x, y, w, h, i, L){
+    ctx.save();
+    ctx.fillStyle = L.isWhite ? '#FFE9F0' : '#FFFFFF';
+    roundRect(ctx, x - 10, y - 10, w + 20, h + 20, 20); ctx.fill();
+    ctx.restore();
+  }
+  function inkPolka(){ return '#93264F'; }   // always on the white label
+
+  /* Checker: a checkerboard band around the edge, clean white inside */
+  function patternChecker(ctx, W, H, L){
+    var band = L.isWhite ? '#E14F7A' : L.hex;
+    var nx = Math.round(W / 30), ny = Math.round(H / 30), sx = W / nx, sy = H / ny;   // whole squares on every side
+    ctx.save();
+    ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = band;
+    for(var j = 0; j < ny; j++){
+      for(var k = 0; k < nx; k++){
+        var edge = j === 0 || j === ny - 1 || k === 0 || k === nx - 1;
+        if(edge && (j + k) % 2 === 0) ctx.fillRect(k * sx, j * sy, Math.ceil(sx), Math.ceil(sy));
+      }
+    }
+    ctx.strokeStyle = band; ctx.lineWidth = 3;
+    ctx.strokeRect(sx + 6, sy + 6, W - 2*sx - 12, H - 2*sy - 12);
+    ctx.restore();
+  }
+  function inkChecker(L){ return L.isWhite ? '#3B1626' : (isDarkHex(L.hex) ? L.hex : shade(L.hex, -0.5)); }   // on white
+
+  /* Kraft & Tape: brown paper, the photos as white-bordered prints, washi tape on their outer top corners */
+  function patternKraft(ctx, W, H, L){
+    var r = plainRnd(7), n = Math.round(W * H / 830);
+    ctx.save();
+    for(var k = 0; k < n; k++){
+      ctx.fillStyle = r() < .5 ? 'rgba(90,58,34,.10)' : 'rgba(255,240,220,.12)';
+      ctx.fillRect(r() * W, r() * H, 1 + r() * 2.5, 1 + r() * 2.5);
+    }
+    ctx.strokeStyle = 'rgba(90,58,34,.08)'; ctx.lineWidth = 1;
+    for(var f = 0; f < 70; f++){
+      var fx = r() * W, fy = r() * H;
+      ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(fx + 20 + r() * 30, fy + (r() - .5) * 12); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  function kraftPrint(ctx, x, y, w, h, i, L){
+    var s = L.scale || 1;   // (shadows ignore the canvas scale: keep them in proportion on thumbnails)
+    ctx.save();
+    ctx.shadowColor = 'rgba(60,35,20,.35)'; ctx.shadowBlur = 14 * s; ctx.shadowOffsetY = 5 * s;
+    ctx.fillStyle = '#FFFDF8'; ctx.fillRect(x - 14, y - 14, w + 28, h + 28);
+    ctx.restore();
+  }
+  var KRAFT_TAPES = ['rgba(255,182,206,.85)', 'rgba(189,239,217,.88)', 'rgba(255,233,168,.9)'];
+  function kraftTape(ctx, x, y, w, h, i, L){
+    function tape(tx, ty, rot, col){
+      ctx.save(); ctx.translate(tx, ty); ctx.rotate(rot);
+      ctx.fillStyle = col; ctx.fillRect(-62, -17, 124, 34);
+      ctx.fillStyle = 'rgba(255,255,255,.35)';
+      for(var s = -56; s < 60; s += 14) ctx.fillRect(s, -17, 5, 34);
+      ctx.restore();
+    }
+    // top corners only: the me / you labels sit at the bottom, and a corner piece stays far from faces
+    tape(x + 10, y + 6, -0.62, KRAFT_TAPES[i % 3]);
+    tape(x + w - 10, y + 6, 0.62, KRAFT_TAPES[(i + 1) % 3]);
+  }
+
+  /* Ticket: a thin border, then a perforated stub "ADMIT TWO ♡" with a number (today's date) */
+  function ticketTone(L){ return plainDark(L) ? 'rgba(255,240,210,.85)' : shade(L.isWhite ? '#E8C27A' : L.hex, -0.4); }
+  function inkTicket(L){ return plainDark(L) ? '#FFF6F8' : shade(L.isWhite ? '#C9A24E' : L.hex, -0.62); }
+  function patternTicket(ctx, W, H, L){
+    ctx.save();
+    ctx.strokeStyle = ticketTone(L); ctx.lineWidth = 3;
+    roundRect(ctx, 16, 16, W - 32, H - 32, 18); ctx.stroke();
+    ctx.restore();
+  }
+  function ticketNumber(){
+    var d = new Date(), p = function(v){ return ('0' + v).slice(-2); };
+    return p(d.getDate()) + p(d.getMonth() + 1) + String(d.getFullYear()).slice(-2);
+  }
+  function ticketStub(ctx, W, y, L){
+    var py = y + 16;
+    ctx.save();
+    ctx.fillStyle = plainDark(L) ? 'rgba(0,0,0,.28)' : 'rgba(59,22,38,.10)';   // the notches on both sides
+    ctx.beginPath(); ctx.arc(0, py, 26, -Math.PI/2, Math.PI/2); ctx.fill();
+    ctx.beginPath(); ctx.arc(W, py, 26, Math.PI/2, Math.PI*1.5); ctx.fill();
+    ctx.fillStyle = ticketTone(L);
+    for(var x = 44; x < W - 40; x += 22){ ctx.beginPath(); ctx.arc(x, py, 3.5, 0, Math.PI*2); ctx.fill(); }
+    ctx.fillStyle = inkTicket(L);
+    ctx.font = '800 36px Poppins, sans-serif'; fillSpaced(ctx, 'ADMIT TWO ♡', W/2, y + 90, 6);
+    ctx.font = '600 17px Poppins, sans-serif'; fillSpaced(ctx, 'No. ' + ticketNumber(), W/2, y + 126, 2);
+    ctx.restore();
+  }
+
+  /* Love Stamp: a perforated stamp edge, white mats, and a postmark with "love mail ♡" at the bottom */
+  function patternStamp(ctx, W, H, L){
+    var r = 9, nx = Math.round((W - 36) / 26), ny = Math.round((H - 36) / 26), sx = (W - 36) / nx, sy = (H - 36) / ny;
+    function hole(x, y){ ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill(); }
+    ctx.save();
+    ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = L.isWhite ? '#F3F6FB' : L.hex; ctx.fillRect(18, 18, W - 36, H - 36);
+    ctx.fillStyle = '#FFFFFF';
+    for(var k = 0; k <= nx; k++){ hole(18 + k * sx, 18); hole(18 + k * sx, H - 18); }
+    for(var j = 0; j <= ny; j++){ hole(18, 18 + j * sy); hole(W - 18, 18 + j * sy); }
+    ctx.restore();
+  }
+  function stampMat(ctx, x, y, w, h){
+    ctx.save(); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x - 6, y - 6, w + 12, h + 12); ctx.restore();
+  }
+  function stampPostmark(ctx, W, y, L){
+    var dark = plainDark(L), ink = dark ? 'rgba(255,255,255,.85)' : 'rgba(31,42,68,.8)', cx = W/2 + 150, cy = y + 58;
+    ctx.save();
+    ctx.strokeStyle = ink; ctx.fillStyle = ink; ctx.textAlign = 'center';
+    ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, 52, 0, Math.PI*2); ctx.stroke();
+    ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(cx, cy, 43, 0, Math.PI*2); ctx.stroke();
+    ctx.font = '700 11px Poppins, sans-serif'; fillSpaced(ctx, 'OUR BOOTH', cx, cy - 12, 1);
+    ctx.font = '700 22px Poppins, sans-serif'; ctx.fillText('♡', cx, cy + 12);
+    ctx.font = '600 13px Poppins, sans-serif'; ctx.fillText(String(new Date().getFullYear()), cx, cy + 32);
+    ctx.lineWidth = 3;   // the wavy cancellation lines
+    for(var k = 0; k < 4; k++){
+      ctx.beginPath();
+      for(var x = cx - 250; x <= cx - 64; x += 4){
+        var yy = cy - 24 + k * 16 + Math.sin(x / 11) * 4;
+        if(x === cx - 250) ctx.moveTo(x, yy); else ctx.lineTo(x, yy);
+      }
+      ctx.stroke();
+    }
+    ctx.fillStyle = dark ? '#FFF6F8' : '#1F2A44';
+    ctx.font = "700 38px 'Dancing Script', cursive"; ctx.textAlign = 'left';
+    ctx.fillText('love mail ♡', 70, cy + 14);
+    ctx.restore();
+  }
+
+  /* Receipt: thermal paper with torn edges, typewriter letters, a small summary and a barcode */
+  function inkReceipt(L){ return plainDark(L) ? '#F4F1EA' : '#222222'; }
+  function patternReceipt(ctx, W, H, L){
+    var t = 18;
+    ctx.save();
+    ctx.fillStyle = plainDark(L) ? '#2A2A2A' : '#E9E4DE'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = plainPaper(L);
+    ctx.beginPath(); ctx.moveTo(14, t);
+    for(var x = 14; x < W - 14; x += t*2){ ctx.lineTo(Math.min(x + t, W - 14), 4); ctx.lineTo(Math.min(x + t*2, W - 14), t); }
+    ctx.lineTo(W - 14, H - t);
+    for(var x2 = W - 14; x2 > 14; x2 -= t*2){ ctx.lineTo(Math.max(x2 - t, 14), H - 4); ctx.lineTo(Math.max(x2 - t*2, 14), H - t); }
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+  var RECEIPT_FONT = "'Courier New', Courier, monospace";
+  function receiptHead(ctx, W, L){
+    ctx.save();
+    ctx.fillStyle = inkReceipt(L); ctx.textAlign = 'center';
+    ctx.font = '700 30px ' + RECEIPT_FONT;
+    ctx.fillText('OUR LITTLE', W/2, 64);
+    ctx.fillText('PHOTO BOOTH', W/2, 100);
+    ctx.font = '700 18px ' + RECEIPT_FONT; fillSpaced(ctx, '* * * * * * * * * *', W/2, 132, 2);
+    ctx.restore();
+  }
+  function receiptFoot(ctx, W, y, L){
+    ctx.save();
+    ctx.strokeStyle = plainDark(L) ? 'rgba(255,255,255,.4)' : 'rgba(0,0,0,.35)'; ctx.lineWidth = 2; ctx.setLineDash([4, 8]);
+    ctx.beginPath(); ctx.moveTo(60, y + 12); ctx.lineTo(W - 60, y + 12); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = inkReceipt(L); ctx.font = '700 20px ' + RECEIPT_FONT;
+    [['PHOTOS', String(L.n)], ['LOVE', '100%']].forEach(function(row, k){
+      ctx.textAlign = 'left'; ctx.fillText(row[0], 70, y + 46 + k * 28);
+      ctx.textAlign = 'right'; ctx.fillText(row[1], W - 70, y + 46 + k * 28);
+    });
+    ctx.textAlign = 'center'; ctx.font = '700 22px ' + RECEIPT_FONT; ctx.fillText('THANK YOU ♡', W/2, y + 120);
+    var r = plainRnd(3), bx = W/2 - 150;
+    for(var b = 0; b < 300;){ var bw = 2 + Math.floor(r() * 4); if(r() > .4) ctx.fillRect(bx + b, y + 136, bw, 40); b += bw + 2; }
+    ctx.restore();
+  }
+
   function drawPhotoInto(ctx, index, x, y, w, h, filter, radius){
     ctx.save();
     if(radius){ roundRect(ctx,x,y,w,h,radius); ctx.clip(); }
@@ -11638,16 +11959,22 @@
     return c;
   }
 
-  function drawFooterDate(ctx, w, y, textColor, maxW){
+  function footerDateText(t){
     var label = '';
     if(state.dateLabel === 'day'){
       var n = dayNumber(state.since);   // no day picked yet: just the date
       if(n) label = 'Day ' + n.toLocaleString('en-US') + ' together ♡ · ';
     } else if(state.dateLabel && state.dateLabel !== 'date') label = state.dateLabel + ' · ';
+    return label + (t && t.dateStyle && t.dateStyle.title ? formatDateTitle() : formatDate());
+  }
+  // t (optional, v4.20): a plain frame's own date style (dateStyle)
+  function drawFooterDate(ctx, w, y, textColor, maxW, t){
+    var ds = t && t.dateStyle;
     ctx.fillStyle = textColor;
     ctx.globalAlpha = 0.85;
     ctx.textAlign = 'center';
-    fillFitted(ctx, label + formatDate(), w/2, y, maxW || w - 40, 600, 20, 14, 'Poppins, sans-serif');
+    if(ds) fillFitted(ctx, footerDateText(t), w/2, y, maxW || w - 40, ds.w, ds.px, ds.min, ds.family);
+    else fillFitted(ctx, footerDateText(), w/2, y, maxW || w - 40, 600, 20, 14, 'Poppins, sans-serif');
     ctx.globalAlpha = 1;
   }
 
