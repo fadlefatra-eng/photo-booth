@@ -1555,7 +1555,7 @@
       </details>
     </section>
 
-    <footer class="site-footer">♡ Our Booth · free, no login, made for two. <span class="app-version" title="Version of this page. If it looks old, reload">v4.20</span></footer>
+    <footer class="site-footer">♡ Our Booth · free, no login, made for two. <span class="app-version" title="Version of this page. If it looks old, reload">v4.21</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -1582,7 +1582,7 @@
         <h2>Choose Frame</h2>
         <p class="step-sub">You'll see its decorations while you pose, and you can still change it after.</p>
         <div class="frame-tabs" id="frameTabsStep" role="tablist" aria-label="Frame types"></div>
-        <!-- (v4.18) Strip or Grid 2×2 — only on the tabs with decorated frames, and with 2 photos or more -->
+        <!-- (v4.18) Strip or Grid 2×2 — only on the tabs with decorated frames (v4.21: and Plain), and with 2 photos or more -->
         <div class="chip-row layout-row js-layout-row" role="group" aria-label="Photo layout" hidden></div>
         <div class="frame-grid" id="frameGrid" role="group" aria-label="Choose a frame"></div>
         <button type="button" class="btn-text cf-edit-btn js-cf-edit" hidden>✎ Edit this custom frame</button>
@@ -1967,7 +1967,9 @@
        footBand (a fixed band at the bottom for the frame's own extras), pattern(ctx,W,H,L),
        headDraw(ctx,W,L), photoUnder / photoOver(ctx,x,y,w,h,i,L), footDraw(ctx,W,y,L,H), ink(L) (text
        colour), titleFont / textFont / dateStyle {w, px, min, family, title}, footPill(L), hidden (kept for
-       old designs and custom frames, not listed) */
+       old designs and custom frames, not listed)
+     (v4.21) plain strips can be a Grid too (Layout row): gridGap = space between the two columns, noGrid = strip only;
+       keepBase = a hidden frame that's still offered as a base for new custom frames */
   var FRAME_TABS = [
     {id:'plain', label:'Plain'},
     {id:'illustrated', label:'Illustrated'},
@@ -1978,14 +1980,14 @@
   // (v4.20) the Plain tab in this order; the two film frames side by side. Minimal is hidden (too close to
   // Classic) but stays for old designs and custom frames built on it. All plain frames are still pictures.
   var TEMPLATES = [
-    {id:'classic', tab:'plain', name:'Classic Strip', layout:'strip', color:'pink'},
+    {id:'classic', tab:'plain', name:'Classic', layout:'strip', color:'pink'},
     {id:'minimal', tab:'plain', name:'Minimal Strip', layout:'strip', color:'white', thin:true, hidden:true},
     {id:'noir', tab:'plain', name:'Booth Noir', layout:'strip', color:'black', colors:['black','navy','midnight'],
      gap:22, radius:0, noBorder:true, footBand:44, pattern:patternFlat, photoUnder:noirLine, footDraw:noirBrand,
      dateStyle:{w:'500', px:18, min:14, family:'Poppins, sans-serif'}},
     {id:'film', tab:'plain', name:'Retro Film', layout:'film', color:'midnight'},
     {id:'studiofilm', tab:'plain', name:'Studio Film', layout:'strip', color:'black', colors:['black','white','mint','cream'],
-     pad:56, gap:24, radius:0, noBorder:true, pattern:patternFlat, photoOver:studioFilmEdge,
+     pad:56, gap:24, gridGap:112, radius:0, noBorder:true, pattern:patternFlat, photoOver:studioFilmEdge,
      dateStyle:{w:'500', px:18, min:14, family:'Poppins, sans-serif'}},
     {id:'doubleline', tab:'plain', name:'Double Line', layout:'strip', color:'cream', colors:['cream','white','baby','butter'],
      title:'our little moments', pad:48, gap:24, radius:4, noBorder:true, pattern:patternDoubleLine, ink:inkDoubleLine,
@@ -1997,7 +1999,7 @@
     {id:'checker', tab:'plain', name:'Checker', layout:'strip', color:'lavender', colors:['lavender','mint','butter','cherry'],
      pad:58, gap:24, radius:10, noBorder:true, pattern:patternChecker, ink:inkChecker},
     {id:'kraft', tab:'plain', name:'Kraft & Tape', layout:'strip', color:'mocha', colors:['mocha','cream','peach'],
-     pad:52, gap:34, radius:0, noBorder:true, pattern:patternKraft, photoUnder:kraftPrint, photoOver:kraftTape},
+     pad:52, gap:34, gridGap:112, radius:0, noBorder:true, pattern:patternKraft, photoUnder:kraftPrint, photoOver:kraftTape},
     {id:'ticket', tab:'plain', name:'Ticket', layout:'strip', color:'butter', colors:['butter','cream','peach','cherry'],
      pad:44, gap:22, radius:8, noBorder:true, footBand:170, pattern:patternTicket, footDraw:ticketStub, ink:inkTicket},
     {id:'stamp', tab:'plain', name:'Love Stamp', layout:'strip', color:'sky', colors:['sky','mint','baby','butter'],
@@ -2008,7 +2010,8 @@
      textFont:{w:'700', px:26, min:16, family:"'Courier New', Courier, monospace"},
      dateStyle:{w:'700', px:20, min:13, family:"'Courier New', Courier, monospace"}},
     {id:'polaroid', tab:'plain', name:'Polaroid', layout:'polaroid', color:'butter'},
-    {id:'grid', tab:'plain', name:'Grid 2×2', layout:'grid', color:'sky'}
+    // (v4.21) hidden: the Layout row's Grid does this with bigger photos. Kept for old designs and as a custom-frame base
+    {id:'grid', tab:'plain', name:'Grid 2×2', layout:'grid', color:'sky', hidden:true, keepBase:true}
   ];
   // Illustrated themes: the drawings live in the decorXxx / patternXxx functions further down
   [
@@ -2101,7 +2104,7 @@
     showDate: true,
     dateLabel: 'date',
     since: '',         // "Day N together": the day you got together, 'YYYY-MM-DD' ('' = not set)
-    layout: 'strip',   // (v4.18) decorated frames: 'strip' (one below the other) or 'grid' (2 per row) — see canGrid
+    layout: 'strip',   // (v4.18) decorated frames (v4.21: and the still Plain strips): 'strip' (one below the other) or 'grid' (2 per row) — see canGrid
     timer: 3,          // seconds before the FIRST photo (3 / 5 / 10); the rest always count 3
     facingMode: 'user',
     shots: [],
@@ -2116,7 +2119,10 @@
   var TIMERS = [3, 5, 10];
   try{ var savedTimer = +localStorage.getItem('oob-timer'); if(TIMERS.indexOf(savedTimer) !== -1) state.timer = savedTimer; }catch(e){}
   try{ state.since = cleanSince(localStorage.getItem('oob-since')); }catch(e){}
-  try{ if(localStorage.getItem('oob-layout') === 'grid') state.layout = 'grid'; }catch(e){}   // your last choice (like the timer)
+  function savedLayout(){   // your last tapped Strip / Grid choice (like the timer)
+    try{ return localStorage.getItem('oob-layout') === 'grid' ? 'grid' : 'strip'; }catch(e){ return 'strip'; }
+  }
+  if(savedLayout() === 'grid') state.layout = 'grid';
   if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) state.animated = false;
 
   // phones & tablets get phone wording; laptops/PCs get computer wording (see .phone-only / .desktop-only)
@@ -2566,7 +2572,8 @@
   });
   function layoutCount(){ return state.currentStep === 'customize' && state.shots.length ? state.shots.length : state.shotCount; }
   function syncLayoutRows(){
-    var show = ['illustrated', 'characters', 'moments'].indexOf(state.frameTab) !== -1 && layoutCount() >= 2;
+    // (v4.21) the Plain tab too: its still strips can be a grid
+    var show = ['plain', 'illustrated', 'characters', 'moments'].indexOf(state.frameTab) !== -1 && layoutCount() >= 2;
     Array.prototype.forEach.call(document.querySelectorAll('.js-layout-row'), function(row){
       row.hidden = !show;
       Array.prototype.forEach.call(row.querySelectorAll('[data-layout]'), function(b){
@@ -2576,6 +2583,14 @@
       });
     });
   }
+  // (v4.21) Grid is on, but the frame you picked has a layout of its own (Retro Film, Polaroid): a short toast says so
+  // when you pick it or tap Grid (a line under the row would push the frame cards down right under your finger)
+  function noteOwnLayout(){
+    var t = templateById(state.templateId);
+    if(state.layout === 'grid' && layoutCount() >= 2 && t.tab === 'plain' && t.tab === state.frameTab && !t.hidden && !canGrid(t)){
+      showToast(t.name + ' keeps its own layout ♡');
+    }
+  }
   function chooseLayout(v){
     if(state.layout === v) return;
     state.layout = v;
@@ -2583,6 +2598,7 @@
     syncLayoutRows();
     if(state.currentStep === 'frame') fillThumbs($('frameGrid'), 0.2);
     if(state.currentStep === 'customize'){ fillThumbs($('framePickRow'), 0.14); renderPreview(); }
+    noteOwnLayout();
   }
   function showFrameTab(tabId){
     syncMoments();
@@ -2620,6 +2636,7 @@
     state.templateId = id;
     state.colorId = templateById(id).color;   // a new frame starts in its own color
     syncFrameSelection();
+    noteOwnLayout();   // (v4.21) e.g. Polaroid while Grid is on
     if(state.currentStep === 'customize'){ prepCustomizeDefaults(); renderPreview(); }
   }
   syncFrameSelection();
@@ -3123,7 +3140,7 @@
     goToStep('customize');
     showToolPanel('frame');
   });
-  // skipping keeps the current frame (Classic Strip by default) — it can still be changed at the end
+  // skipping keeps the current frame (Classic by default) — it can still be changed at the end
   $('skipFrameBtn').addEventListener('click', function(){ $('toCameraBtn').click(); });
   // start over with new photos. In a live room nothing is lost yet: the heart asks before replacing
   function takeNewPhotos(){
@@ -5067,9 +5084,12 @@
   });
   // entering live without photos picks the frame for you: one per row for Together, 2x2 for Separate.
   // Once you choose a frame yourself, it stays.
+  // (v4.21) both are Classic now: Separate (Stacked) = Classic as a Grid (Grid 2×2 is hidden); Together = your own
+  // Strip / Grid choice (the one you last tapped)
   function applyAutoTemplate(){
     if(!live.autoTemplate || state.shots.length) return;
-    state.templateId = liveMode() === 'duo' ? 'classic' : 'grid';
+    state.templateId = 'classic';
+    state.layout = liveMode() === 'duo' ? savedLayout() : 'grid';
     state.frameTab = 'plain'; state.colorId = null;
     syncFrameSelection();
   }
@@ -8476,7 +8496,7 @@
     box.innerHTML = '';
     CF_BASES.concat(TEMPLATES.filter(isDecoBase).map(function(t){ return t.id; })).forEach(function(id){
       var t = templateById(id);
-      if(t.hidden && cf.draft.baseId !== id) return;   // (v4.20) Minimal: only for a frame already built on it
+      if(t.hidden && !t.keepBase && cf.draft.baseId !== id) return;   // (v4.20) Minimal: only for a frame already built on it
       var card = document.createElement('button');
       card.type = 'button'; card.className = 'frame-card'; card.dataset.base = id;
       var thumb = document.createElement('div'); thumb.className = 'frame-thumb';
@@ -11233,8 +11253,12 @@
   // draws template `t` into a new canvas; `scale` < 1 gives a small thumbnail of the exact same design
   // `n` (optional) forces the number of photo slots, e.g. the full count while you're still shooting
   // (v4.18) the decorated frames (Illustrated, Characters, Moments) can also lay 2+ photos out as a grid
+  // (v4.21) …and the still Plain strips. Retro Film (sprocket holes), Polaroid and Grid 2×2 keep their own layout;
+  // noGrid = a plain strip that only makes sense as a strip
   function canGrid(t){
-    return !!t.decor && !t.custom && t.layout === 'strip' && (t.tab === 'illustrated' || t.tab === 'characters' || t.tab === 'moments');
+    if(t.custom || t.layout !== 'strip') return false;
+    if(t.tab === 'plain') return !t.noGrid;
+    return !!t.decor && (t.tab === 'illustrated' || t.tab === 'characters' || t.tab === 'moments');
   }
   // `layout` (optional): 'strip' / 'grid' instead of your choice — the home page gallery and custom-frame bases stay strips
   function makeBase(t, colorId, scale, n, layout){
@@ -11256,7 +11280,8 @@
     };
     var canvas = document.createElement('canvas');
     var grid = (layout || state.layout) === 'grid' && look.n >= 2 && canGrid(t);
-    var size = (grid ? drawDecoGridLayout : (LAYOUTS[t.layout] || drawStripLayout))(canvas, look);
+    look.grid = grid;   // (v4.21) a plain frame's grid is its strip layout with 2 per row (drawStripLayout)
+    var size = (grid && t.decor ? drawDecoGridLayout : (LAYOUTS[t.layout] || drawStripLayout))(canvas, look);
     var b = {canvas:canvas, w:size.w, h:size.h, t:t, hex:hex, dark:dark,
              accent:look.accent, textColor:look.textColor, rects:look.rects, decoRects:look.decoRects || null};
     // thumbnails are static pictures, so they get their decorations baked in right away
@@ -11457,15 +11482,18 @@
   }
 
   // one photo per row; "film" is the same strip with sprocket holes in wider margins
+  // (v4.21) L.grid: a still Plain frame as a Grid — the same 640px photos, 2 per row (an odd last photo sits in the
+  // middle), with all the frame's own extras. gridGap: a frame's own space between the two columns (default = gap)
   function drawStripLayout(canvas, L){
     var t = L.t, film = t.layout === 'film';
     var PAD = t.pad || (film ? 76 : 40), CELL = 640, GAP = t.gap || (film ? 20 : 26);   // pad: wider side margins on request
+    var cols = L.grid ? 2 : 1, rows = Math.ceil(L.n / cols), COLGAP = t.gridGap || GAP;
     var headerH = t.headerH || ((L.title || t.decor) ? 96 : 40);   // decorated frames keep room above the photos for their drawings
     // …and below (footerTrim: a custom frame's wider sides — the same margin runs along the bottom)
     // (v4.20) footBand: a plain frame's own band at the very bottom (e.g. a ticket stub), below your text and date
     var footerH = t.footerH || (((state.showDate || state.customText || t.decor) ? 130 : 60) - (t.footerTrim || 0) + (t.footBand || 0));
-    var W = CELL + PAD*2;
-    var H = headerH + L.n*CELL + (L.n-1)*GAP + footerH + PAD;
+    var W = cols*CELL + (cols-1)*COLGAP + PAD*2;
+    var H = headerH + rows*CELL + (rows-1)*GAP + footerH + PAD;
     var ctx = prepCanvas(canvas, W, H, L.scale);
     paintBackground(ctx, W, H, L.hex, L.isWhite);
     if(t.pattern) t.pattern(ctx, W, H, L);   // e.g. picnic gingham, journal dots
@@ -11474,15 +11502,16 @@
 
     var radius = t.radius != null ? t.radius : (film ? 6 : 16);
     for(var s=0; s<L.n; s++){
-      var y = headerH + s*(CELL+GAP);
-      if(t.photoUnder) t.photoUnder(ctx, PAD, y, CELL, CELL, s, L);   // (v4.20) e.g. a mat or a thin line around the photo
-      drawPhotoInto(ctx, s, PAD, y, CELL, CELL, L.filter, radius);
-      if(t.photoOver) t.photoOver(ctx, PAD, y, CELL, CELL, s, L);     // (v4.20) e.g. tape on its outer corners, film-edge text
-      L.rects.push({cx:PAD + CELL/2, cy:y + CELL/2, w:CELL, h:CELL, rot:0});
+      var row = Math.floor(s / cols), inRow = Math.min(cols, L.n - row*cols);
+      var x = (W - inRow*CELL - (inRow-1)*COLGAP)/2 + (s % cols)*(CELL+COLGAP), y = headerH + row*(CELL+GAP);   // a strip: x = PAD
+      if(t.photoUnder) t.photoUnder(ctx, x, y, CELL, CELL, s, L);   // (v4.20) e.g. a mat or a thin line around the photo
+      drawPhotoInto(ctx, s, x, y, CELL, CELL, L.filter, radius);
+      if(t.photoOver) t.photoOver(ctx, x, y, CELL, CELL, s, L);     // (v4.20) e.g. tape on its outer corners, film-edge text
+      L.rects.push({cx:x + CELL/2, cy:y + CELL/2, w:CELL, h:CELL, rot:0});
     }
     // title and text after the photos: then we know exactly where custom images sit
     var e = {w:W, h:H, rects:L.rects}, ink = t.ink ? t.ink(L) : L.textColor;
-    var photosEnd = headerH + L.n*CELL + (L.n-1)*GAP;
+    var photosEnd = headerH + rows*CELL + (rows-1)*GAP;
     if(t.headDraw) t.headDraw(ctx, W, L);
     drawHeader(ctx, L.title, W, ink, titleLane(t, e), t.titleFont);
     drawFooter(ctx, W, photosEnd + 46, ink, textLane(t, e), t);
@@ -11829,7 +11858,7 @@
     }
     ctx.fillStyle = dark ? '#FFF6F8' : '#1F2A44';
     ctx.font = "700 38px 'Dancing Script', cursive"; ctx.textAlign = 'left';
-    ctx.fillText('love mail ♡', 70, cy + 14);
+    ctx.fillText('love mail ♡', W/2 - 302, cy + 14);   // 70 on a strip; on a wider grid it stays with the postmark
     ctx.restore();
   }
 
@@ -11858,14 +11887,15 @@
     ctx.restore();
   }
   function receiptFoot(ctx, W, y, L){
+    var half = Math.min(W/2 - 70, 296);   // the summary is a column as wide as the strip's, also on a wider grid
     ctx.save();
     ctx.strokeStyle = plainDark(L) ? 'rgba(255,255,255,.4)' : 'rgba(0,0,0,.35)'; ctx.lineWidth = 2; ctx.setLineDash([4, 8]);
-    ctx.beginPath(); ctx.moveTo(60, y + 12); ctx.lineTo(W - 60, y + 12); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(W/2 - half - 10, y + 12); ctx.lineTo(W/2 + half + 10, y + 12); ctx.stroke();
     ctx.setLineDash([]);
     ctx.fillStyle = inkReceipt(L); ctx.font = '700 20px ' + RECEIPT_FONT;
     [['PHOTOS', String(L.n)], ['LOVE', '100%']].forEach(function(row, k){
-      ctx.textAlign = 'left'; ctx.fillText(row[0], 70, y + 46 + k * 28);
-      ctx.textAlign = 'right'; ctx.fillText(row[1], W - 70, y + 46 + k * 28);
+      ctx.textAlign = 'left'; ctx.fillText(row[0], W/2 - half, y + 46 + k * 28);
+      ctx.textAlign = 'right'; ctx.fillText(row[1], W/2 + half, y + 46 + k * 28);
     });
     ctx.textAlign = 'center'; ctx.font = '700 22px ' + RECEIPT_FONT; ctx.fillText('THANK YOU ♡', W/2, y + 120);
     var r = plainRnd(3), bx = W/2 - 150;
