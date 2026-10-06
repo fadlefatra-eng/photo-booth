@@ -237,6 +237,19 @@
   .privacy-more li{margin-bottom:6px;}
   .privacy-more li:last-child{margin-bottom:0;}
   footer.site-footer{text-align:center; padding:36px 20px 56px; font-size:.82rem; color:var(--rose-800); opacity:.85;}
+  /* (v4.23) support: a small card under "Made for Two", a footer link, and a pill on the result page after saving.
+     All three stay hidden while SUPPORT_URL is empty. */
+  .support-card{max-width:520px; margin:18px auto 0; padding:22px 22px 18px; background:var(--white); border-radius:var(--radius-lg); box-shadow:var(--shadow-soft); text-align:center;}
+  .support-card .kicker{display:block; font-family:var(--font-script); font-size:1.45rem; color:var(--rose-600);}
+  .support-card p{max-width:420px; margin:8px auto 14px; color:var(--plum-900); opacity:.82; font-size:.9rem; line-height:1.6;}
+  .support-card .btn{display:inline-flex; align-items:center; justify-content:center; width:100%; max-width:320px; min-height:48px; padding:12px 18px; font-size:.86rem; text-decoration:none;}
+  .support-via{display:block; margin-top:8px; font-size:.74rem; color:var(--rose-800); opacity:.9;}
+  .foot-support{display:inline-block; padding:12px 4px; color:var(--rose-800); font-weight:600; text-decoration:underline; text-underline-offset:3px;}
+  .sup-pill{text-decoration:none; white-space:nowrap;}
+  @media (max-width:359px){   /* one line on 320px phones too */
+    .al-pill.sup-pill{font-size:.72rem;}   /* (.al-pill is defined further down, so two classes win) */
+    .al-pill.sup-pill b{font-size:.66rem; padding:8px 9px; letter-spacing:.02em;}
+  }
 
   /* ================= APP FLOW ================= */
   /* no "display" here: it used to say display:block, which beat ".view{display:none}" — so the app (its top
@@ -1578,6 +1591,13 @@
         <p>Can't be in the same place? Open a live room, see each other on screen, and smile on the same countdown. Your photos end up together in one frame ♡</p>
         <p class="tag">Take a picture. Laugh a little. Keep the memory forever.</p>
       </div>
+      <!-- (v4.23) shown only when SUPPORT_URL is set; the payment happens on Trakteer, in a new tab -->
+      <div class="support-card" id="supportCard" hidden>
+        <span class="kicker">Kept free with love ♡</span>
+        <p>Our Booth is made by one person and stays free: no ads, no login. If it made you smile, you can treat me to a little something.</p>
+        <a class="btn btn-primary js-support" href="#" target="_blank" rel="noopener">♡ SUPPORT OUR BOOTH</a>
+        <span class="support-via">via Trakteer · opens in a new tab</span>
+      </div>
     </section>
 
     <section class="section" style="padding-top:0;">
@@ -1591,12 +1611,13 @@
           <li>Send to my love as a link: your photos and design are locked (encrypted) on your device first. Our Cloudflare storage keeps only the locked copy for 3 days, then deletes it. The key is inside the link itself, so anyone with the link can open it. Only send it to your love.</li>
           <li>A photo file or code contains your photos, so only send it to your love.</li>
           <li>My album lives only in this browser on this device. Clearing the browser's data deletes it. BACKUP ALBUM saves a copy.</li>
+          <li id="visitsNote" hidden>We count visits with Cloudflare Web Analytics, so we know how many people use the booth. Cloudflare says it doesn't collect personal data, and it never sees your photos.</li>
           <li>The letters come from Google Fonts, so Google can see that this page was opened.</li>
         </ul>
       </details>
     </section>
 
-    <footer class="site-footer">♡ Our Booth · free, no login, made for two. <span class="app-version" title="Version of this page. If it looks old, reload">v4.22</span></footer>
+    <footer class="site-footer">♡ Our Booth · free, no login, made for two. <a class="foot-support js-support" id="footSupport" href="#" target="_blank" rel="noopener" hidden>Support Our Booth ♡</a> <span class="app-version" title="Version of this page. If it looks old, reload">v4.23</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -1953,6 +1974,8 @@
         <button type="button" class="btn-text print-link" id="printBtn">🖨 Save for printing (4R · A4)</button>
         <!-- (v4.19) appears once this strip is in your album -->
         <button type="button" class="al-pill" id="albumPill" hidden>♡ Kept in your album <b>OPEN ›</b></button>
+        <!-- (v4.23) appears once you saved, shared or printed this strip (never before), when SUPPORT_URL is set -->
+        <a class="al-pill sup-pill js-support" id="supportPill" href="#" target="_blank" rel="noopener" hidden>Made you smile? <b>Support Our Booth ♡ ›</b></a>
         <div class="result-actions">
           <button class="btn btn-primary btn-block" id="downloadBtn">DOWNLOAD PHOTO ♡</button>
           <p class="save-hint" id="saveHint" aria-live="polite" hidden></p>
@@ -12725,6 +12748,7 @@
     $('saveNote').hidden = !(moving && !canVideo);
     if(!moving || !canVideo) state.resultMode = 'photo';
     syncAlbumPill();   // (v4.19) a changed design is a new picture: not in the album until you save it
+    syncSupportPill();   // (v4.23) same: the support pill waits until this picture is saved
     syncSaveAs();
   }
   function syncSaveAs(){
@@ -12944,6 +12968,7 @@
   function videoName(v){ return 'our-little-photo-booth-' + fileStamp() + '.' + v.ext; }
   function onSaveTap(how){
     try{ albumKeep(how); }catch(e){}   // (v4.19) the strip goes into your album too (a moment later, after the menu / download has started) — never in the way of saving
+    try{ supportSaved(); }catch(e){}   // (v4.23) now the support pill may show
     if(state.resultMode === 'animated'){
       if(videoReady()){ deliver(lastVideo.blob, videoName(lastVideo), how, true); return; }
       if(recording) return;   // the buttons wait until it's ready
@@ -13116,6 +13141,7 @@
     closePrintSheet();
     deliver(blob, printName(printSize), SAVE_VIA_SHARE ? 'save' : 'download', false);
     try{ albumKeep(SAVE_VIA_SHARE ? 'save' : 'download'); }catch(e){}   // (v4.19) the album keeps the strip itself, not the paper sheet
+    try{ supportSaved(); }catch(e){}
   });
 
   /* ================= MY ALBUM (v4.19) =================
@@ -13848,6 +13874,47 @@
   $('alvPrev').addEventListener('click', function(){ stepMemory(-1); });
   $('alvNext').addEventListener('click', function(){ stepMemory(1); });
   loadAlbum();   // (for the home page's MY ALBUM button)
+
+  /* ================= SUPPORT + VISITS (v4.23) =================
+     A small "support" link to the owner's Trakteer page: a card under "Made for Two", a footer link, and a pill
+     on the result page that shows only after the strip was saved, shared or printed. The payment happens on
+     Trakteer in a new tab (this page never touches payment details; GitHub Pages allows donation buttons), and
+     the booth tab stays open, so nothing is lost.
+     Visits: Cloudflare Web Analytics (page visits only; it never sees photos), loaded only on the real site so
+     local tests aren't counted. Each part stays off while its value below is empty. */
+  var SUPPORT_URL = 'https://trakteer.id/mf_hf';   // the owner's Trakteer page (not a secret). Empty = no support link
+  var CF_BEACON = '0e2eed772d8040e28ab55b599fdb2ecd';   // Cloudflare Web Analytics token (not a secret: it sits in the page). Empty = no counting
+  var COUNT_HOSTS = ['fadlefatra-eng.github.io'];
+  var support = {savedBase: null};
+  function supportOn(){ return /^https:\/\/(www\.)?trakteer\.id\/[A-Za-z0-9_.-]{2,40}\/?$/.test(SUPPORT_URL); }
+  function syncSupportPill(){
+    // (called by renderResult, which may run before this section has set `support` up)
+    $('supportPill').hidden = !(support && supportOn() && support.savedBase && support.savedBase === base);
+  }
+  function supportSaved(){
+    if(!support) return;
+    support.savedBase = base;
+    syncSupportPill();
+  }
+  (function startSupport(){
+    var on = supportOn();
+    Array.prototype.forEach.call(document.querySelectorAll('.js-support'), function(a){
+      if(on) a.href = SUPPORT_URL; else a.removeAttribute('href');
+    });
+    $('supportCard').hidden = !on;
+    $('footSupport').hidden = !on;
+    syncSupportPill();
+    var token = /^[A-Za-z0-9]{16,64}$/.test(CF_BEACON) ? CF_BEACON : '';
+    $('visitsNote').hidden = !token;   // the privacy list tells the truth wherever the page is opened
+    if(token && COUNT_HOSTS.indexOf(location.hostname) >= 0){
+      // like Cloudflare's own snippet: a module script (deferred; it finds its token through script[data-cf-beacon])
+      var s = document.createElement('script');
+      s.type = 'module';
+      s.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+      s.setAttribute('data-cf-beacon', JSON.stringify({token: token}));
+      document.head.appendChild(s);
+    }
+  })();
 
   /* init */
   goToStep('count');   // (on the home page this adds no history entry)
