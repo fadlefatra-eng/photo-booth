@@ -531,6 +531,17 @@
   .st-tools button[aria-pressed="true"], .st-tab.active{background:var(--rose-600); border-color:var(--rose-600); color:#fff;}
   .st-tabs{display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:6px;}
   .st-tab{font-size:.78rem; white-space:nowrap;}
+  .st-tab[hidden]{display:none;}   /* (v4.22) the Space page has its own tabs (Text, Photos) instead of Images, Words */
+  /* (v4.22) the Space page's trays: your words + their style, the photos in the space */
+  .st-tile.space-edit{flex-basis:84px; border:2px dashed var(--pink-300); font-size:.72rem; font-weight:600; color:var(--rose-800); line-height:1.2; text-align:center; overflow:hidden;}
+  .st-tile.space-style{flex-basis:56px; font-size:.8rem; font-weight:600; color:var(--plum-900);}
+  .st-tile.space-style[data-style="serif"]{font-family:'Playfair Display', serif; font-style:italic;}
+  .st-tile.space-style[data-style="script"]{font-family:var(--font-script); font-size:1rem;}
+  .st-tile.space-style[data-style="bold"]{font-weight:700; letter-spacing:.05em;}
+  .st-tile.space-style[data-style="type"]{font-family:'Courier New', Courier, monospace; font-weight:700;}
+  .st-tile.on, .st-tile.in{border-color:var(--rose-600); box-shadow:inset 0 0 0 1.5px var(--rose-600);}
+  .st-tile .st-in{position:absolute; top:-7px; right:-7px; width:22px; height:22px; border-radius:50%; background:var(--rose-600); color:#fff; font-size:.7rem; display:flex; align-items:center; justify-content:center;}
+  .st-tools button.na{opacity:.4;}
   /* (v4.13) drawing: pens, 14 colours in two rows, line sizes — they replace the tools, tabs and trays
      while you draw; the photo gets a dashed outline so you can see you're drawing */
   .st-tools[hidden], .st-tabs[hidden], .st-panels[hidden], .st-pens[hidden], .st-inks[hidden], .st-sizes[hidden]{display:none;}
@@ -623,6 +634,24 @@
   .layout-row .chip-label{font-size:.8rem; font-weight:600; color:var(--rose-800); margin-right:2px;}
   .layout-row .chip{display:inline-flex; align-items:center; gap:7px; min-height:42px; padding:9px 15px; font-weight:600;}
   .layout-row .chip svg{flex:none;}
+  /* (v4.22) Extra space: None / Top / Bottom, in the editor's Text tab */
+  .space-pick{margin:0 0 10px;}
+  .space-pick[hidden], .space-more[hidden]{display:none;}
+  .space-label{font-size:.8rem; font-weight:600; color:var(--rose-800); margin:0 0 6px;}
+  .space-row .chip, .space-styles .chip{display:inline-flex; align-items:center; gap:7px; min-height:42px; padding:9px 13px; font-weight:600;}
+  .space-row .chip svg{flex:none;}
+  .space-more{margin-top:8px;}
+  .space-note{font-size:.76rem; color:var(--rose-800); margin:0 0 10px; line-height:1.4;}
+  .space-styles .chip[data-style="serif"]{font-family:'Playfair Display', serif; font-style:italic;}
+  .space-styles .chip[data-style="script"]{font-family:var(--font-script); font-size:1rem;}
+  .space-styles .chip[data-style="bold"]{font-weight:700; letter-spacing:.05em;}
+  .space-styles .chip[data-style="type"]{font-family:'Courier New', Courier, monospace; font-weight:700;}
+  .space-photos-btn{width:100%; min-height:46px; margin-top:12px; padding:11px 14px; font-size:.82rem;}
+  .space-tip{font-size:.74rem; color:var(--rose-800); opacity:.85; margin:6px 0 0; line-height:1.4;}
+  @media (max-width:359px){   /* 320px phones: both rows stay one line */
+    .space-row, .space-styles{gap:6px;}
+    .space-row .chip, .space-styles .chip{padding:9px 8px;}
+  }
   input[type="text"], input[type="date"], select{
     width:100%; padding:13px 16px; border-radius:12px; border:1.5px solid var(--blush-100);
     font-family:inherit; font-size:.95rem; background:var(--white); color:var(--plum-900); min-height:48px;
@@ -1361,7 +1390,7 @@
       <div class="st-stage" id="stStage">
         <canvas id="stCanvas" width="10" height="10" tabindex="0" aria-label="Your photo with its stickers. Drag a sticker to move it; pinch with two fingers to resize and turn it. Arrow keys move the chosen sticker, + and − change its size."></canvas>
       </div>
-      <div class="st-hintrow"><p class="st-hint" id="stHint"></p><button type="button" class="btn-text" id="stClear" hidden>remove all</button><button type="button" class="btn-text" id="stDrawClear" hidden>clear</button></div>
+      <div class="st-hintrow"><p class="st-hint" id="stHint"></p><button type="button" class="btn-text" id="stClear" hidden>remove all</button><button type="button" class="btn-text" id="stDrawClear" hidden>clear</button><button type="button" class="btn-text" id="stArrange" hidden>arrange again</button></div>
       <div class="st-tools off" id="stTools" role="toolbar" aria-label="The chosen sticker">
         <button type="button" data-act="smaller" aria-label="Smaller">−</button>
         <button type="button" data-act="bigger" aria-label="Bigger">+</button>
@@ -1371,6 +1400,9 @@
         <button type="button" data-act="remove" aria-label="Remove this sticker">✕</button>
       </div>
       <div class="st-tabs" role="tablist" aria-label="Add">
+        <!-- (v4.22) only on the Space page (instead of Images and Words) -->
+        <button type="button" class="st-tab" role="tab" aria-selected="false" data-tray="spacetext" aria-label="Your words in the space" hidden>Text</button>
+        <button type="button" class="st-tab" role="tab" aria-selected="false" data-tray="spacephotos" aria-label="Photos in the space" hidden>Photos</button>
         <button type="button" class="st-tab active" role="tab" aria-selected="true" data-tray="shapes">Stickers</button>
         <button type="button" class="st-tab" role="tab" aria-selected="false" data-tray="images" aria-label="My images">Images</button>
         <button type="button" class="st-tab" role="tab" aria-selected="false" data-tray="words" aria-label="Your words">Words</button>
@@ -1392,6 +1424,15 @@
         </div>
         <!-- (v4.13) "+ new drawing" and your last drawings -->
         <div class="st-tray" id="stTrayDraw" role="tabpanel" aria-label="Draw" hidden></div>
+        <!-- (v4.22) the Space page: your words (✎ opens the box to type them) and their style · the photos in the space -->
+        <div id="stTraySpaceText" role="tabpanel" aria-label="Your words in the space" hidden>
+          <form class="st-words" id="stSpaceForm" autocomplete="off" hidden>
+            <input type="text" id="stSpaceInput" maxlength="40" placeholder="Forever &amp; Always" aria-label="Your words in the space">
+            <button type="submit" class="btn btn-primary">OK</button>
+          </form>
+          <div class="st-tray" id="stSpaceTextTiles"></div>
+        </div>
+        <div class="st-tray" id="stTraySpacePhotos" role="tabpanel" aria-label="Photos in the space" hidden></div>
       </div>
       <!-- (v4.13) while you draw: pens, colours and line sizes take the place of the rows above -->
       <div class="st-pens" id="stPens" role="toolbar" aria-label="Pen" hidden>
@@ -1555,7 +1596,7 @@
       </details>
     </section>
 
-    <footer class="site-footer">♡ Our Booth · free, no login, made for two. <span class="app-version" title="Version of this page. If it looks old, reload">v4.21</span></footer>
+    <footer class="site-footer">♡ Our Booth · free, no login, made for two. <span class="app-version" title="Version of this page. If it looks old, reload">v4.22</span></footer>
   </main>
 
   <!-- ============ APP FLOW ============ -->
@@ -1821,8 +1862,20 @@
             </div>
             <div class="tool-panel" data-panel="text" role="tabpanel" hidden>
               <label class="switch-row" id="titleToggleRow" hidden><input type="checkbox" id="titleToggle" checked><span>Show frame title</span></label>
+              <!-- (v4.22) Extra space above or below the photos (still Plain strips): your text goes big in it -->
+              <div class="space-pick" id="spacePick" hidden>
+                <p class="space-label">Extra space</p>
+                <div class="chip-row space-row" id="spaceRow" role="group" aria-label="Extra space"></div>
+              </div>
               <input type="text" id="customText" maxlength="40" placeholder="Forever &amp; Always" aria-label="Your text" aria-describedby="textLimit">
               <p class="text-limit" id="textLimit" hidden></p>
+              <div class="space-more" id="spaceMore" hidden>
+                <p class="space-note">Your text sits big in the space ♡</p>
+                <p class="space-label">Words style</p>
+                <div class="chip-row space-styles" id="spaceStyles" role="group" aria-label="Words style"></div>
+                <button type="button" class="btn btn-secondary space-photos-btn" id="spacePhotosBtn">🖼 PHOTOS IN THE SPACE · 0/3</button>
+                <p class="space-tip" id="spaceTip"></p>
+              </div>
               <select id="dateLabelSelect" aria-label="Date on the photo">
                 <option value="none">No date</option>
                 <option value="date">Just the date</option>
@@ -2105,7 +2158,11 @@
     dateLabel: 'date',
     since: '',         // "Day N together": the day you got together, 'YYYY-MM-DD' ('' = not set)
     layout: 'strip',   // (v4.18) decorated frames (v4.21: and the still Plain strips): 'strip' (one below the other) or 'grid' (2 per row) — see canGrid
-    timer: 3,          // seconds before the FIRST photo (3 / 5 / 10); the rest always count 3
+    space: 'none',       // (v4.22) Extra space above ('top') or below ('bottom') the photos: see EXTRA SPACE
+    spaceStyle: 'script',// …your text's style in it: serif / script / bold / type
+    spaceWords: null,    // …where your words sit, once you moved them ({x, y, px, l, r}; null = not yet)
+    spaceAuto: true,     // …its photos and words arranged automatically (until you move one yourself)
+    timer: 3,         // seconds before the FIRST photo (3 / 5 / 10); the rest always count 3
     facingMode: 'user',
     shots: [],
     stream: null,
@@ -2589,7 +2646,9 @@
     var t = templateById(state.templateId);
     if(state.layout === 'grid' && layoutCount() >= 2 && t.tab === 'plain' && t.tab === state.frameTab && !t.hidden && !canGrid(t)){
       showToast(t.name + ' keeps its own layout ♡');
+      return true;
     }
+    return false;
   }
   function chooseLayout(v){
     if(state.layout === v) return;
@@ -2599,6 +2658,75 @@
     if(state.currentStep === 'frame') fillThumbs($('frameGrid'), 0.2);
     if(state.currentStep === 'customize'){ fillThumbs($('framePickRow'), 0.14); renderPreview(); }
     noteOwnLayout();
+  }
+  /* ---- (v4.22) Extra space: None / Top / Bottom in the editor's Text tab (see EXTRA SPACE for the drawing) ----
+     Shown for the frames that can have it (canSpace); with any other frame your choice is kept but not used. */
+  var SPACE_ROW = ['none', 'top', 'bottom'];
+  var SPACE_H = 480, SPACE_PHOTOS = 3;   // ¾ of a photo high (owner's choice) · up to 3 photos in it
+  var SPACE_STYLE_IDS = ['serif', 'script', 'bold', 'type'];
+  var SPACE_STYLES = {   // the 4 styles of your words in the space (max = the biggest letters, in strip units)
+    serif:  {label:'Serif',  w:'italic 600', family:"'Playfair Display', serif", max:84, sp:0, upper:false},
+    script: {label:'Script', w:'700', family:"'Dancing Script', cursive", max:104, sp:0, upper:false},
+    bold:   {label:'BOLD',   w:'700', family:'Poppins, sans-serif', max:70, sp:0.08, upper:true},
+    type:   {label:'Type',   w:'700', family:"'Courier New', Courier, monospace", max:62, sp:0.04, upper:false}
+  };
+  var SPACE_ICONS = {
+    none: '<svg width="14" height="22" viewBox="0 0 14 22" aria-hidden="true"><rect x="1" y="1" width="12" height="20" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3.5" y="4" width="7" height="5" rx="1" fill="currentColor"/><rect x="3.5" y="12" width="7" height="5" rx="1" fill="currentColor"/></svg>',
+    top: '<svg width="14" height="22" viewBox="0 0 14 22" aria-hidden="true"><rect x="1" y="1" width="12" height="20" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3.5" y="3.5" width="7" height="4" rx="1" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="2 1.2"/><rect x="3.5" y="9.5" width="7" height="4.5" rx="1" fill="currentColor"/><rect x="3.5" y="15.5" width="7" height="4" rx="1" fill="currentColor"/></svg>',
+    bottom: '<svg width="14" height="22" viewBox="0 0 14 22" aria-hidden="true"><rect x="1" y="1" width="12" height="20" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3.5" y="3" width="7" height="4" rx="1" fill="currentColor"/><rect x="3.5" y="8.5" width="7" height="4.5" rx="1" fill="currentColor"/><rect x="3.5" y="14.5" width="7" height="4" rx="1" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="2 1.2"/></svg>'
+  };
+  [['none', 'None'], ['top', 'Top'], ['bottom', 'Bottom']].forEach(function(o){
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.dataset.space = o[0];
+    b.innerHTML = SPACE_ICONS[o[0]] + '<span>' + o[1] + '</span>';
+    b.addEventListener('click', function(){ chooseSpace(o[0]); });
+    $('spaceRow').appendChild(b);
+  });
+  SPACE_STYLE_IDS.forEach(function(id){
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.dataset.style = id; b.textContent = SPACE_STYLES[id].label;
+    b.addEventListener('click', function(){ chooseSpaceStyle(id); });
+    $('spaceStyles').appendChild(b);
+  });
+  $('spacePhotosBtn').addEventListener('click', function(){
+    openStudio('S');
+    if(st.open) showStudioTray('spacephotos');
+  });
+  function syncSpaceUI(){
+    var t = templateById(state.templateId), can = canSpace(t), on = can && state.space !== 'none';
+    $('spacePick').hidden = !can;
+    $('spaceMore').hidden = !on;
+    Array.prototype.forEach.call($('spaceRow').children, function(b){
+      var yes = b.dataset.space === state.space;
+      b.classList.toggle('active', yes);
+      b.setAttribute('aria-pressed', yes ? 'true' : 'false');
+    });
+    Array.prototype.forEach.call($('spaceStyles').children, function(b){
+      var yes = b.dataset.style === state.spaceStyle;
+      b.classList.toggle('active', yes);
+      b.setAttribute('aria-pressed', yes ? 'true' : 'false');
+    });
+    $('spacePhotosBtn').textContent = '🖼 PHOTOS IN THE SPACE · ' + spacePhotoCount() + '/' + SPACE_PHOTOS;
+    $('spaceTip').textContent = 'Tip: ' + TAP + ' the space in your strip to move things around.';
+  }
+  function chooseSpace(v){
+    if(SPACE_ROW.indexOf(v) === -1 || state.space === v) return;
+    state.space = v;
+    syncSpaceUI();
+    if(state.currentStep === 'customize'){ fillThumbs($('framePickRow'), 0.14); renderPreview(); }
+  }
+  function chooseSpaceStyle(id){
+    if(SPACE_STYLE_IDS.indexOf(id) === -1 || state.spaceStyle === id) return;
+    state.spaceStyle = id;
+    syncSpaceUI();
+    if(st.open){ renderSpaceTextTiles(); stickersChanged(); }
+    else if(state.currentStep === 'customize') renderPreview();
+  }
+  // a frame without the space while yours is on: a short note (Polaroid while Grid is on already got one)
+  function noteNoSpace(shown){
+    var t = templateById(state.templateId);
+    if(shown || state.space === 'none' || canSpace(t) || state.currentStep !== 'customize') return;
+    showToast(t.tab === 'plain' ? t.name + ' keeps its own layout ♡' : 'Extra space is for Plain frames for now ♡');
   }
   function showFrameTab(tabId){
     syncMoments();
@@ -2636,7 +2764,7 @@
     state.templateId = id;
     state.colorId = templateById(id).color;   // a new frame starts in its own color
     syncFrameSelection();
-    noteOwnLayout();   // (v4.21) e.g. Polaroid while Grid is on
+    noteNoSpace(noteOwnLayout());   // (v4.21) e.g. Polaroid while Grid is on · (v4.22) a frame without the extra space
     if(state.currentStep === 'customize'){ prepCustomizeDefaults(); renderPreview(); }
   }
   syncFrameSelection();
@@ -3146,7 +3274,7 @@
   function takeNewPhotos(){
     if(inRoom()){ goToStep('live'); return; }
     state.shots = [];
-    state.placed = [];   // stickers you placed were for the old photos
+    state.placed = spaceThings(state.placed);   // stickers you placed were for the old photos (the extra space's stay)
     clearSession();   // taking new photos: last time's are no longer offered
     goToStep('camera');
   }
@@ -3181,6 +3309,7 @@
     $('popoutToggle').checked = state.popout;
     syncDateMenu();
     syncSinceRow();
+    syncSpaceUI();
     renderFilterThumbs();
   }
   function renderFilterThumbs(){
@@ -3802,7 +3931,7 @@
         if(state.currentStep !== 'camera') return;
         if(!yes){ showToast(TAP_ + ' × on a photo to retake just that one ♡'); return; }
         state.shots = [];
-        state.placed = [];
+        state.placed = spaceThings(state.placed);   // (v4.22) what's in the extra space stays
         updateTray();
         $('takePhotoBtn').click();   // and start the countdown
       });
@@ -4745,7 +4874,7 @@
     if(!$('duoHelp').hidden) closeDuoHelp();
     if(!$('confirmModal').hidden) closeConfirm(null);
     state.shots = [];
-    state.placed = [];   // (both phones do this: each starts its new photos without stickers)
+    state.placed = spaceThings(state.placed);   // (both phones do this: each starts its new photos without stickers; the extra space's stay)
     live.roundIdx = 0;
     // your love may have picked another style or count: follow theirs
     live.mode = mode; live.rounds = rounds; live.roundsBy[mode] = rounds;
@@ -5504,12 +5633,11 @@
     heart:drawHeart, star:drawStar, flower:drawFlower, bow:drawBow, sparkle:drawSparkleMark,
     kiss:drawKiss, cherry:drawCherry, crown:drawCrown, cloud:drawCloud
   };
-  function hasStickers(){
-    return (state.placed && state.placed.length > 0) || STICKERS.some(function(s){ return state.stickers[s.id]; });
-  }
   // anything on the strip that moves? (stickers, or a frame whose illustrations are animated)
   function hasMotion(){
-    return state.animated && (hasStickers() || !!templateById(state.templateId).animated);
+    // (v4.22) the photos in the extra space stand still: they alone don't make an Animated picture
+    var moves = (state.placed || []).some(function(it){ return !isSpacePhoto(it); }) || STICKERS.some(function(s){ return state.stickers[s.id]; });
+    return state.animated && (moves || !!templateById(state.templateId).animated);
   }
   // t = seconds into the loop; when `moving` is false every sticker sits still (t is ignored)
   function drawStickerPicks(ctx, w, h, accent, textColor, t, moving){
@@ -5554,7 +5682,10 @@
        p       its photo (0 = the first) · x, y = its middle, from the photo's middle, in photo widths
                (turning with the photo on polaroid frames) · s = its width in photo widths · r = its turn
        e       a thin white edge · ph = where its gentle motion starts (so they don't all move in sync)
-     (v4.13) k 'draw' = your own drawing (key = the drawing's id, see DRAWINGS below) */
+     (v4.13) k 'draw' = your own drawing (key = the drawing's id, see DRAWINGS below)
+     (v4.22) p 'S' = it sits in the extra space (see EXTRA SPACE): x, y from the space's middle, still in photo
+     widths (640). A picture there (k 'img') is one of the space's photos: a little print with a white border (a
+     cut-out stays cut out), standing still. k 'big' = your words in the space (not in this list: state.spaceWords) */
   var STUDIO_MAX = 30;                                      // stickers on one strip (keeps phones smooth)
   var ST_MIN = 0.04, ST_MAX = 1.2, ST_MAX_TALL = 1.4;        // size limits, in photo widths
   // a drawing may be as big as the studio's view (the photo and a bit of frame around it)
@@ -5589,7 +5720,12 @@
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ badgeWidths = {}; quickFor = null; });
   // height ÷ width (0 = can't be drawn, e.g. a picture that isn't here)
   function itemAspect(it){
-    if(it.k === 'img'){ var im = stickerImgs[it.key]; return im ? im.h / im.w : 0; }
+    if(it.k === 'img'){
+      var im = stickerImgs[it.key];
+      if(!im) return 0;
+      if(isPrint(it)){ var B = printBorder(im); return (im.h / im.w + 2*B) / (1 + 2*B); }   // (v4.22) with its white border
+      return im.h / im.w;
+    }
     if(it.k === 'draw'){ var dr = stickerDraws[it.key]; return dr ? dr.h0 / dr.w0 : 0; }
     var d = stickerDef(it);
     if(!d) return 0;
@@ -5599,27 +5735,59 @@
   }
   // where a sticker sits on strip b (full-size units): {x, y (its middle), w, h, rot} — null if its photo
   // isn't on this strip (fewer photos now) or its picture is missing
+  // (v4.22) the "photo" a sticker belongs to: one of the photos, or the extra space ('S': as wide as a photo for
+  // the units, bw × bh = the space itself)
+  function rectOf(b, p){ return p === 'S' ? b.spaceRect : b.rects[p]; }
   function itemGeom(it, b){
-    var r = b.rects[it.p], asp = itemAspect(it);
-    if(!r || !(asp > 0)) return null;
-    var rot = r.rot || 0, c = Math.cos(rot), s = Math.sin(rot), w = it.s * r.w;
-    return {x:r.cx + (it.x*c - it.y*s) * r.w, y:r.cy + (it.x*s + it.y*c) * r.w, w:w, h:w * asp, rot:rot + it.r};
+    var r = rectOf(b, it.p);
+    if(!r) return null;
+    if(it.k === 'big') return wordsGeom(b, it);   // (v4.22) your words in the space
+    // (v4.22) the space's photos sit where the automatic arrangement puts them, until you move one yourself
+    var src = it.p === 'S' && it.k === 'img' && state.spaceAuto ? (spaceAutoLayout(b) || {})[it.id] || it : it;
+    var asp = itemAspect(it);
+    if(!(asp > 0)) return null;
+    var rot = r.rot || 0, c = Math.cos(rot), s = Math.sin(rot), w = src.s * r.w;
+    var g = {x:r.cx + (src.x*c - src.y*s) * r.w, y:r.cy + (src.x*s + src.y*c) * r.w, w:w, h:w * asp, rot:rot + src.r};
+    if(it.p === 'S'){   // (v4.22) always completely inside the space (e.g. placed on a wider Grid space, now a strip)
+      var ca = Math.abs(Math.cos(g.rot)), sa = Math.abs(Math.sin(g.rot));
+      var hx = Math.min(r.bw/2, (ca*g.w + sa*g.h)/2), hy = Math.min(r.bh/2, (sa*g.w + ca*g.h)/2);
+      g.x = clamp(g.x, r.cx - r.bw/2 + hx, r.cx + r.bw/2 - hx); g.y = clamp(g.y, r.cy - r.bh/2 + hy, r.cy + r.bh/2 - hy);
+    }
+    return g;
   }
   // move a sticker's middle to strip point (x, y) — its middle never leaves the strip
+  // (v4.22) one in the extra space stays in it completely (so it never covers the date or the photos)
   function setItemCenter(it, b, x, y){
-    var r = b.rects[it.p], rot = r.rot || 0, c = Math.cos(rot), s = Math.sin(rot);
+    var r = rectOf(b, it.p), rot = r.rot || 0, c = Math.cos(rot), s = Math.sin(rot);
+    if(it.p === 'S'){
+      var g = itemGeom(it, b), hw = 0, hh = 0;
+      if(g){ var ca = Math.abs(Math.cos(g.rot)), sa = Math.abs(Math.sin(g.rot)); hw = Math.min(r.bw/2, (ca*g.w + sa*g.h)/2); hh = Math.min(r.bh/2, (sa*g.w + ca*g.h)/2); }
+      x = clamp(x, r.cx - r.bw/2 + hw, r.cx + r.bw/2 - hw); y = clamp(y, r.cy - r.bh/2 + hh, r.cy + r.bh/2 - hh);
+    }
     var dx = (clamp(x, 0, b.w) - r.cx) / r.w, dy = (clamp(y, 0, b.h) - r.cy) / r.w;
     it.x = dx*c + dy*s; it.y = -dx*s + dy*c;
   }
-  // up to about a whole photo wide (a tall picture: up to 1.4 photos tall)
+  // (v4.22) after a size or turn change: back inside the space if it now sticks out
+  function keepInSpace(it, b){
+    if(it.p !== 'S' || (state.spaceAuto && (it.k === 'img' || it.k === 'big'))) return;
+    var g = itemGeom(it, b);
+    if(g) setItemCenter(it, b, g.x, g.y);
+  }
+  // up to about a whole photo wide (a tall picture: up to 1.4 photos tall) — in the space: never bigger than it
   function setItemWidth(it, b, w){
+    var r = rectOf(b, it.p);
+    if(it.k === 'big'){ setWordsWidth(it, b, w); keepInSpace(it, b); return; }
     var asp = itemAspect(it) || 1, draw = it.k === 'draw';
-    it.s = clamp(w / b.rects[it.p].w, ST_MIN, Math.min(draw ? ST_MAX_DRAW : ST_MAX, (draw ? ST_MAX_DRAW_TALL : ST_MAX_TALL) / asp));
+    var maxW = draw ? ST_MAX_DRAW : ST_MAX, maxH = draw ? ST_MAX_DRAW_TALL : ST_MAX_TALL;
+    if(it.p === 'S'){ maxW = Math.min(maxW, r.bw / r.w); maxH = Math.min(maxH, r.bh / r.w); }
+    it.s = clamp(w / r.w, ST_MIN, Math.min(maxW, maxH / asp));
+    keepInSpace(it, b);
   }
   function setItemTurn(it, b, rot){
-    var r = rot - (b.rects[it.p].rot || 0);
+    var r = rot - (rectOf(b, it.p).rot || 0);
     r = Math.atan2(Math.sin(r), Math.cos(r));
     it.r = Math.abs(r) < 0.06 ? 0 : r;   // nearly straight = straight
+    keepInSpace(it, b);
   }
   // the photo at strip point (x, y); strict: -1 when it's not on a photo (else the nearest one)
   function photoAt(b, x, y, strict){
@@ -5641,7 +5809,8 @@
     ctx.translate(g.x, g.y); ctx.rotate(g.rot);
     if(it.k === 'img'){
       var im = stickerImgs[it.key];
-      if(im) ctx.drawImage(im.img, -g.w/2, -g.h/2, g.w, g.h);
+      if(im && isPrint(it)) paintPrint(ctx, im, g);   // (v4.22) a photo in the extra space
+      else if(im) ctx.drawImage(im.img, -g.w/2, -g.h/2, g.w, g.h);
     } else if(it.k === 'draw'){
       var dr = stickerDraws[it.key];
       if(dr){ ctx.scale(g.w / dr.w0, g.w / dr.w0); drawDrawing(ctx, dr, Infinity, false, 0, color); }
@@ -5662,7 +5831,7 @@
      stamped all around it — a canvas can't outline any shape, this works for words and pictures too */
   var edgeSprites = {}, edgeCount = 0;
   function edgeSprite(it, color){
-    var id = it.k + '|' + it.key + '|' + (it.k === 'img' ? '' : color);
+    var id = it.k + '|' + it.key + '|' + (it.k === 'img' ? (isPrint(it) ? 'print' : '') : color);
     if(edgeSprites[id]) return edgeSprites[id];
     if(edgeCount > 40){ edgeSprites = {}; edgeCount = 0; }   // many colors tried: start over
     var asp = itemAspect(it), w = asp > 1 ? 480 / asp : 480, h = w * asp;
@@ -5702,7 +5871,7 @@
       if(!g) return;
       if(it.k === 'draw'){ paintDrawing(ctx, it, g, b.accent, moving && it.id !== still ? t : -1); return; }   // writes itself
       var alpha = 1;
-      if(moving && it.id !== still){
+      if(moving && it.id !== still && !isSpacePhoto(it)){   // (v4.22) the space's photos stand still
         var bob, rot, k = 1;
         if(it.k === 'img'){   // your own pictures only sway gently (a person shouldn't bounce)
           bob = wave(t, 1, it.ph) * 5; rot = wave(t, 1, it.ph + 1) * 0.035 * Math.min(1, 300 / g.w);
@@ -5718,6 +5887,235 @@
       if(it.e) paintEdged(ctx, it, g, b.accent, alpha);
       else paintSticker(ctx, it, g, b.accent, alpha);
     });
+  }
+
+  /* ================= EXTRA SPACE (v4.22) =================
+     The still Plain strips can get an extra space ABOVE (Top) or BELOW (Bottom) the photos: ¾ of a photo high
+     (SPACE_H) and as wide as the photos (both columns on a grid). Your text moves into it, big, in one of 4
+     styles (SPACE_STYLES), and up to 3 of your own photos sit around it: a photo from the gallery becomes a
+     little print (white border, soft shadow, a little tilt), a cut-out picture stays cut out.
+     In the sticker studio the space is a page of its own ("Space ♡"): its photos and words move, pinch and turn
+     like stickers, and stickers and drawings can go there too. Its things are placed items with p 'S' (see FREE
+     STICKERS); the words are state.spaceWords {x, y (from the space's middle, in photo widths), px (letter size,
+     strip units), l (1 or 2 lines), r} — never wider or taller than the space.
+     While state.spaceAuto is on, the photos and words are arranged automatically (spaceAutoLayout): the words at
+     the strip's outer edge of the space (top of a Top space, bottom of a Bottom one) with the photos in a row
+     beside them; a wide space (Grid) puts the words in the middle and the photos at its sides. The first time you
+     move one of them yourself, everything stays where it is from then on ("arrange again" switches it back on).
+     Other frames keep your choice but don't show the space: your text goes below the photos as always. */
+  function canSpace(t){ return !!t && !t.custom && t.tab === 'plain' && (t.layout === 'strip' || t.layout === 'film'); }
+  function spaceOn(t){ return state.space !== 'none' && SPACE_ROW.indexOf(state.space) !== -1 && canSpace(t) ? state.space : ''; }
+  function isSpacePhoto(it){ return !!it && it.p === 'S' && it.k === 'img'; }
+  function spaceThings(list){ return (list || []).filter(function(it){ return it.p === 'S'; }); }
+  function spacePhotoCount(){ return (state.placed || []).filter(isSpacePhoto).length; }
+  // your text as it's drawn in the space: one line of at most 40 letters
+  function spaceText(){ return (state.customText || '').replace(/[\u0000-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim().slice(0, 40); }
+  function spaceStyle(){ return SPACE_STYLE_IDS.indexOf(state.spaceStyle) !== -1 ? SPACE_STYLES[state.spaceStyle] : SPACE_STYLES.script; }
+
+  /* ---- the photos: a little print with a white border (a cut-out picture stays as it is) ---- */
+  function isPrint(it){ return isSpacePhoto(it) && !!stickerImgs[it.key] && !idolIsCutout(stickerImgs[it.key]); }
+  function printBorder(im){ return 0.05 * Math.min(1, im.h / im.w); }   // per photo width: 5% of its shorter side
+  function paintPrint(ctx, im, g){
+    var B = printBorder(im), u = g.w / (1 + 2*B), m = ctx.getTransform ? ctx.getTransform() : null;
+    var k = m ? Math.hypot(m.a, m.b) : 1;   // (shadows ignore the canvas scale: keep them in proportion)
+    ctx.save();
+    ctx.shadowColor = 'rgba(40,20,30,.30)'; ctx.shadowBlur = 16 * k; ctx.shadowOffsetY = 6 * k;
+    ctx.fillStyle = '#FFFFFF'; ctx.fillRect(-g.w/2, -g.h/2, g.w, g.h);
+    ctx.restore();
+    ctx.drawImage(im.img, -g.w/2 + B*u, -g.h/2 + B*u, u, u * im.h / im.w);
+  }
+
+  /* ---- the words ---- */
+  var spaceMeasure = null;
+  // a line's width at letter size px (the spaced styles: letter by letter, exactly as they're drawn)
+  function measureSpaceText(s, px, sty){
+    var c = spaceMeasure || (spaceMeasure = document.createElement('canvas').getContext('2d'));
+    c.font = sty.w + ' ' + px + 'px ' + sty.family;
+    if(!sty.sp) return c.measureText(s).width;
+    var chars = Array.from ? Array.from(s) : s.split(''), w = 0;
+    chars.forEach(function(ch){ w += c.measureText(ch).width; });
+    return w + px * sty.sp * (chars.length - 1);
+  }
+  function fillSpacedChars(ctx, text, y, sp){   // centred on x = 0 (Array.from keeps emoji in one piece)
+    var chars = Array.from ? Array.from(text) : text.split(''), w = -sp, keep = ctx.textAlign;
+    chars.forEach(function(ch){ w += ctx.measureText(ch).width + sp; });
+    var x = -w / 2;
+    ctx.textAlign = 'left';
+    chars.forEach(function(ch){ ctx.fillText(ch, x, y); x += ctx.measureText(ch).width + sp; });
+    ctx.textAlign = keep;
+  }
+  // 2 lines = split at the space nearest the middle (no space: one line)
+  function splitSpaceWords(text, l){
+    if(l !== 2) return [text];
+    var mid = text.length / 2, idx = -1;
+    for(var i = 0; i < text.length; i++) if(text[i] === ' ' && (idx < 0 || Math.abs(i - mid) < Math.abs(idx - mid))) idx = i;
+    return idx > 0 ? [text.slice(0, idx), text.slice(idx + 1)] : [text];
+  }
+  // the biggest letters that fit a bw × bh box, on one line or two (two only when clearly bigger)
+  function fitWordsInto(text, sty, bw, bh){
+    var shown = sty.upper ? text.toUpperCase() : text;
+    var one = Math.min(sty.max, bh * 0.62, 100 * bw / Math.max(1, measureSpaceText(shown, 100, sty)));
+    var best = {px:one, l:1}, two = splitSpaceWords(shown, 2);
+    if(two.length === 2){
+      var longest = Math.max(measureSpaceText(two[0], 100, sty), measureSpaceText(two[1], 100, sty));
+      var px2 = Math.min(sty.max, bh / 2.4, 100 * bw / Math.max(1, longest));
+      if(px2 > one * 1.15) best = {px:px2, l:2};
+    }
+    best.px = Math.max(14, Math.floor(best.px));
+    return best;
+  }
+  var WORDS_DEFAULT = {id:'W', k:'big', p:'S', x:0, y:0, px:72, l:1, r:0};   // (moved things, then wrote words)
+  function copyWords(w){ return w ? {id:'W', k:'big', p:'S', x:w.x, y:w.y, px:w.px, l:w.l === 2 ? 2 : 1, r:w.r || 0} : null; }
+  // from a design: sensible numbers only (anything else = not placed yet)
+  function cleanWords(raw){
+    if(!raw || typeof raw !== 'object') return null;
+    function num(v, a, b){ return typeof v === 'number' && isFinite(v) ? clamp(v, a, b) : null; }
+    var x = num(raw.x, -2, 2), y = num(raw.y, -2, 2), px = num(raw.px, 8, 600);
+    if(x === null || y === null || px === null) return null;
+    return {id:'W', k:'big', p:'S', x:x, y:y, px:px, l:raw.l === 2 ? 2 : 1, r:num(raw.r, -7, 7) || 0};
+  }
+  function wordsItem(){ return state.spaceWords || WORDS_DEFAULT; }   // (read only: see spaceHold)
+  // where the words are on strip b: {x, y, w, h, rot, px, lines, sty} — null without words or space
+  function wordsGeom(b, w){
+    var r = b && b.spaceRect, text = spaceText();
+    if(!r || !text) return null;
+    var maxW = r.bw - 24, maxH = r.bh - 12;   // never bigger than the space…
+    if(state.spaceAuto){
+      var lay = spaceAutoLayout(b);
+      // …and, arranged automatically, never outside their own place (a very long word gets smaller letters
+      // rather than running into the photos beside it)
+      if(lay && lay.W){ w = lay.W; maxW = Math.min(maxW, w.sw); maxH = Math.min(maxH, w.sh); }
+    }
+    var sty = spaceStyle(), lines = splitSpaceWords(sty.upper ? text.toUpperCase() : text, w.l), px = w.px, ww = 0;
+    lines.forEach(function(l){ ww = Math.max(ww, measureSpaceText(l, px, sty)); });
+    var hh = lines.length * px * 1.12;
+    var k = Math.min(1, maxW / Math.max(1, ww), maxH / Math.max(1, hh));
+    px *= k; ww *= k; hh *= k;
+    // longer words than when you placed them: they move in a little rather than stick out of the space
+    var rot = (r.rot || 0) + (w.r || 0), ca = Math.abs(Math.cos(rot)), sa = Math.abs(Math.sin(rot));
+    var hx = Math.min(r.bw/2, (ca*ww + sa*hh)/2), hy = Math.min(r.bh/2, (sa*ww + ca*hh)/2);
+    return {x:clamp(r.cx + w.x * r.w, r.cx - r.bw/2 + hx, r.cx + r.bw/2 - hx), y:clamp(r.cy + w.y * r.w, r.cy - r.bh/2 + hy, r.cy + r.bh/2 - hy),
+            w:ww, h:hh, rot:rot, px:px, lines:lines, sty:sty};
+  }
+  function setWordsWidth(it, b, w){
+    var g = wordsGeom(b, it);
+    if(!g || !(g.w > 0)) return;
+    it.px = clamp(g.px * w / g.w, 8, 600);
+    var g2 = wordsGeom(b, it);
+    if(g2) it.px = g2.px;   // (stops growing at the space's size)
+  }
+  // the 4 styles' letters: a canvas only uses a web font once it's loaded (the page itself never shows Dancing
+  // Script bold, for example) — asked for once, then the strip is drawn again with them
+  var spaceFontsAsked = false;
+  function loadSpaceFonts(){
+    if(spaceFontsAsked || !document.fonts || !document.fonts.load) return;
+    spaceFontsAsked = true;
+    Promise.all(SPACE_STYLE_IDS.map(function(id){
+      var sty = SPACE_STYLES[id];
+      return document.fonts.load(sty.w + ' 40px ' + sty.family, 'Our love ♡').catch(function(){});
+    })).then(function(){ if(state.currentStep === 'customize') renderPreview(); });
+  }
+  // drawn right on top of the strip (under the frame's drawings, the stickers and the space's photos)
+  function drawSpaceWords(ctx, b){
+    var r = b && b.spaceRect;
+    if(!r) return;
+    loadSpaceFonts();
+    var g = wordsGeom(b, wordsItem());
+    if(!g){
+      // an empty space gets a small heart in the middle, so it never looks unfinished
+      if(!state.placed.some(function(it){ return it.p === 'S'; })) drawHeart(ctx, r.cx, r.cy - 32, 56, b.ink, 0.4);
+      return;
+    }
+    ctx.save();
+    ctx.translate(g.x, g.y); ctx.rotate(g.rot);
+    if(b.t.footPill){   // Polka Dots: on a white label, so the dots never run through the letters
+      ctx.fillStyle = b.t.footPill;
+      roundRect(ctx, -g.w/2 - 28, -g.h/2 - 15, g.w + 56, g.h + 30, Math.min(28, (g.h + 30) / 2)); ctx.fill();
+    }
+    ctx.fillStyle = b.ink; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = g.sty.w + ' ' + g.px + 'px ' + g.sty.family;
+    var lh = g.px * 1.12;
+    g.lines.forEach(function(line, i){
+      var y = (i - (g.lines.length - 1) / 2) * lh;
+      if(g.sty.sp) fillSpacedChars(ctx, line, y, g.px * g.sty.sp);
+      else ctx.fillText(line, 0, y);
+    });
+    ctx.restore();
+  }
+
+  /* ---- the automatic arrangement (strip units, kept on the strip it was made for) ---- */
+  var SPACE_TILTS = [-5, 4, -2.5];   // degrees, prints only
+  function spaceAutoLayout(b){
+    var r = b && b.spaceRect;
+    if(!r) return null;
+    var pics = state.placed.filter(function(it){ return isSpacePhoto(it) && itemAspect(it) > 0; }).slice(0, SPACE_PHOTOS);
+    var text = spaceText();
+    var key = pics.map(function(it){ return it.id + ':' + itemAspect(it).toFixed(4); }).join(',') + '|' + text + '|' + state.spaceStyle + '|' + state.space;
+    if(b.spaceLay && b.spaceLayKey === key) return b.spaceLay;
+    var n = pics.length, m = 28, wordsFirst = state.space === 'top';
+    var box = {x:r.cx - r.bw/2 + m, y:r.cy - r.bh/2 + m, w:r.bw - 2*m, h:r.bh - 2*m};
+    var wide = r.bw / r.bh > 2, wb = null, slots = [];
+    function row(a, count){   // side by side, overlapping a little
+      var sw = a.w / count, over = count > 1 ? 0.1 : 0, out = [];
+      for(var i = 0; i < count; i++) out.push({x:a.x + i*sw - sw*over/2, y:a.y, w:sw*(1 + over), h:a.h});
+      return out;
+    }
+    if(!n){ if(text) wb = box; }
+    else if(!text) slots = row(box, n);
+    else if(wide){
+      if(n === 1){
+        var pw = box.w * 0.42;
+        slots = [{x:box.x, y:box.y, w:pw, h:box.h}];
+        wb = {x:box.x + pw + 20, y:box.y, w:box.w - pw - 20, h:box.h};
+      } else {
+        var sw = box.w * 0.3, L = {x:box.x, y:box.y, w:sw, h:box.h}, R = {x:box.x + box.w - sw, y:box.y, w:sw, h:box.h};
+        wb = {x:box.x + sw + 16, y:box.y, w:box.w - 2*sw - 32, h:box.h};
+        slots = n === 2 ? [L, R] : [{x:L.x, y:L.y, w:sw*0.9, h:box.h*0.62}, R, {x:L.x + sw*0.14, y:L.y + box.h*0.38, w:sw*0.86, h:box.h*0.62}];
+      }
+    } else {
+      var wh = box.h * 0.34, gap = 10;
+      if(wordsFirst){
+        wb = {x:box.x, y:box.y, w:box.w, h:wh};
+        slots = row({x:box.x, y:box.y + wh + gap, w:box.w, h:box.h - wh - gap}, n);
+      } else {
+        slots = row({x:box.x, y:box.y, w:box.w, h:box.h - wh - gap}, n);
+        wb = {x:box.x, y:box.y + box.h - wh, w:box.w, h:wh};
+      }
+    }
+    var out = {};
+    slots.forEach(function(s, i){
+      var it = pics[i], asp = itemAspect(it), w = Math.min(s.w * 0.92, s.h * 0.92 / asp);
+      out[it.id] = {x:(s.x + s.w/2 - r.cx) / r.w, y:(s.y + s.h/2 - r.cy) / r.w, s:Math.min(ST_MAX, w / r.w),
+                    r:isPrint(it) ? SPACE_TILTS[i % 3] * Math.PI / 180 : 0};
+    });
+    if(text && wb){
+      var f = fitWordsInto(text, spaceStyle(), wb.w, wb.h);
+      out.W = {id:'W', k:'big', p:'S', x:(wb.x + wb.w/2 - r.cx) / r.w, y:(wb.y + wb.h/2 - r.cy) / r.w, px:f.px, l:f.l, r:0,
+               sw:wb.w, sh:wb.h};   // (its place: the words never leave it while arranged automatically)
+    }
+    b.spaceLay = out; b.spaceLayKey = key;
+    return out;
+  }
+  // you're moving a photo or the words in the space yourself: from now on everything stays where it is
+  function spaceManual(){
+    if(!state.spaceAuto) return;
+    var lay = base && base.spaceRect ? spaceAutoLayout(base) : null;
+    var gw = lay && lay.W ? wordsGeom(base, lay.W) : null;   // (the size they're shown at now: no jump)
+    state.spaceAuto = false;
+    if(!lay) return;
+    state.placed.forEach(function(it){
+      var a = lay[it.id];
+      if(a && isSpacePhoto(it)){ it.x = a.x; it.y = a.y; it.s = a.s; it.r = a.r; }
+    });
+    if(lay.W){ state.spaceWords = copyWords(lay.W); if(gw) state.spaceWords.px = clamp(gw.px, 8, 600); }
+  }
+  // before changing something in the space by hand; returns the thing to change (the words: your own copy)
+  function spaceHold(it){
+    if(!it || it.p !== 'S') return it;
+    if(it.k === 'img' || it.k === 'big') spaceManual();
+    if(it.k !== 'big') return it;
+    if(!state.spaceWords) state.spaceWords = copyWords(WORDS_DEFAULT);
+    return state.spaceWords;
   }
 
   /* ================= DRAWINGS (v4.13) =================
@@ -6584,7 +6982,8 @@
       else return;
       var id = typeof it.id === 'string' && /^[a-z0-9]{1,24}$/.test(it.id) && !seen[it.id] ? it.id : stId();
       seen[id] = true;
-      out.push({id:id, k:k, key:key, p:Math.round(num(it.p, 0, MAX_SHOTS - 1, 0)), x:num(it.x, -3, 3, 0), y:num(it.y, -3, 3, 0),
+      out.push({id:id, k:k, key:key, p:it.p === 'S' ? 'S' : Math.round(num(it.p, 0, MAX_SHOTS - 1, 0)),   // (v4.22) 'S' = the extra space
+                x:num(it.x, -3, 3, 0), y:num(it.y, -3, 3, 0),
                 s:num(it.s, ST_MIN, k === 'draw' ? ST_MAX_DRAW : ST_MAX, 0.23), r:num(it.r, -7, 7, 0), e:it.e === true, ph:num(it.ph, 0, 7, 0)});
     });
     return out;
@@ -8781,7 +9180,7 @@
      Shift it turns). Everything fits on one phone screen: the photo shrinks on short screens.
      The editor's preview pauses while the studio is open; DONE (or back) returns to it. */
   // (v4.13) draw = the drawing you're making ({strokes, points, p = its photo}), stroke = the line under your finger
-  var st = {open:false, i:0, last:0, sel:null, cw:1, ch:1, crops:[], bg:null, raf:0, dirty:true, tray:'shapes', manage:false, wheelT:0,
+  var st = {open:false, i:0, last:0, pages:[0], sel:null, cw:1, ch:1, crops:[], bg:null, raf:0, dirty:true, tray:'shapes', manage:false, wheelT:0,
             draw:null, stroke:null, drawBlocked:false, draftStale:true};
   var stPen = {pen:'pen', c:'accent', sz:'medium'};   // (v4.13) the pen, colour and size you picked last
   var FINE_POINTER = !!(window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches);
@@ -8789,11 +9188,22 @@
   var stPtr = {pts:{}, mode:null, grab:null, pinch:null, down:null, moved:false};
   function selItem(){
     if(!st.sel) return null;
+    if(st.sel === 'W') return wordsGeom(base, wordsItem()) ? wordsItem() : null;   // (v4.22) your words in the space
     for(var i = 0; i < state.placed.length; i++) if(state.placed[i].id === st.sel) return state.placed[i];
     return null;
   }
-  // i: the photo to show · add (optional): {k, key} — a sticker to add right away
-  function openStudio(i, add){
+  /* (v4.22) the studio's pages: the photos, and the extra space ('S') first (Top) or last (Bottom).
+     st.i = the page on screen, st.last = the photo (or 'S') you were on — the editor opens it again.
+     Every page has its own view (st.crops[i]: left, top, cw, ch); st.cw / st.ch = the one on screen */
+  function studioPages(){
+    var pages = base.rects.map(function(r, i){ return i; });
+    if(base.spaceRect){ if(spaceOn(base.t) === 'top') pages.unshift('S'); else pages.push('S'); }
+    return pages;
+  }
+  function curP(){ return st.pages && st.pages.length ? st.pages[clamp(st.i, 0, st.pages.length - 1)] : 0; }
+  function useCrop(){ var c = st.crops[st.i]; if(c){ st.cw = c.cw; st.ch = c.ch; } }
+  // p: the photo (0 = the first) or 'S' (the extra space) to show · add (optional): {k, key} — a sticker to add right away
+  function openStudio(p, add){
     if(state.currentStep !== 'customize') return;
     buildBase();
     if(!base.rects.length) return;
@@ -8801,7 +9211,9 @@
     closeZoom();
     stopAnim();   // the editor's preview waits behind the studio
     st.open = true; st.sel = null; st.manage = false;
-    st.i = st.last = clamp(i || 0, 0, base.rects.length - 1);
+    st.pages = studioPages();
+    st.i = Math.max(0, st.pages.indexOf(p));   // (a photo that isn't there any more, or no space: the first page)
+    st.last = st.pages[st.i];
     stPtr.pts = {}; stPtr.mode = null;
     $('stEditor').hidden = false;
     $('stEditor').scrollTop = 0;
@@ -8830,16 +9242,23 @@
   $('stPrev').addEventListener('click', function(){ studioGo(st.i - 1); });
   $('stNext').addEventListener('click', function(){ studioGo(st.i + 1); });
   function studioGo(i){
-    var n = base.rects.length;
-    st.i = st.last = (i + n) % n;
+    var n = st.pages.length;
+    st.i = (i + n) % n;
+    st.last = st.pages[st.i];
     st.sel = null; st.bg = null;
+    useCrop();     // (v4.22) the space's view has its own size
+    fitStudio();
+    syncStudioTabs();
     syncStudioUI();
   }
   // what each photo's view shows (strip units): a bit of frame around the photo; the first row also the
-  // title above, the last row the date below
+  // title above, the last row the date below. (v4.22) The space: all of it with a bit of frame around it
   function studioLayout(){
-    var b = base, n = b.rects.length;
-    st.i = clamp(st.i, 0, n - 1);
+    var b = base, keep = curP();
+    st.pages = studioPages();
+    var at = st.pages.indexOf(keep);   // stay on the same photo / the space when the strip is drawn again
+    st.i = at !== -1 ? at : clamp(st.i, 0, st.pages.length - 1);
+    st.last = st.pages[st.i];
     var boxes = b.rects.map(function(r){
       var c = Math.abs(Math.cos(r.rot || 0)), s = Math.abs(Math.sin(r.rot || 0)), w = c*r.w + s*r.h, h = s*r.w + c*r.h;
       return {l:r.cx - w/2, t:r.cy - h/2, r:r.cx + w/2, b:r.cy + h/2, w:w, h:h};
@@ -8847,19 +9266,26 @@
     var m = b.rects[0].w * 0.14;
     var bw = Math.max.apply(null, boxes.map(function(x){ return x.w; }));
     var bh = Math.max.apply(null, boxes.map(function(x){ return x.h; }));
-    st.cw = Math.min(b.w, bw + 2*m);
-    st.ch = Math.min(b.h, Math.max(bh + 2*m, st.cw * 1.15));
-    st.crops = boxes.map(function(x, i){
+    var cw = Math.min(b.w, bw + 2*m);
+    var ch = Math.min(b.h, Math.max(bh + 2*m, cw * 1.15));
+    var crops = boxes.map(function(x, i){
       var above = boxes.some(function(y, j){ return j !== i && y.b <= x.t + 2; });
       var below = boxes.some(function(y, j){ return j !== i && y.t >= x.b - 2; });
       var top;
-      if(!above && below) top = x.b + m/2 - st.ch;          // first row: as much of the title as fits
-      else if(above && !below) top = x.t - m/2;              // last row: as much of the date as fits
-      else top = (x.t + x.b)/2 - st.ch/2;
-      return {left:clamp((x.l + x.r)/2 - st.cw/2, 0, b.w - st.cw), top:clamp(top, 0, b.h - st.ch)};
+      if(!above && below) top = x.b + m/2 - ch;          // first row: as much of the title as fits
+      else if(above && !below) top = x.t - m/2;          // last row: as much of the date as fits
+      else top = (x.t + x.b)/2 - ch/2;
+      return {left:clamp((x.l + x.r)/2 - cw/2, 0, b.w - cw), top:clamp(top, 0, b.h - ch), cw:cw, ch:ch};
     });
+    var sr = b.spaceRect, scw, sch;
+    if(sr){ scw = Math.min(b.w, sr.bw + 2*m); sch = Math.min(b.h, sr.bh + 2*m); }
+    st.crops = st.pages.map(function(p){
+      return p === 'S' ? {left:clamp(sr.cx - scw/2, 0, b.w - scw), top:clamp(sr.cy - sch/2, 0, b.h - sch), cw:scw, ch:sch} : crops[p];
+    });
+    useCrop();
     st.bg = null; st.draftStale = true;
     fitStudio();
+    syncStudioTabs();
   }
   function fitStudio(){
     if(!st.open) return;
@@ -8898,6 +9324,7 @@
     ctx.setTransform(k, 0, 0, k, 0, 0);
     ctx.drawImage(st.bg, 0, 0);
     ctx.setTransform(k, 0, 0, k, -c.left * k, -c.top * k);
+    drawSpaceWords(ctx, base);   // (v4.22) the words in the extra space (they move, so they're not in the still view)
     drawPlaced(ctx, base, t, state.animated, st.sel);
     if(st.draw) paintDraft(ctx, cv, k, c);
     drawLabels(ctx, base);
@@ -8909,7 +9336,7 @@
   // your finger is drawn again every time
   var stDraft = document.createElement('canvas');
   function paintDraft(ctx, cv, k, c){
-    var r = base.rects[st.draw.p];
+    var r = rectOf(base, st.draw.p);
     if(!r) return;
     var s = k * r.w / 1000, ox = (r.cx - c.left) * k, oy = (r.cy - c.top) * k;
     if(st.draftStale || stDraft.width !== cv.width || stDraft.height !== cv.height){
@@ -8986,20 +9413,29 @@
   }
   function syncStudioUI(){
     if(!st.open) return;
-    var n = base.rects.length, it = selItem(), drawing = !!st.draw;
-    $('stTitle').textContent = drawing ? '✏️ Drawing' + (n > 1 ? ' · photo ' + (st.i + 1) : '')
-      : n > 1 ? 'Photo ' + (st.i + 1) + ' of ' + n : 'Your photo';
-    $('stPrev').classList.toggle('off', n < 2 || drawing);
-    $('stNext').classList.toggle('off', n < 2 || drawing);
+    var n = base.rects.length, p = curP(), space = p === 'S', it = selItem(), drawing = !!st.draw;
+    var words = !!it && it.k === 'big', pages = st.pages.length;
+    $('stTitle').textContent = drawing ? '✏️ Drawing' + (space ? ' · space' : n > 1 ? ' · photo ' + (p + 1) : '')
+      : space ? 'Space ♡' : n > 1 ? 'Photo ' + (p + 1) + ' of ' + n : 'Your photo';
+    $('stPrev').classList.toggle('off', pages < 2 || drawing);
+    $('stNext').classList.toggle('off', pages < 2 || drawing);
     $('stDone').textContent = drawing ? '✓ DONE' : 'DONE ♡';
     $('stTools').classList.toggle('off', !it);
     $('stTools').querySelector('[data-act="edge"]').setAttribute('aria-pressed', it && it.e ? 'true' : 'false');
+    // (v4.22) your words: no front / back (they always sit behind) and no edge
+    Array.prototype.forEach.call($('stTools').querySelectorAll('[data-act="front"], [data-act="back"], [data-act="edge"]'), function(b){
+      b.classList.toggle('na', words);
+    });
     $('stHint').textContent = drawing ? (stPen.pen === 'rainbow' ? 'Rainbow picks its own colours ✏️' : 'Write big, then shrink it after DONE ✏️')
       : it ? (FINE_POINTER ? 'drag to move · ↻ corner or mouse wheel: size and turn' : 'drag to move · two fingers: size and turn')
+      : space && st.tray === 'spacephotos' ? 'Gallery photos become little prints ♡ Up to ' + SPACE_PHOTOS
+      : space && st.tray === 'spacetext' ? 'Your text sits big in the space ♡'
       : st.tray === 'images' ? 'Saved on this device only ♡ Cut-out pictures look best'
       : st.tray === 'draw' ? (recentDraws().length ? 'Your last drawings stay on this device ♡' : TAP_ + ' + new drawing to write or draw ✏️')
+      : space ? TAP_ + ' a photo or your words to move them ♡'
       : state.placed.length ? TAP_ + ' a sticker to move it ♡' : 'Add a sticker below ♡';
-    $('stClear').hidden = drawing || !!it || !state.placed.length;
+    $('stClear').hidden = drawing || !!it || space || !state.placed.some(function(x){ return !isSpacePhoto(x); });
+    $('stArrange').hidden = drawing || !space || state.spaceAuto;   // (v4.22) back to the automatic arrangement
     $('stDrawClear').hidden = !(drawing && st.draw.strokes.length);
     st.dirty = true;
   }
@@ -9016,11 +9452,19 @@
   function addSticker(k, key){
     if(!st.open) return null;
     if(state.placed.length >= STUDIO_MAX){ showToast(STUDIO_MAX + ' stickers is the most for one strip ♡'); return null; }
-    var r = base.rects[st.i], ratio = r.h / r.w;
-    var it = {id:stId(), k:k, key:key, p:st.i, x:0, y:0, s:0.23, r:0, e:false, ph:Math.random() * 6.28};
+    var p = curP(), r = rectOf(base, p), ratio = (p === 'S' ? r.bh : r.h) / r.w;
+    if(k === 'img' && p === 'S' && spacePhotoCount() >= SPACE_PHOTOS){ showToast('Up to ' + SPACE_PHOTOS + ' photos in the space ♡'); return null; }
+    var it = {id:stId(), k:k, key:key, p:p, x:0, y:0, s:0.23, r:0, e:false, ph:Math.random() * 6.28};
     var asp = itemAspect(it);
     if(!(asp > 0)) return null;
-    if(k === 'img'){
+    if(k === 'img' && p === 'S'){
+      // (v4.22) a photo in the space: arranged with the others — or, after you moved things yourself, about 60% as
+      // tall as the space in a free third of it, a little tilted like the others
+      var count = spacePhotoCount(), thirds = [-0.32, 0.32, 0];
+      setItemWidth(it, base, r.bh * 0.6 / asp);
+      it.x = thirds[count % 3] * r.bw / r.w; it.y = 0;
+      if(isPrint(it)) it.r = SPACE_TILTS[count % 3] * Math.PI / 180;
+    } else if(k === 'img'){
       // "standing next to you": 82% as tall as the photo, at its right side, feet on the photo's bottom edge
       setItemWidth(it, base, r.w * 0.82 * ratio / asp);
       it.x = 0.5 - it.s * 0.3; it.y = ratio / 2 - it.s * asp / 2;
@@ -9031,11 +9475,11 @@
       // a small one in a free corner
       setItemWidth(it, base, Math.min(stickerDraws[key].w0 / 1000, 0.6) * r.w);
       if(it.s > 0.35){ it.x = 0; it.y = ratio * 0.28; }
-      else { var sp = freeSpot(st.i, ratio); it.x = sp[0]; it.y = sp[1]; }
+      else { var sp = freeSpot(p, ratio); it.x = sp[0]; it.y = sp[1]; }
     } else {
       var d = stickerDef(it), word = d.kind === 'word';
       setItemWidth(it, base, word ? Math.min(300, 60 + badgeWidth(d.text) * 1.6) : 150);
-      var spot = freeSpot(st.i, ratio);
+      var spot = freeSpot(p, ratio);
       it.x = spot[0]; it.y = spot[1];
       if(word) it.r = -0.12;
     }
@@ -9054,28 +9498,57 @@
     return [(Math.random() - 0.5) * 0.6, (Math.random() - 0.5) * 0.6 * ratio];
   }
   function removeSticker(id){
+    if(id === 'W'){ removeWords(); return; }   // (v4.22) your words in the space
     var i = -1;
     state.placed.forEach(function(x, j){ if(x.id === id) i = j; });
     if(i < 0) return;
     var it = state.placed.splice(i, 1)[0];
     if(st.sel === id) st.sel = null;
     stickersChanged();
-    showToast('Sticker removed', {label:'UNDO', fn:function(){
+    if(st.open && st.tray === 'spacephotos') renderSpacePhotoTiles();   // (v4.22) its ✓ goes
+    showToast(isSpacePhoto(it) ? 'Photo removed' : 'Sticker removed', {label:'UNDO', fn:function(){
       if(state.placed.some(function(x){ return x.id === it.id; }) || state.placed.length >= STUDIO_MAX) return;
+      if(isSpacePhoto(it) && spacePhotoCount() >= SPACE_PHOTOS) return;
       state.placed.splice(Math.min(i, state.placed.length), 0, it);
       if(st.open) st.sel = it.id;
+      stickersChanged();
+      if(st.open && st.tray === 'spacephotos') renderSpacePhotoTiles();
+    }});
+  }
+  // (v4.22) ✕ on your words in the space: the text goes (UNDO brings it back)
+  function removeWords(){
+    var old = state.customText;
+    if(!old) return;
+    state.customText = '';
+    $('customText').value = '';
+    if(st.sel === 'W') st.sel = null;
+    if(st.open && st.tray === 'spacetext') renderSpaceTextTiles();
+    stickersChanged();
+    showToast('Words removed', {label:'UNDO', fn:function(){
+      if(state.customText) return;
+      state.customText = old;
+      $('customText').value = old;
+      if(st.open && st.tray === 'spacetext') renderSpaceTextTiles();
       stickersChanged();
     }});
   }
   $('stClear').addEventListener('click', function(){
     confirmBox({title:'Remove all stickers?', text:'From every photo on this strip.', yes:'REMOVE ALL', no:'KEEP'}).then(function(yes){
       if(!yes) return;
-      state.placed = []; state.stickers = {}; st.sel = null;
+      state.placed = state.placed.filter(isSpacePhoto); state.stickers = {}; st.sel = null;   // (v4.22) the space's photos stay
       stickersChanged();
     });
   });
+  // (v4.22) "arrange again": the space's photos and words go back to the automatic arrangement
+  $('stArrange').addEventListener('click', function(){
+    state.spaceAuto = true;
+    st.sel = null;
+    stickersChanged();
+  });
   // a sticker let go over another photo now belongs to that photo (it follows it to other frames)
+  // (v4.22) what's in the extra space stays in it
   function reanchor(it){
+    if(it.p === 'S') return;
     var g = itemGeom(it, base);
     if(!g) return;
     var p = photoAt(base, g.x, g.y, true);
@@ -9091,6 +9564,9 @@
     var it = selItem(), g = it && itemGeom(it, base);
     if(!g){ showToast(TAP_ + ' a sticker on the photo first ♡'); return; }
     var act = b.dataset.act;
+    if(it.k === 'big' && (act === 'front' || act === 'back' || act === 'edge')){ showToast('Your words always sit behind the photos ♡'); return; }
+    if(act !== 'remove'){ it = spaceHold(it); g = itemGeom(it, base); }   // (v4.22) moved by hand: no more automatic arranging
+    if(!g) return;
     if(act === 'smaller') setItemWidth(it, base, g.w / 1.15);
     else if(act === 'bigger') setItemWidth(it, base, g.w * 1.15);
     else if(act === 'front' || act === 'back'){
@@ -9129,9 +9605,14 @@
       var l = stLocal(g, p);
       if(Math.abs(l.x) > Math.max(g.w/2, g0) || Math.abs(l.y) > Math.max(g.h/2, g0)) continue;
       if(it.k === 'draw'){ if(drawingHit(it, l, g, g0 * 0.8)) return it; continue; }   // by its lines
-      if(it.k !== 'img' || (g.w < 3*g0 && g.h < 3*g0)) return it;
+      if(it.k !== 'img' || (g.w < 3*g0 && g.h < 3*g0) || isPrint(it)) return it;   // (a print is solid everywhere)
       var im = stickerImgs[it.key], e = g0 * 0.6;
       if(im && [[0,0],[e,0],[-e,0],[0,e],[0,-e]].some(function(o){ return imgSolidAt(im, (l.x + o[0]) / g.w + 0.5, (l.y + o[1]) / g.h + 0.5); })) return it;
+    }
+    // (v4.22) the Space page: your words (they sit behind everything else)
+    if(curP() === 'S'){
+      var gw = wordsGeom(base, wordsItem());
+      if(gw){ var lw = stLocal(gw, p); if(Math.abs(lw.x) <= gw.w/2 + g0 * 0.5 && Math.abs(lw.y) <= gw.h/2 + g0 * 0.5) return wordsItem(); }
     }
     var sel = selItem(), gs = sel && itemGeom(sel, base);
     if(gs){ var ls = stLocal(gs, p); if(Math.abs(ls.x) <= gs.w/2 && Math.abs(ls.y) <= gs.h/2) return sel; }
@@ -9187,6 +9668,7 @@
     if(stPtr.down && Math.hypot(e.clientX - stPtr.down.x, e.clientY - stPtr.down.y) > 6) stPtr.moved = true;
     var it = selItem();
     if(!it) return;
+    if(/^(drag|turn|pinch)$/.test(stPtr.mode)) it = spaceHold(it);   // (v4.22) moved by hand: no more automatic arranging
     if(stPtr.mode === 'drag') setItemCenter(it, base, p.x + stPtr.grab.dx, p.y + stPtr.grab.dy);
     else if(stPtr.mode === 'turn'){
       var g = itemGeom(it, base), G = stPtr.grab;
@@ -9228,6 +9710,8 @@
     var it = selItem(), g = it && itemGeom(it, base);
     if(!g) return;
     e.preventDefault();
+    it = spaceHold(it); g = itemGeom(it, base);   // (v4.22)
+    if(!g) return;
     // lines / pages → pixels; Shift+wheel arrives as deltaX in some browsers; ctrlKey = a touchpad pinch
     var unit = e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 400 : 1, d = (e.deltaY || e.deltaX) * unit;
     if(e.shiftKey) setItemTurn(it, base, g.rot + d * 0.003);
@@ -9240,16 +9724,19 @@
   stCv.addEventListener('keydown', function(e){
     if(st.draw) return;   // (drawing: Escape = DONE, Ctrl+Z = undo — see "✏️ Draw")
     if(e.key === 'Enter' || e.key === ' '){
-      var mine = state.placed.filter(function(x){ return x.p === st.i; });
+      var p = curP(), mine = state.placed.filter(function(x){ return x.p === p; });
+      if(p === 'S' && wordsGeom(base, wordsItem())) mine.unshift(wordsItem());   // (v4.22) your words too
       if(!mine.length) return;
       e.preventDefault();
-      var at = mine.indexOf(selItem());
+      var cur = selItem(), at = -1;
+      mine.forEach(function(x, j){ if(cur && x.id === cur.id) at = j; });
       st.sel = mine[(at + 1) % mine.length].id;
       syncStudioUI();
       return;
     }
     var it = selItem(), g = it && itemGeom(it, base);
     if(!g) return;
+    if(e.key !== 'Delete' && e.key !== 'Backspace' && /^(Arrow|\+|=|-)/.test(e.key)){ it = spaceHold(it); g = itemGeom(it, base); if(!g) return; }
     var step = e.shiftKey ? 24 : 6, used = true;
     if(e.key === 'ArrowLeft') setItemCenter(it, base, g.x - step, g.y);
     else if(e.key === 'ArrowRight') setItemCenter(it, base, g.x + step, g.y);
@@ -9297,15 +9784,110 @@
     $('stTrayImages').hidden = name !== 'images';
     $('stTrayWords').hidden = name !== 'words';
     $('stTrayDraw').hidden = name !== 'draw';
+    $('stTraySpaceText').hidden = name !== 'spacetext';     // (v4.22) the Space page's own trays
+    $('stTraySpacePhotos').hidden = name !== 'spacephotos';
     if(name !== 'images') st.manage = false;
     else renderImageTiles();
     if(name === 'words') renderWordTiles();
     if(name === 'draw') renderDrawTiles();
+    if(name === 'spacetext') renderSpaceTextTiles();
+    if(name === 'spacephotos') renderSpacePhotoTiles();
     syncStudioUI();   // (the hint says where My images are kept)
   }
   Array.prototype.forEach.call(document.querySelectorAll('.st-tab'), function(b){
     b.addEventListener('click', function(){ showStudioTray(b.dataset.tray); });
   });
+  /* ---- (v4.22) the Space page: tabs Text · Photos · Stickers · ✏️ Draw (the photos' pages: Stickers · Images ·
+     Words · ✏️ Draw) ---- */
+  function syncStudioTabs(){
+    var space = curP() === 'S';
+    Array.prototype.forEach.call(document.querySelectorAll('.st-tab'), function(b){
+      var t = b.dataset.tray;
+      b.hidden = space ? (t === 'images' || t === 'words') : (t === 'spacetext' || t === 'spacephotos');
+    });
+    var ok = space ? ['spacetext', 'spacephotos', 'shapes', 'draw'] : ['shapes', 'images', 'words', 'draw'];
+    if(ok.indexOf(st.tray) === -1) showStudioTray(space ? (spacePhotoCount() || !spaceText() ? 'spacephotos' : 'spacetext') : 'shapes');
+  }
+  // Text: "✎ your words" (opens the box to type them) and the 4 styles, each written in its own letters
+  function renderSpaceTextTiles(typing){
+    var row = $('stSpaceTextTiles'), form = $('stSpaceForm');
+    form.hidden = !typing;
+    row.hidden = !!typing;
+    row.innerHTML = '';
+    if(typing) return;
+    var text = spaceText(), edit = document.createElement('button');
+    edit.type = 'button'; edit.className = 'st-tile space-edit';
+    edit.textContent = text ? '✎ ' + (text.length > 18 ? text.slice(0, 17) + '…' : text) : '✎ your words';
+    edit.setAttribute('aria-label', text ? 'Change your words' : 'Write your words');
+    edit.addEventListener('click', function(){
+      renderSpaceTextTiles(true);
+      $('stSpaceInput').value = state.customText;
+      try{ $('stSpaceInput').focus({preventScroll:true}); }catch(err){}
+    });
+    row.appendChild(edit);
+    SPACE_STYLE_IDS.forEach(function(id){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'st-tile space-style' + (state.spaceStyle === id ? ' on' : '');
+      b.dataset.style = id; b.textContent = SPACE_STYLES[id].label;
+      b.setAttribute('aria-pressed', state.spaceStyle === id ? 'true' : 'false');
+      b.addEventListener('click', function(){ chooseSpaceStyle(id); });
+      row.appendChild(b);
+    });
+  }
+  // typing here changes your text (the same one as in the editor's Text tab)
+  $('stSpaceInput').addEventListener('input', function(){
+    state.customText = this.value.replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 40);
+    $('customText').value = state.customText;
+    if(st.sel === 'W' && !spaceText()) st.sel = null;
+    stickersChanged();
+  });
+  $('stSpaceForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    $('stSpaceInput').blur();   // the phone keyboard closes, so the space shows again
+    renderSpaceTextTiles();
+  });
+  // Photos: + = a photo from your gallery (it joins My images too); My images: tap = into the space (one already
+  // in it gets chosen instead), ✓ = in the space now
+  function renderSpacePhotoTiles(){
+    loadMyImages().then(function(list){
+      if(!st.open || st.tray !== 'spacephotos') return;
+      var row = $('stTraySpacePhotos');
+      row.innerHTML = '';
+      var add = document.createElement('button');
+      add.type = 'button'; add.className = 'st-tile add'; add.textContent = '+';
+      add.setAttribute('aria-label', 'Add a photo from your gallery');
+      add.addEventListener('click', function(){
+        if(spacePhotoCount() >= SPACE_PHOTOS){ showToast('Up to ' + SPACE_PHOTOS + ' photos in the space ♡'); return; }
+        $('stFile').click();
+      });
+      row.appendChild(add);
+      list.slice().reverse().forEach(function(rec){   // newest first
+        var inSpace = state.placed.filter(function(it){ return isSpacePhoto(it) && it.key === rec.id; })[0];
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'st-tile' + (inSpace ? ' in' : '');
+        b.setAttribute('aria-label', inSpace ? 'In your space: choose it' : 'Put this picture in the space');
+        loadStickerImg(rec.id, rec.blob).then(function(im){
+          var c = document.createElement('canvas'), k = Math.min(80 / im.w, 80 / im.h);
+          c.width = 80; c.height = 80;
+          c.getContext('2d').drawImage(im.img, (80 - im.w * k) / 2, (80 - im.h * k) / 2, im.w * k, im.h * k);
+          b.insertBefore(c, b.firstChild);
+        }).catch(function(){ b.remove(); });
+        if(inSpace){
+          var tick = document.createElement('span');
+          tick.className = 'st-in'; tick.textContent = '✓'; tick.setAttribute('aria-hidden', 'true');
+          b.appendChild(tick);
+        }
+        b.addEventListener('click', function(){
+          var now = state.placed.filter(function(it){ return isSpacePhoto(it) && it.key === rec.id; })[0];
+          if(now){ st.sel = now.id; syncStudioUI(); return; }
+          loadStickerImg(rec.id, rec.blob).then(function(){
+            if(addSticker('img', rec.id)) renderSpacePhotoTiles();
+          }, function(){ showToast("Couldn't open that picture ♡"); });
+        });
+        row.appendChild(b);
+      });
+    });
+  }
   // your own words: the last 8 are remembered on this device
   var WORDS_KEY = 'oob-words';
   function recentWords(){
@@ -9400,8 +9982,8 @@
     if(!file) return;
     addMyImage(file).then(function(rec){
       if(!st.open) return;
-      renderImageTiles();
-      addSticker('img', rec.id);
+      addSticker('img', rec.id);   // (v4.22) on the Space page: one of the space's photos
+      if(st.tray === 'spacephotos') renderSpacePhotoTiles(); else renderImageTiles();
     }, function(err){
       showToast(err && err.message === 'full' ? 'My images holds ' + MY_IMAGES_MAX + ' pictures. Remove one first ♡'
                                                : "We couldn't read that picture. Try another one ♡");
@@ -9427,13 +10009,13 @@
   function startDrawing(){
     if(!st.open || st.draw) return;
     if(state.placed.length >= STUDIO_MAX){ showToast(STUDIO_MAX + ' stickers is the most for one strip ♡'); return; }
-    st.draw = {strokes:[], points:0, p:st.i}; st.stroke = null; st.drawBlocked = false; st.sel = null;
+    st.draw = {strokes:[], points:0, p:curP()}; st.stroke = null; st.drawBlocked = false; st.sel = null;   // (v4.22: or the space)
     setDrawUI(true);
   }
   function finishDrawing(){
     if(!st.draw) return;
     if(st.stroke) endStroke();
-    var d = st.draw, r = base.rects[d.p];
+    var d = st.draw, r = rectOf(base, d.p);
     st.draw = null; st.stroke = null;
     setDrawUI(false);
     if(!d.strokes.length || !r) return;
@@ -9476,12 +10058,12 @@
   }
   // a point on the strip → drawing units: from the middle of the photo you draw on, 1000 = its width
   function drawUnits(p){
-    var r = base.rects[st.draw.p];
+    var r = rectOf(base, st.draw.p);
     return {x:(p.x - r.cx) * 1000 / r.w, y:(p.y - r.cy) * 1000 / r.w, k:1000 / r.w};
   }
   function startStroke(e){
     var d = st.draw;
-    if(!base.rects[d.p]) return;
+    if(!rectOf(base, d.p)) return;
     if(d.strokes.length >= DRAW_MAX_STROKES || d.points >= DRAW_MAX_POINTS - 20){ showToast('This drawing is full ♡ Tap DONE and start another'); return; }
     var q = drawUnits(stWorld(e));
     st.stroke = newStroke(stPen.pen, stPen.c, stPen.sz);
@@ -9588,14 +10170,16 @@
     });
   }
   function syncStickerButton(){
-    var n = state.placed.length;
+    var n = state.placed.filter(function(it){ return !isSpacePhoto(it); }).length;   // (v4.22) the space's photos aren't stickers
     $('stOpenBtn').textContent = '✋ PLACE & EDIT STICKERS' + (n ? ' (' + n + ')' : '');
   }
-  // tap a photo in the editor's preview: the studio opens on that photo
+  // tap a photo in the editor's preview: the studio opens on that photo — (v4.22) or on the extra space
   $('previewCanvas').addEventListener('click', function(e){
     if(state.currentStep !== 'customize' || !base || !base.rects.length) return;
-    var r = this.getBoundingClientRect();
-    openStudio(photoAt(base, (e.clientX - r.left) * base.w / r.width, (e.clientY - r.top) * base.h / r.height));
+    var r = this.getBoundingClientRect(), x = (e.clientX - r.left) * base.w / r.width, y = (e.clientY - r.top) * base.h / r.height;
+    var sr = base.spaceRect;
+    if(sr && Math.abs(x - sr.cx) <= sr.bw/2 && Math.abs(y - sr.cy) <= sr.bh/2){ openStudio('S'); return; }
+    openStudio(photoAt(base, x, y));
   });
 
   /* ================= SEND MY DESIGN (live room) =================
@@ -9607,7 +10191,9 @@
      sensible size, which we re-draw ourselves — a message can't make the app do anything else. */
   // (older pages ignore 'since' and turn the 'day' label into the plain date — nothing breaks)
   // (v4.12) 'placed' = your placed stickers; pictures they use travel along as `imgs` (see FREE STICKERS)
-  var DESIGN_KEYS = ['templateId','colorId','showTitle','popout','filterId','stickers','placed','customText','showDate','dateLabel','since','layout','animated'];
+  // (v4.22) 'space', 'spaceStyle', 'spaceWords', 'spaceAuto' = the extra space (its photos are in 'placed', p 'S')
+  var DESIGN_KEYS = ['templateId','colorId','showTitle','popout','filterId','stickers','placed','customText','showDate','dateLabel','since','layout','animated',
+                     'space','spaceStyle','spaceWords','spaceAuto'];
   var DATE_LABELS = ['date','Our Date','Love Day','Best Day','day'];
   var MAX_FRAME_IMG = 2*1024*1024, MAX_FRAME_TOTAL = 10*1024*1024;
   var designOffer = null;   // {design, rec, kind} waiting for USE THEIRS / KEEP MINE (or JOIN / NOT NOW)
@@ -9624,7 +10210,10 @@
   }
   function currentDesign(){
     var d = {};
-    DESIGN_KEYS.forEach(function(k){ d[k] = k === 'stickers' ? copyStickers(state.stickers) : k === 'placed' ? copyPlaced(state.placed) : state[k]; });
+    DESIGN_KEYS.forEach(function(k){
+      d[k] = k === 'stickers' ? copyStickers(state.stickers) : k === 'placed' ? copyPlaced(state.placed)
+           : k === 'spaceWords' ? copyWords(state.spaceWords) : state[k];
+    });
     return d;
   }
   function findCustomRec(test){
@@ -9681,7 +10270,12 @@
       dateLabel: DATE_LABELS.indexOf(raw.dateLabel) !== -1 ? raw.dateLabel : 'date',
       since: cleanSince(raw.since) || state.since,   // a design without one (older page) keeps yours
       layout: raw.layout === 'grid' || raw.layout === 'strip' ? raw.layout : state.layout,   // (v4.18) same: none = keep yours
-      animated: bool(raw.animated, true)
+      animated: bool(raw.animated, true),
+      // (v4.22) the extra space — a design from an older page has none: keep yours
+      space: SPACE_ROW.indexOf(raw.space) !== -1 ? raw.space : state.space,
+      spaceStyle: SPACE_STYLE_IDS.indexOf(raw.spaceStyle) !== -1 ? raw.spaceStyle : state.spaceStyle,
+      spaceWords: raw.spaceWords === undefined ? copyWords(state.spaceWords) : cleanWords(raw.spaceWords),
+      spaceAuto: bool(raw.spaceAuto, state.spaceAuto)
     };
   }
   function unpackFrame(f){
@@ -9769,6 +10363,7 @@
       c.width = Math.round(b.w*k); c.height = Math.round(b.h*k);
       ctx.setTransform(k, 0, 0, k, 0, 0);
       ctx.drawImage(b.canvas, 0, 0);
+      drawSpaceWords(ctx, b);   // (v4.22) the words in the extra space
       drawDecorLayer(ctx, b, 0, false);
       drawStickerPicks(ctx, b.w, b.h, b.accent, '#fff', 0, false);
       drawPlaced(ctx, b, 0, false, null);
@@ -9812,6 +10407,7 @@
     $('customText').value = state.customText;
     syncDateMenu();
     syncSinceRow();
+    syncSpaceUI();
     $('animToggle').checked = state.animated;
     $('titleToggle').checked = state.showTitle;
     $('popoutToggle').checked = state.popout;
@@ -9844,7 +10440,11 @@
     DESIGN_KEYS.forEach(function(k){
       if(k === 'animated' && reduce) return;   // this phone asked for less motion: keep its own choice
       if(k === 'layout' && d.layout !== 'grid' && d.layout !== 'strip') return;   // (v4.18) a design from before has none: keep yours
-      state[k] = k === 'stickers' ? copyStickers(d.stickers) : k === 'placed' ? copyPlaced(d.placed) : d[k];
+      if(k === 'space' && SPACE_ROW.indexOf(d.space) === -1) return;               // (v4.22) the same for the extra space
+      if(k === 'spaceStyle' && SPACE_STYLE_IDS.indexOf(d.spaceStyle) === -1) return;
+      if(k === 'spaceAuto' && typeof d.spaceAuto !== 'boolean') return;
+      state[k] = k === 'stickers' ? copyStickers(d.stickers) : k === 'placed' ? copyPlaced(d.placed)
+               : k === 'spaceWords' ? copyWords(d.spaceWords) : d[k];
     });
     if(!state.colorId) state.colorId = templateById(state.templateId).color;
     rememberSince();   // your love's "together since" (same couple, same day) — or your own, unchanged
@@ -11281,14 +11881,17 @@
     var canvas = document.createElement('canvas');
     var grid = (layout || state.layout) === 'grid' && look.n >= 2 && canGrid(t);
     look.grid = grid;   // (v4.21) a plain frame's grid is its strip layout with 2 per row (drawStripLayout)
+    look.space = layout ? '' : spaceOn(t);   // (v4.22) the extra space (not on the home gallery / custom-frame bases)
     var size = (grid && t.decor ? drawDecoGridLayout : (LAYOUTS[t.layout] || drawStripLayout))(canvas, look);
     var b = {canvas:canvas, w:size.w, h:size.h, t:t, hex:hex, dark:dark,
-             accent:look.accent, textColor:look.textColor, rects:look.rects, decoRects:look.decoRects || null};
-    // thumbnails are static pictures, so they get their decorations baked in right away
-    if(scale && scale < 1 && t.decor){
+             accent:look.accent, textColor:look.textColor, rects:look.rects, decoRects:look.decoRects || null,
+             spaceRect:look.spaceRect || null, ink:t.ink ? t.ink(look) : look.textColor};
+    // thumbnails are static pictures, so they get their decorations (v4.22: and the space's words) baked in right away
+    if(scale && scale < 1 && (t.decor || b.spaceRect)){
       var ctx = canvas.getContext('2d');
       ctx.setTransform(scale, 0, 0, scale, 0, 0);
-      drawDecorLayer(ctx, b, 0, false);
+      if(t.decor) drawDecorLayer(ctx, b, 0, false);
+      if(b.spaceRect) drawSpaceWords(ctx, b);
     }
     return b;
   }
@@ -11390,6 +11993,7 @@
     ctx.clearRect(0,0,w,h);
     ctx.setTransform(w/base.w, 0, 0, h/base.h, 0, 0);
     ctx.drawImage(base.canvas, 0, 0, base.w, base.h);
+    drawSpaceWords(ctx, base);   // (v4.22) the words in the extra space (under the stickers and the space's photos)
     drawDecorLayer(ctx, base, t, state.animated);
     drawStickerPicks(ctx, base.w, base.h, base.accent, '#fff', t, state.animated);
     drawPlaced(ctx, base, t, state.animated, null);
@@ -11450,15 +12054,16 @@
   }
   function titleLane(t, e){ return t.custom && e ? customLane(t, e, 't') : 0; }
   // maxW: the text lane width (0 = full width) · t (optional, v4.20): a plain frame's own fonts / pill behind the text
-  function drawFooter(ctx, w, y, color, maxW, t){
+  // noText (v4.22): your text is in the extra space, only the date is down here
+  function drawFooter(ctx, w, y, color, maxW, t, noText){
     maxW = Math.min(maxW || w, w - 80);
-    var tf = t && t.textFont;
-    if(t && t.footPill && (state.customText || state.showDate)) drawFootPill(ctx, w, y, maxW, t);
-    if(state.customText){
+    var tf = t && t.textFont, text = noText ? '' : state.customText;
+    if(t && t.footPill && (text || state.showDate)) drawFootPill(ctx, w, y, maxW, t, text);
+    if(text){
       ctx.fillStyle = color;
       ctx.textAlign = 'center';
-      if(tf) fillFitted(ctx, state.customText.slice(0,40), w/2, y, maxW, tf.w, tf.px, tf.min, tf.family);
-      else fillFitted(ctx, state.customText.slice(0,40), w/2, y, maxW, 600, 30, 20, "'Dancing Script', cursive");
+      if(tf) fillFitted(ctx, text.slice(0,40), w/2, y, maxW, tf.w, tf.px, tf.min, tf.family);
+      else fillFitted(ctx, text.slice(0,40), w/2, y, maxW, 600, 30, 20, "'Dancing Script', cursive");
       y += 38;
     }
     if(state.showDate) drawFooterDate(ctx, w, y, color, maxW, t);
@@ -11484,16 +12089,19 @@
   // one photo per row; "film" is the same strip with sprocket holes in wider margins
   // (v4.21) L.grid: a still Plain frame as a Grid — the same 640px photos, 2 per row (an odd last photo sits in the
   // middle), with all the frame's own extras. gridGap: a frame's own space between the two columns (default = gap)
+  // (v4.22) L.space 'top' | 'bottom': the extra space (SPACE_H high, as wide as the photos) above / below them;
+  // your text then lives in it (drawSpaceWords), the date stays at the bottom
   function drawStripLayout(canvas, L){
     var t = L.t, film = t.layout === 'film';
     var PAD = t.pad || (film ? 76 : 40), CELL = 640, GAP = t.gap || (film ? 20 : 26);   // pad: wider side margins on request
     var cols = L.grid ? 2 : 1, rows = Math.ceil(L.n / cols), COLGAP = t.gridGap || GAP;
+    var sp = L.space || '', spH = sp ? SPACE_H + GAP : 0, footText = !sp && state.customText;
     var headerH = t.headerH || ((L.title || t.decor) ? 96 : 40);   // decorated frames keep room above the photos for their drawings
     // …and below (footerTrim: a custom frame's wider sides — the same margin runs along the bottom)
     // (v4.20) footBand: a plain frame's own band at the very bottom (e.g. a ticket stub), below your text and date
-    var footerH = t.footerH || (((state.showDate || state.customText || t.decor) ? 130 : 60) - (t.footerTrim || 0) + (t.footBand || 0));
+    var footerH = t.footerH || (((state.showDate || footText || t.decor) ? 130 : 60) - (t.footerTrim || 0) + (t.footBand || 0));
     var W = cols*CELL + (cols-1)*COLGAP + PAD*2;
-    var H = headerH + rows*CELL + (rows-1)*GAP + footerH + PAD;
+    var H = headerH + spH + rows*CELL + (rows-1)*GAP + footerH + PAD;
     var ctx = prepCanvas(canvas, W, H, L.scale);
     paintBackground(ctx, W, H, L.hex, L.isWhite);
     if(t.pattern) t.pattern(ctx, W, H, L);   // e.g. picnic gingham, journal dots
@@ -11501,9 +12109,10 @@
     else if(!t.noBorder) drawBorder(ctx, W, H, L.accent, t.thin);
 
     var radius = t.radius != null ? t.radius : (film ? 6 : 16);
+    var top0 = headerH + (sp === 'top' ? spH : 0);   // (v4.22) the first row of photos (a Top space comes first)
     for(var s=0; s<L.n; s++){
       var row = Math.floor(s / cols), inRow = Math.min(cols, L.n - row*cols);
-      var x = (W - inRow*CELL - (inRow-1)*COLGAP)/2 + (s % cols)*(CELL+COLGAP), y = headerH + row*(CELL+GAP);   // a strip: x = PAD
+      var x = (W - inRow*CELL - (inRow-1)*COLGAP)/2 + (s % cols)*(CELL+COLGAP), y = top0 + row*(CELL+GAP);   // a strip: x = PAD
       if(t.photoUnder) t.photoUnder(ctx, x, y, CELL, CELL, s, L);   // (v4.20) e.g. a mat or a thin line around the photo
       drawPhotoInto(ctx, s, x, y, CELL, CELL, L.filter, radius);
       if(t.photoOver) t.photoOver(ctx, x, y, CELL, CELL, s, L);     // (v4.20) e.g. tape on its outer corners, film-edge text
@@ -11511,11 +12120,16 @@
     }
     // title and text after the photos: then we know exactly where custom images sit
     var e = {w:W, h:H, rects:L.rects}, ink = t.ink ? t.ink(L) : L.textColor;
-    var photosEnd = headerH + rows*CELL + (rows-1)*GAP;
+    var photosEnd = top0 + rows*CELL + (rows-1)*GAP;
+    if(sp){   // (v4.22) the space: as wide as the photos, between the title and the photos / the photos and the date
+      var blockW = cols*CELL + (cols-1)*COLGAP, spTop = sp === 'top' ? headerH : photosEnd + GAP;
+      L.spaceRect = {cx:W/2, cy:spTop + SPACE_H/2, w:CELL, h:SPACE_H, rot:0, bw:blockW, bh:SPACE_H};
+    }
+    var footTop = sp === 'bottom' ? photosEnd + spH : photosEnd;
     if(t.headDraw) t.headDraw(ctx, W, L);
     drawHeader(ctx, L.title, W, ink, titleLane(t, e), t.titleFont);
-    drawFooter(ctx, W, photosEnd + 46, ink, textLane(t, e), t);
-    if(t.footDraw) t.footDraw(ctx, W, photosEnd + footerH - (t.footBand || 0), L, H);
+    drawFooter(ctx, W, footTop + 46, ink, textLane(t, e), t, !!sp);
+    if(t.footDraw) t.footDraw(ctx, W, footTop + footerH - (t.footBand || 0), L, H);
     return {w:W, h:H};
   }
 
@@ -11658,19 +12272,19 @@
   // a flat background instead of the usual soft gradient (Booth Noir, Studio Film)
   function patternFlat(ctx, W, H, L){ ctx.fillStyle = plainPaper(L); ctx.fillRect(0, 0, W, H); }
   // a rounded "label" behind your text and date (Polka Dots: the dots never run through the letters)
-  function drawFootPill(ctx, w, y, maxW, t){
+  function drawFootPill(ctx, w, y, maxW, t, text){   // text (v4.22): the text that's drawn down here ('' = none)
     var tf = t.textFont, ds = t.dateStyle, widths = [];
     ctx.save();
-    if(state.customText){
+    if(text){
       ctx.font = tf ? tf.w + ' ' + tf.px + 'px ' + tf.family : "600 30px 'Dancing Script', cursive";
-      widths.push(Math.min(maxW, ctx.measureText(state.customText.slice(0,40)).width));
+      widths.push(Math.min(maxW, ctx.measureText(text.slice(0,40)).width));
     }
     if(state.showDate){
       ctx.font = ds ? ds.w + ' ' + ds.px + 'px ' + ds.family : '600 20px Poppins, sans-serif';
       widths.push(Math.min(maxW, ctx.measureText(footerDateText(t)).width));
     }
     var bw = Math.max.apply(null, widths) + 56;
-    var top = y - (state.customText ? 36 : 26), bottom = y + (state.customText && state.showDate ? 38 : 0) + 16;
+    var top = y - (text ? 36 : 26), bottom = y + (text && state.showDate ? 38 : 0) + 16;
     ctx.fillStyle = t.footPill;
     roundRect(ctx, w/2 - bw/2, top, bw, bottom - top, Math.min(24, (bottom - top) / 2));
     ctx.fill();
@@ -12064,7 +12678,7 @@
     clearTimeout(previewTimer);
     previewTimer = setTimeout(function(){
       buildBase(); textLimit.lane = null; syncTextLimit(); syncLayoutRows();
-      renderStickerQuick(); syncStickerButton();
+      renderStickerQuick(); syncStickerButton(); syncSpaceUI();
       if(st.open){ studioLayout(); syncStudioUI(); return; }   // the sticker studio covers the editor: it shows the change
       playAnim($('zoomModal').hidden ? $('previewCanvas') : $('zoomCanvas'));   // zoom open: the big view shows it
       syncZoomBtn();
